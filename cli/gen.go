@@ -1,10 +1,6 @@
 package main
 
-import (
-	"strings"
-
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
 func genCommand() *cobra.Command {
 	command := &cobra.Command{
@@ -20,15 +16,4 @@ func genCommand() *cobra.Command {
 	command.AddCommand(iconsCommand())
 
 	return command
-}
-
-func ident(name string) string {
-	var b strings.Builder
-	for _, part := range strings.Split(name, "_") {
-		if part != "" {
-			b.WriteString(strings.ToUpper(part[:1]) + part[1:])
-		}
-	}
-
-	return b.String()
 }

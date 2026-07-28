@@ -13,29 +13,24 @@ import (
 	"strings"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/atlas"
 	"github.com/spf13/cobra"
 )
 
 const breakStages = 10
 
+// vanilla GUI art copied straight out of the jar, keyed by its path inside it
 var guiTextures = map[string]string{
-	"assets/minecraft/textures/gui/sprites/hud/hotbar.png":           "viewer/assets/hotbar.png",
-	"assets/minecraft/textures/gui/sprites/hud/hotbar_selection.png": "viewer/assets/hotbar_selection.png",
-	"assets/minecraft/textures/gui/container/inventory.png":          "viewer/assets/inventory.png",
-	"assets/minecraft/textures/entity/player/wide/steve.png":         "viewer/assets/steve.png",
-	"assets/minecraft/textures/font/ascii.png":                       "viewer/assets/ascii.png",
-	"assets/minecraft/textures/gui/sprites/hud/crosshair.png":        "viewer/assets/crosshair.png",
+	"assets/minecraft/textures/gui/sprites/hud/hotbar.png":           viewerAssets + "/hotbar.png",
+	"assets/minecraft/textures/gui/sprites/hud/hotbar_selection.png": viewerAssets + "/hotbar_selection.png",
+	"assets/minecraft/textures/gui/container/inventory.png":          viewerAssets + "/inventory.png",
+	"assets/minecraft/textures/entity/player/wide/steve.png":         viewerAssets + "/steve.png",
+	"assets/minecraft/textures/font/ascii.png":                       viewerAssets + "/ascii.png",
+	"assets/minecraft/textures/gui/sprites/hud/crosshair.png":        viewerAssets + "/crosshair.png",
 }
 
 type registryItem struct {
 	Name gocraft.Identifier `json:"name"`
-}
-
-type iconsFile struct {
-	Tile    int            `json:"tile"`
-	Columns int            `json:"columns"`
-	Rows    int            `json:"rows"`
-	Items   map[string]int `json:"items"`
 }
 
 type iconSources struct {
@@ -46,29 +41,27 @@ type iconSources struct {
 
 func iconsCommand() *cobra.Command {
 	return &cobra.Command{
-		Use:   "icons <version>",
-		Short: "Generate viewer/assets/{icons.png,icons.json} from a codec's Minecraft item sprites",
+		Use:   "icons <protocol>",
+		Short: "Generate assets/{icons.png,icons.json} from a codec's Minecraft item sprites",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			assets := fmt.Sprintf("codec/v%s/assets", args[0])
-
-			sources, err := loadIconSources(assets)
+			sources, err := loadIconSources(args[0])
 			if err != nil {
 				return err
 			}
 
 			index := assignIcons(sources.icons)
 
-			if err := os.MkdirAll("viewer/assets", 0o755); err != nil {
+			if err := os.MkdirAll(viewerAssets, 0o755); err != nil {
 				return err
 			}
-			if err := writeIconAtlas("viewer/assets/icons.png", sources.icons, index); err != nil {
+			if err := writeIconAtlas(viewerAssets+"/icons.png", sources.icons, index); err != nil {
 				return err
 			}
-			if err := writeIcons("viewer/assets/icons.json", index); err != nil {
+			if err := writeIcons(viewerAssets+"/icons.json", index); err != nil {
 				return err
 			}
-			if err := writeBreaking("viewer/assets/breaking.png", sources.blocks); err != nil {
+			if err := writeBreaking(viewerAssets+"/breaking.png", sources.blocks); err != nil {
 				return err
 			}
 			if err := extractTextures(sources.jar); err != nil {
@@ -82,20 +75,13 @@ func iconsCommand() *cobra.Command {
 	}
 }
 
-func loadIconSources(assets string) (iconSources, error) {
-	fetchModels := func() ([]byte, error) {
-		return fetch(modelsURL)
+func loadIconSources(protocol string) (iconSources, error) {
+	codec, err := openCodecAssets(protocol)
+	if err != nil {
+		return iconSources{}, err
 	}
 
-	jar, err := cached(assets+"/client.jar", fetchClientJar)
-	if err != nil {
-		return iconSources{}, err
-	}
-	rawItems, err := os.ReadFile(assets + "/items.json")
-	if err != nil {
-		return iconSources{}, err
-	}
-	rawModels, err := cached(assets+"/blocks_models.json", fetchModels)
+	rawItems, err := os.ReadFile(fmt.Sprintf("../codec/v%s/assets/items.json", protocol))
 	if err != nil {
 		return iconSources{}, err
 	}
@@ -105,27 +91,38 @@ func loadIconSources(assets string) (iconSources, error) {
 		return iconSources{}, err
 	}
 	var models map[string]blockModel
-	if err := json.Unmarshal(rawModels, &models); err != nil {
+	if err := json.Unmarshal(codec.models, &models); err != nil {
 		return iconSources{}, err
 	}
 
-	sprites, err := readSprites(jar)
+	sprites, err := readSprites(codec.jar)
 	if err != nil {
 		return iconSources{}, err
 	}
-	blocks, err := readTextures(jar)
+	blocks, err := readTextures(codec.jar)
 	if err != nil {
 		return iconSources{}, err
 	}
 
 	return iconSources{
-		jar:    jar,
+		jar:    codec.jar,
 		icons:  pickIcons(items, sprites, resolveFaces(models, blocks), blocks),
 		blocks: blocks,
 	}, nil
 }
 
-func pickIcons(items []registryItem, sprites map[string]image.Image, faces map[string]faceNames, blocks map[string]image.Image) map[string]image.Image {
+func blit(canvas *image.RGBA, src image.Image, originX, originY int) {
+	bounds := src.Bounds()
+	for y := range tileSize {
+		for x := range tileSize {
+			canvas.Set(originX+x, originY+y, src.At(bounds.Min.X+x, bounds.Min.Y+y))
+		}
+	}
+}
+
+// an item without a sprite of its own is drawn from the side texture of the
+// block it places, which is why the block faces are consulted here too
+func pickIcons(items []registryItem, sprites map[string]image.Image, faces map[gocraft.Identifier]faceNames, blocks map[string]image.Image) map[string]image.Image {
 	icons := map[string]image.Image{}
 	for _, item := range items {
 		name := item.Name.Path()
@@ -137,7 +134,7 @@ func pickIcons(items []registryItem, sprites map[string]image.Image, faces map[s
 			continue
 		}
 
-		face, cubic := faces[name]
+		face, cubic := faces[item.Name]
 		if cubic {
 			icons[name] = blocks[face.side]
 		}
@@ -233,12 +230,9 @@ func writeIconAtlas(pathname string, icons map[string]image.Image, index map[str
 }
 
 func writeIcons(pathname string, index map[string]int) error {
-	columns := atlasColumns(len(index))
-	data := iconsFile{
-		Tile:    tileSize,
-		Columns: columns,
-		Rows:    atlasRows(len(index), columns),
-		Items:   index,
+	data := atlas.ItemSheet{
+		Sheet: sheetOf(len(index)),
+		Items: index,
 	}
 
 	encoded, err := json.MarshalIndent(data, "", "\t")

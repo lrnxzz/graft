@@ -16,14 +16,21 @@ import (
 	"strings"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/atlas"
 	"github.com/spf13/cobra"
 )
 
 const (
 	tileSize    = 16
-	jarVersion  = "1.20.4"
 	manifestURL = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json"
-	modelsURL   = "https://raw.githubusercontent.com/PrismarineJS/minecraft-assets/master/data/1.20.2/blocks_models.json"
+
+	// both viewer generators run from the viewer package, so their output lands
+	// beside the go:embed directives that pick it up
+	viewerAssets = "assets"
+
+	// a texture reference may point at another slot in the same model, and a
+	// malformed pack can make that chain loop
+	maxTextureIndirection = 8
 )
 
 type versionManifest struct {
@@ -56,41 +63,24 @@ type faceNames struct {
 	up, down, side string
 }
 
-type faceTiles struct {
-	Up   int `json:"up"`
-	Down int `json:"down"`
-	Side int `json:"side"`
-}
-
-type atlasFile struct {
-	Tile    int                  `json:"tile"`
-	Columns int                  `json:"columns"`
-	Rows    int                  `json:"rows"`
-	Blocks  map[string]faceTiles `json:"blocks"`
-}
-
+// like every other generator this one runs through go:generate, here from the
+// viewer package that embeds what it writes
 func atlasCommand() *cobra.Command {
 	return &cobra.Command{
-		Use:   "atlas <version>",
-		Short: "Generate viewer/assets/{atlas.png,blocks.json} from a codec's Minecraft textures",
+		Use:   "atlas <protocol>",
+		Short: "Generate assets/{atlas.png,blocks.json} from a codec's Minecraft textures",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			assets := fmt.Sprintf("codec/v%s/assets", args[0])
-
-			jar, err := cached(assets+"/client.jar", fetchClientJar)
-			if err != nil {
-				return err
-			}
-			rawModels, err := cached(assets+"/blocks_models.json", func() ([]byte, error) { return fetch(modelsURL) })
+			sources, err := openCodecAssets(args[0])
 			if err != nil {
 				return err
 			}
 
 			var models map[string]blockModel
-			if err := json.Unmarshal(rawModels, &models); err != nil {
+			if err := json.Unmarshal(sources.models, &models); err != nil {
 				return err
 			}
-			textures, err := readTextures(jar)
+			textures, err := readTextures(sources.jar)
 			if err != nil {
 				return err
 			}
@@ -98,13 +88,13 @@ func atlasCommand() *cobra.Command {
 			faces := resolveFaces(models, textures)
 			index := assignTiles(faces)
 
-			if err := os.MkdirAll("viewer/assets", 0o755); err != nil {
+			if err := os.MkdirAll(viewerAssets, 0o755); err != nil {
 				return err
 			}
-			if err := writeAtlas("viewer/assets/atlas.png", textures, index); err != nil {
+			if err := writeAtlas(viewerAssets+"/atlas.png", textures, index); err != nil {
 				return err
 			}
-			if err := writeBlocks("viewer/assets/blocks.json", faces, index); err != nil {
+			if err := writeBlocks(viewerAssets+"/blocks.json", faces, index); err != nil {
 				return err
 			}
 
@@ -115,9 +105,47 @@ func atlasCommand() *cobra.Command {
 	}
 }
 
+// codecAssets are the two downloads both viewer generators start from, cached
+// next to the codec they describe
+type codecAssets struct {
+	jar    []byte
+	models []byte
+}
+
+func openCodecAssets(protocol string) (codecAssets, error) {
+	known, err := releaseOf(protocol)
+	if err != nil {
+		return codecAssets{}, err
+	}
+
+	cache := fmt.Sprintf("../codec/v%s/assets", protocol)
+
+	downloadJar := func() ([]byte, error) {
+		return fetchClientJar(known.game)
+	}
+	jar, err := cached(cache+"/client.jar", downloadJar)
+	if err != nil {
+		return codecAssets{}, err
+	}
+
+	downloadModels := func() ([]byte, error) {
+		return fetch(known.modelsURL())
+	}
+	models, err := cached(cache+"/blocks_models.json", downloadModels)
+	if err != nil {
+		return codecAssets{}, err
+	}
+
+	return codecAssets{
+		jar:    jar,
+		models: models,
+	}, nil
+}
+
 func cached(pathname string, download func() ([]byte, error)) ([]byte, error) {
-	if data, err := os.ReadFile(pathname); err == nil {
-		return data, nil
+	cachedData, err := os.ReadFile(pathname)
+	if err == nil {
+		return cachedData, nil
 	}
 
 	data, err := download()
@@ -157,7 +185,7 @@ func readTextures(jar []byte) (map[string]image.Image, error) {
 	return textures, nil
 }
 
-func fetchClientJar() ([]byte, error) {
+func fetchClientJar(game string) ([]byte, error) {
 	raw, err := fetch(manifestURL)
 	if err != nil {
 		return nil, err
@@ -170,12 +198,12 @@ func fetchClientJar() ([]byte, error) {
 
 	var versionURL string
 	for _, version := range manifest.Versions {
-		if version.ID == jarVersion {
+		if version.ID == game {
 			versionURL = version.URL
 		}
 	}
 	if versionURL == "" {
-		return nil, fmt.Errorf("gen: version %s not in manifest", jarVersion)
+		return nil, fmt.Errorf("gen: version %s not in manifest", game)
 	}
 
 	raw, err = fetch(versionURL)
@@ -205,8 +233,10 @@ func fetch(url string) ([]byte, error) {
 	return io.ReadAll(response.Body)
 }
 
-func resolveFaces(models map[string]blockModel, textures map[string]image.Image) map[string]faceNames {
-	faces := map[string]faceNames{}
+// the model name is where the wire data becomes a domain identity, so the
+// conversion happens once here and never again downstream
+func resolveFaces(models map[string]blockModel, textures map[string]image.Image) map[gocraft.Identifier]faceNames {
+	faces := map[gocraft.Identifier]faceNames{}
 	for name := range models {
 		merged := mergeTextures(models, name)
 
@@ -217,7 +247,11 @@ func resolveFaces(models map[string]blockModel, textures map[string]image.Image)
 			continue
 		}
 
-		faces[name] = faceNames{up: up, down: down, side: side}
+		faces[gocraft.Identifier(name)] = faceNames{
+			up:   up,
+			down: down,
+			side: side,
+		}
 	}
 
 	return faces
@@ -231,7 +265,8 @@ func mergeTextures(models map[string]blockModel, name string) map[string]string 
 			break
 		}
 		for key, value := range current.Textures {
-			if _, exists := merged[key]; !exists {
+			_, inherited := merged[key]
+			if !inherited {
 				merged[key] = value
 			}
 		}
@@ -248,7 +283,9 @@ func lookup(merged map[string]string, textures map[string]image.Image, keys ...s
 			continue
 		}
 		name := dereference(merged, ref, 0)
-		if _, exists := textures[name]; exists {
+
+		_, drawn := textures[name]
+		if drawn {
 			return name
 		}
 	}
@@ -257,7 +294,7 @@ func lookup(merged map[string]string, textures map[string]image.Image, keys ...s
 }
 
 func dereference(merged map[string]string, ref string, depth int) string {
-	if depth > 8 {
+	if depth > maxTextureIndirection {
 		return ""
 	}
 	if strings.HasPrefix(ref, "#") {
@@ -278,7 +315,7 @@ func trimNamespace(ref string) string {
 	return strings.TrimPrefix(path, "block/")
 }
 
-func assignTiles(faces map[string]faceNames) map[string]int {
+func assignTiles(faces map[gocraft.Identifier]faceNames) map[string]int {
 	used := map[string]bool{}
 	for _, face := range faces {
 		used[face.up], used[face.down], used[face.side] = true, true, true
@@ -318,16 +355,17 @@ func writeAtlas(pathname string, textures map[string]image.Image, index map[stri
 	return writePNG(pathname, canvas)
 }
 
-func writeBlocks(pathname string, faces map[string]faceNames, index map[string]int) error {
-	columns := atlasColumns(len(index))
-	data := atlasFile{
-		Tile:    tileSize,
-		Columns: columns,
-		Rows:    atlasRows(len(index), columns),
-		Blocks:  make(map[string]faceTiles, len(faces)),
+func writeBlocks(pathname string, faces map[gocraft.Identifier]faceNames, index map[string]int) error {
+	data := atlas.BlockSheet{
+		Sheet:  sheetOf(len(index)),
+		Blocks: make(map[gocraft.Identifier]atlas.Faces, len(faces)),
 	}
 	for name, face := range faces {
-		data.Blocks[name] = faceTiles{Up: index[face.up], Down: index[face.down], Side: index[face.side]}
+		data.Blocks[name] = atlas.Faces{
+			Up:   index[face.up],
+			Down: index[face.down],
+			Side: index[face.side],
+		}
 	}
 
 	encoded, err := json.MarshalIndent(data, "", "\t")
@@ -338,21 +376,23 @@ func writeBlocks(pathname string, faces map[string]faceNames, index map[string]i
 	return os.WriteFile(pathname, encoded, 0o644)
 }
 
+// the sheet is squared off so both generators lay their tiles out the same way
+func sheetOf(tiles int) atlas.Sheet {
+	columns := atlasColumns(tiles)
+
+	return atlas.Sheet{
+		Tile:    tileSize,
+		Columns: columns,
+		Rows:    atlasRows(tiles, columns),
+	}
+}
+
 func atlasColumns(tiles int) int {
 	return int(math.Ceil(math.Sqrt(float64(tiles))))
 }
 
 func atlasRows(tiles, columns int) int {
 	return (tiles + columns - 1) / columns
-}
-
-func blit(canvas *image.RGBA, src image.Image, originX, originY int) {
-	bounds := src.Bounds()
-	for y := range tileSize {
-		for x := range tileSize {
-			canvas.Set(originX+x, originY+y, src.At(bounds.Min.X+x, bounds.Min.Y+y))
-		}
-	}
 }
 
 func writePNG(pathname string, canvas image.Image) error {

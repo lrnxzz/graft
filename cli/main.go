@@ -1,16 +1,35 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/cobra"
 )
 
 func main() {
+	if err := run(); err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+}
+
+// the long-running commands hang their deadline off this context; without a
+// signal-aware one a ctrl-c would tear the connection down mid-packet
+func run() error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	return root().ExecuteContext(ctx)
+}
+
+func root() *cobra.Command {
 	var verbose bool
 
-	root := &cobra.Command{
+	command := &cobra.Command{
 		Use:           "gocraft",
 		Short:         "Minecraft protocol toolbox",
 		SilenceUsage:  true,
@@ -21,22 +40,20 @@ func main() {
 				level = slog.LevelDebug
 			}
 
-			slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			options := slog.HandlerOptions{
 				Level: level,
-			})))
+			}
+			slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &options)))
 		},
 	}
 
-	root.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable debug logging")
+	command.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable debug logging")
 
-	root.AddCommand(pingCommand())
-	root.AddCommand(loginCommand())
-	root.AddCommand(joinCommand())
-	root.AddCommand(gotoCommand())
-	root.AddCommand(genCommand())
+	command.AddCommand(pingCommand())
+	command.AddCommand(loginCommand())
+	command.AddCommand(joinCommand())
+	command.AddCommand(gotoCommand())
+	command.AddCommand(genCommand())
 
-	if err := root.Execute(); err != nil {
-		slog.Error(err.Error())
-		os.Exit(1)
-	}
+	return command
 }
