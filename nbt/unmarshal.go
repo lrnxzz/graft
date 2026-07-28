@@ -1,12 +1,15 @@
 package nbt
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
 )
 
 var tagInterface = reflect.TypeFor[Tag]()
+
+var errRootNotCompound = errors.New("nbt: root tag is not a compound")
 
 func Unmarshal(data []byte, v any) error {
 	_, err := unmarshalRoot(data, false, v)
@@ -31,7 +34,7 @@ func unmarshalRoot(data []byte, named bool, v any) (string, error) {
 		if dec.err != nil {
 			return "", dec.err
 		}
-		return "", fmt.Errorf("nbt: root tag is not a compound")
+		return "", errRootNotCompound
 	}
 
 	name := ""

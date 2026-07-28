@@ -20,8 +20,12 @@ var (
 )
 
 func fieldsOf(t reflect.Type) []field {
-	if cached, ok := _fieldCache.Load(t); ok {
-		return cached.([]field)
+	cached, hit := _fieldCache.Load(t)
+	if hit {
+		fields, ok := cached.([]field)
+		if ok {
+			return fields
+		}
 	}
 
 	fields := resolveShadows(collectFields(t, nil))
@@ -31,8 +35,12 @@ func fieldsOf(t reflect.Type) []field {
 }
 
 func fieldMapOf(t reflect.Type) map[string]field {
-	if cached, ok := _fieldMapCache.Load(t); ok {
-		return cached.(map[string]field)
+	cached, hit := _fieldMapCache.Load(t)
+	if hit {
+		byName, ok := cached.(map[string]field)
+		if ok {
+			return byName
+		}
 	}
 
 	byName := make(map[string]field, t.NumField())
