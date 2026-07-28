@@ -176,43 +176,34 @@ func (x *Xbox) XSTSToken(ctx context.Context, user XboxToken) (XboxToken, error)
 	return x.authorize(ctx, target, payload)
 }
 
-func (x *Xbox) authorize(ctx context.Context, target string, body []byte) (XboxToken, error) {
-	if x.Client == nil {
-		x.Client = &fasthttp.Client{}
+func (x *Xbox) authorize(ctx context.Context, target string, payload []byte) (XboxToken, error) {
+	call := request{
+		client:      x.Client,
+		method:      fasthttp.MethodPost,
+		url:         target,
+		contentType: jsonContentType,
+		accept:      jsonContentType,
+		body:        payload,
+		timeout:     xboxTimeout,
 	}
 
-	request := fasthttp.AcquireRequest()
-	response := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(request)
-	defer fasthttp.ReleaseResponse(response)
-
-	request.Header.SetMethod(fasthttp.MethodPost)
-	request.SetRequestURI(target)
-	request.Header.SetContentType("application/json")
-	request.Header.Set(fasthttp.HeaderAccept, "application/json")
-	request.SetBody(body)
-
-	deadline := time.Now().Add(xboxTimeout)
-	if ctxDeadline, ok := ctx.Deadline(); ok && ctxDeadline.Before(deadline) {
-		deadline = ctxDeadline
-	}
-
-	if err := x.Client.DoDeadline(request, response, deadline); err != nil {
+	body, status, err := send(ctx, call)
+	if err != nil {
 		return XboxToken{}, err
 	}
 
-	if response.StatusCode() == fasthttp.StatusUnauthorized {
+	if status == fasthttp.StatusUnauthorized {
 		var denial XSTSError
-		if err := json.Unmarshal(response.Body(), &denial); err == nil && denial.XErr != 0 {
+		if err := json.Unmarshal(body, &denial); err == nil && denial.XErr != 0 {
 			return XboxToken{}, &denial
 		}
 	}
-	if response.StatusCode() != fasthttp.StatusOK {
-		return XboxToken{}, fmt.Errorf("mojang: xbox authorization returned %d: %s", response.StatusCode(), response.Body())
+	if status != fasthttp.StatusOK {
+		return XboxToken{}, fmt.Errorf("mojang: xbox authorization returned %d: %s", status, body)
 	}
 
 	var decoded xboxResponse
-	if err := json.Unmarshal(response.Body(), &decoded); err != nil {
+	if err := json.Unmarshal(body, &decoded); err != nil {
 		return XboxToken{}, err
 	}
 	if len(decoded.DisplayClaims.XUI) == 0 {

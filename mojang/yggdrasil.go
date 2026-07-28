@@ -66,37 +66,31 @@ func (y Yggdrasil) Authenticate(ctx context.Context) (Session, error) {
 		return Session{}, err
 	}
 
-	request := fasthttp.AcquireRequest()
-	response := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(request)
-	defer fasthttp.ReleaseResponse(response)
-
-	request.Header.SetMethod(fasthttp.MethodPost)
-	request.SetRequestURI(y.BaseURL + "/authenticate")
-	request.Header.SetContentType("application/json")
-	request.Header.Set(fasthttp.HeaderAccept, "application/json")
-	request.SetBody(body)
-
-	deadline := time.Now().Add(yggdrasilTimeout)
-	if ctxDeadline, ok := ctx.Deadline(); ok && ctxDeadline.Before(deadline) {
-		deadline = ctxDeadline
+	call := request{
+		method:      fasthttp.MethodPost,
+		url:         y.BaseURL + "/authenticate",
+		contentType: jsonContentType,
+		accept:      jsonContentType,
+		body:        body,
+		timeout:     yggdrasilTimeout,
 	}
 
-	if err := fasthttp.DoDeadline(request, response, deadline); err != nil {
+	answer, status, err := send(ctx, call)
+	if err != nil {
 		return Session{}, err
 	}
 
-	if response.StatusCode() != fasthttp.StatusOK {
+	if status != fasthttp.StatusOK {
 		var failure yggdrasilError
-		if err := json.Unmarshal(response.Body(), &failure); err == nil && failure.Err != "" {
+		if err := json.Unmarshal(answer, &failure); err == nil && failure.Err != "" {
 			return Session{}, &failure
 		}
 
-		return Session{}, fmt.Errorf("mojang: yggdrasil authenticate returned %d: %s", response.StatusCode(), response.Body())
+		return Session{}, fmt.Errorf("mojang: yggdrasil authenticate returned %d: %s", status, answer)
 	}
 
 	var decoded yggdrasilResponse
-	if err := json.Unmarshal(response.Body(), &decoded); err != nil {
+	if err := json.Unmarshal(answer, &decoded); err != nil {
 		return Session{}, err
 	}
 

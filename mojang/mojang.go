@@ -111,31 +111,18 @@ func (m *Mojang) HasJoined(ctx context.Context, username, serverID string) (Prof
 }
 
 func (m *Mojang) do(ctx context.Context, method, target string, body []byte) (raw []byte, status int, err error) {
-	request := fasthttp.AcquireRequest()
-	response := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(request)
-	defer fasthttp.ReleaseResponse(response)
-
-	request.Header.SetMethod(method)
-	request.SetRequestURI(target)
-	request.Header.Set(fasthttp.HeaderAuthorization, "Bearer "+m.token)
-	request.Header.Set(fasthttp.HeaderAccept, "application/json")
-
+	call := request{
+		client:  m.Client,
+		method:  method,
+		url:     target,
+		accept:  jsonContentType,
+		bearer:  m.token,
+		body:    body,
+		timeout: mojangTimeout,
+	}
 	if body != nil {
-		request.Header.SetContentType("application/json")
-		request.SetBody(body)
+		call.contentType = jsonContentType
 	}
 
-	deadline := time.Now().Add(mojangTimeout)
-	if ctxDeadline, ok := ctx.Deadline(); ok && ctxDeadline.Before(deadline) {
-		deadline = ctxDeadline
-	}
-
-	if err := m.Client.DoDeadline(request, response, deadline); err != nil {
-		return nil, 0, err
-	}
-
-	raw = append([]byte(nil), response.Body()...)
-
-	return raw, response.StatusCode(), nil
+	return send(ctx, call)
 }

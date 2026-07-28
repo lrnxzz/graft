@@ -92,31 +92,25 @@ func loginWithIdentity(ctx context.Context, identityToken string) (minecraftToke
 		return minecraftToken{}, err
 	}
 
-	request := fasthttp.AcquireRequest()
-	response := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(request)
-	defer fasthttp.ReleaseResponse(response)
-
-	request.Header.SetMethod(fasthttp.MethodPost)
-	request.SetRequestURI(loginWithXboxURL)
-	request.Header.SetContentType("application/json")
-	request.Header.Set(fasthttp.HeaderAccept, "application/json")
-	request.SetBody(body)
-
-	deadline := time.Now().Add(loginTimeout)
-	if ctxDeadline, ok := ctx.Deadline(); ok && ctxDeadline.Before(deadline) {
-		deadline = ctxDeadline
+	call := request{
+		method:      fasthttp.MethodPost,
+		url:         loginWithXboxURL,
+		contentType: jsonContentType,
+		accept:      jsonContentType,
+		body:        body,
+		timeout:     loginTimeout,
 	}
 
-	if err := fasthttp.DoDeadline(request, response, deadline); err != nil {
+	answer, status, err := send(ctx, call)
+	if err != nil {
 		return minecraftToken{}, err
 	}
-	if response.StatusCode() != fasthttp.StatusOK {
-		return minecraftToken{}, fmt.Errorf("mojang: login_with_xbox returned %d: %s", response.StatusCode(), response.Body())
+	if status != fasthttp.StatusOK {
+		return minecraftToken{}, fmt.Errorf("mojang: login_with_xbox returned %d: %s", status, answer)
 	}
 
 	var token minecraftToken
-	if err := json.Unmarshal(response.Body(), &token); err != nil {
+	if err := json.Unmarshal(answer, &token); err != nil {
 		return minecraftToken{}, err
 	}
 

@@ -37,30 +37,25 @@ func (m *MSA) RequestDeviceCode(ctx context.Context) (DeviceCode, error) {
 		responseType: m.Flow.ResponseType,
 	}
 
-	request := fasthttp.AcquireRequest()
-	response := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(request)
-	defer fasthttp.ReleaseResponse(response)
-
-	request.Header.SetMethod(fasthttp.MethodPost)
-	request.SetRequestURI(m.Flow.DeviceCodeURL)
-	request.Header.SetContentType(formContentType)
-	request.SetBodyString(form.encode())
-
-	deadline := time.Now().Add(msaTimeout)
-	if ctxDeadline, ok := ctx.Deadline(); ok && ctxDeadline.Before(deadline) {
-		deadline = ctxDeadline
+	call := request{
+		client:      m.Client,
+		method:      fasthttp.MethodPost,
+		url:         m.Flow.DeviceCodeURL,
+		contentType: formContentType,
+		body:        []byte(form.encode()),
+		timeout:     msaTimeout,
 	}
 
-	if err := m.Client.DoDeadline(request, response, deadline); err != nil {
+	body, status, err := send(ctx, call)
+	if err != nil {
 		return DeviceCode{}, err
 	}
-	if response.StatusCode() != fasthttp.StatusOK {
-		return DeviceCode{}, fmt.Errorf("mojang: device code request returned %d: %s", response.StatusCode(), response.Body())
+	if status != fasthttp.StatusOK {
+		return DeviceCode{}, fmt.Errorf("mojang: device code request returned %d: %s", status, body)
 	}
 
 	var code DeviceCode
-	if err := json.Unmarshal(response.Body(), &code); err != nil {
+	if err := json.Unmarshal(body, &code); err != nil {
 		return DeviceCode{}, err
 	}
 
@@ -90,28 +85,23 @@ func (m *MSA) Refresh(ctx context.Context, refreshToken string) (TokenSet, error
 }
 
 func (m *MSA) token(ctx context.Context, form msaForm) (TokenSet, error) {
-	request := fasthttp.AcquireRequest()
-	response := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(request)
-	defer fasthttp.ReleaseResponse(response)
-
-	request.Header.SetMethod(fasthttp.MethodPost)
-	request.SetRequestURI(m.Flow.TokenURL)
-	request.Header.SetContentType(formContentType)
-	request.SetBodyString(form.encode())
-
-	deadline := time.Now().Add(msaTimeout)
-	if ctxDeadline, ok := ctx.Deadline(); ok && ctxDeadline.Before(deadline) {
-		deadline = ctxDeadline
+	call := request{
+		client:      m.Client,
+		method:      fasthttp.MethodPost,
+		url:         m.Flow.TokenURL,
+		contentType: formContentType,
+		body:        []byte(form.encode()),
+		timeout:     msaTimeout,
 	}
 
-	if err := m.Client.DoDeadline(request, response, deadline); err != nil {
+	body, status, err := send(ctx, call)
+	if err != nil {
 		return TokenSet{}, err
 	}
 
-	if response.StatusCode() == fasthttp.StatusOK {
+	if status == fasthttp.StatusOK {
 		var tokens TokenSet
-		if err := json.Unmarshal(response.Body(), &tokens); err != nil {
+		if err := json.Unmarshal(body, &tokens); err != nil {
 			return TokenSet{}, err
 		}
 
@@ -119,8 +109,8 @@ func (m *MSA) token(ctx context.Context, form msaForm) (TokenSet, error) {
 	}
 
 	var failure OAuthError
-	if err := json.Unmarshal(response.Body(), &failure); err != nil || failure.Code == "" {
-		return TokenSet{}, fmt.Errorf("mojang: token request returned %d: %s", response.StatusCode(), response.Body())
+	if err := json.Unmarshal(body, &failure); err != nil || failure.Code == "" {
+		return TokenSet{}, fmt.Errorf("mojang: token request returned %d: %s", status, body)
 	}
 
 	return TokenSet{}, &failure
