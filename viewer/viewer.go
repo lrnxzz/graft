@@ -125,7 +125,9 @@ func attach(window *gpu.Window, bot *agent.Agent) (*Viewer, error) {
 	}
 
 	chat := NewChat(window.Time)
-	bot.OnChat(chat.Push)
+	agent.On(bot, func(e agent.ChatReceived) {
+		chat.Push(e.Line)
+	})
 
 	spawn := bot.Snapshot()
 	eye := eyeOf(spawn.Position)

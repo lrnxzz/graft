@@ -47,6 +47,10 @@ type Agent struct {
 	miner     miner
 	navigator navigator
 
+	watching map[string][]func(Notice)
+	guarding map[string][]func(Intent)
+	pending  []Notice
+
 	ticks    uint64
 	snapshot Snapshot
 }
@@ -80,9 +84,11 @@ func Join(ctx context.Context, address, username string) (*Agent, error) {
 
 	client := gocraft.NewClient(conn, v765.Protocol())
 	a := &Agent{
-		client:  client,
-		physics: gocraft.NewPhysics(blocks.Collision),
-		spawned: make(chan struct{}),
+		client:   client,
+		physics:  gocraft.NewPhysics(blocks.Collision),
+		spawned:  make(chan struct{}),
+		watching: map[string][]func(Notice){},
+		guarding: map[string][]func(Intent){},
 	}
 
 	session, err := v765.Join(client, host, port, username, nil)
@@ -93,6 +99,7 @@ func Join(ctx context.Context, address, username string) (*Agent, error) {
 	}
 	a.session = session
 	a.miner = miner{digger: session}
+	a.observe()
 
 	client.Tick(gocraft.TickRate, a.tick)
 
@@ -199,6 +206,11 @@ func (a *Agent) ClickSlot(slot int) error {
 }
 
 func (a *Agent) Chat(message string) error {
+	proposed := &Chatting{Message: message}
+	if err := a.allowed(proposed); err != nil {
+		return err
+	}
+
 	command, addressed := strings.CutPrefix(message, "/")
 	if addressed {
 		return a.session.SendCommand(command)
@@ -207,8 +219,36 @@ func (a *Agent) Chat(message string) error {
 	return a.session.SendChat(message)
 }
 
-func (a *Agent) OnChat(listener v765.ChatListener) {
-	a.session.OnChat(listener)
+// observe turns the wire into notices. The session keeps its single chat
+// listener — this one — and the fan-out to many happens here, which is what
+// stops two plugins from silently unsubscribing each other.
+func (a *Agent) observe() {
+	a.session.OnChat(func(line string) {
+		a.post(ChatReceived{Line: line})
+	})
+
+	gocraft.On(a.client, a.noticeBlock)
+	gocraft.On(a.client, a.noticeHealth)
+}
+
+func (a *Agent) noticeBlock(_ *gocraft.Client, p *v765.BlockUpdate) error {
+	change := p.Change()
+
+	a.post(BlockChanged{
+		At:    gocraft.At(change.X, change.Y, change.Z),
+		State: change.State,
+	})
+
+	return nil
+}
+
+func (a *Agent) noticeHealth(_ *gocraft.Client, p *v765.SetHealth) error {
+	a.post(HealthChanged{
+		Health: p.Health.Float32(),
+		Food:   float32(p.Food.Int()),
+	})
+
+	return nil
 }
 
 func (a *Agent) Carried() gocraft.ItemStack {
@@ -221,6 +261,15 @@ func (a *Agent) Dig(ctx context.Context, reach float64) (gocraft.RayHit, error) 
 	hit, ok := a.Target(reach)
 	if !ok {
 		return gocraft.RayHit{}, errNoBlockInReach
+	}
+
+	proposed := &Digging{
+		Block: hit.Block,
+		State: hit.State,
+		Tool:  a.session.Inventory().Held().Item,
+	}
+	if err := a.allowed(proposed); err != nil {
+		return gocraft.RayHit{}, err
 	}
 
 	a.mu.Lock()
@@ -287,6 +336,14 @@ func (a *Agent) Place(reach float64) error {
 		return errNoBlockInReach
 	}
 
+	proposed := &Placing{
+		Block: hit.Block.Neighbor(hit.Face),
+		Item:  a.session.Inventory().Held().Item,
+	}
+	if err := a.allowed(proposed); err != nil {
+		return err
+	}
+
 	return a.session.PlaceBlock(hit)
 }
 
@@ -294,6 +351,11 @@ func (a *Agent) Place(reach float64) error {
 // itself is driven by the tick loop, so a caller that wants to do something else
 // meanwhile runs this in a goroutine
 func (a *Agent) Navigate(ctx context.Context, goal pathfinder.Goal) (gocraft.Position, error) {
+	proposed := &Navigating{Goal: goal}
+	if err := a.allowed(proposed); err != nil {
+		return gocraft.Position{}, err
+	}
+
 	from := a.session.Player().Position.Floor()
 	planner := pathfinder.NewPlanner(a.session.World(), blocks.Terrain(), a.loadout())
 
@@ -310,6 +372,11 @@ func (a *Agent) Navigate(ctx context.Context, goal pathfinder.Goal) (gocraft.Pos
 
 	select {
 	case reached := <-done:
+		a.post(Arrived{
+			At:     reached.at,
+			Reason: reached.err,
+		})
+
 		return reached.at, reached.err
 	case <-ctx.Done():
 		a.Stop()
@@ -354,8 +421,11 @@ func (a *Agent) tick() {
 
 	player := a.session.Player()
 	a.spawns.Do(func() {
+		a.post(Spawned{At: player.Position})
 		close(a.spawned)
 	})
+
+	a.deliver()
 	a.navigate(player)
 
 	a.mu.Lock()
