@@ -7,10 +7,13 @@ import (
 	"image/png"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/atlas"
 	"github.com/lrnxzz/go-craft/codec/v765/blocks"
 	"github.com/lrnxzz/go-craft/viewer/gpu"
 	"github.com/lrnxzz/go-craft/viewer/mesh"
 )
+
+//go:generate go run github.com/lrnxzz/go-craft/cli gen atlas 765
 
 //go:embed assets/atlas.png
 var atlasImage []byte
@@ -18,21 +21,9 @@ var atlasImage []byte
 //go:embed assets/blocks.json
 var atlasMapping []byte
 
-type faceTiles struct {
-	Up   int `json:"up"`
-	Down int `json:"down"`
-	Side int `json:"side"`
-}
-
-type atlasFile struct {
-	Columns int                              `json:"columns"`
-	Rows    int                              `json:"rows"`
-	Blocks  map[gocraft.Identifier]faceTiles `json:"blocks"`
-}
-
 type Tileset struct {
 	atlas  *gpu.Atlas
-	blocks map[gocraft.Identifier]faceTiles
+	blocks map[gocraft.Identifier]atlas.Faces
 }
 
 func LoadTileset() (*Tileset, error) {
@@ -41,7 +32,7 @@ func LoadTileset() (*Tileset, error) {
 		return nil, err
 	}
 
-	var file atlasFile
+	var file atlas.BlockSheet
 	if err := json.Unmarshal(atlasMapping, &file); err != nil {
 		return nil, err
 	}
@@ -50,6 +41,10 @@ func LoadTileset() (*Tileset, error) {
 		atlas:  gpu.NewAtlas(gpu.NewTexture(img), file.Columns, file.Rows),
 		blocks: file.Blocks,
 	}, nil
+}
+
+func (t *Tileset) Delete() {
+	t.atlas.Delete()
 }
 
 func (t *Tileset) Atlas() *gpu.Atlas {

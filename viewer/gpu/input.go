@@ -25,6 +25,15 @@ func Digit(index int) Key {
 	return Key(glfw.Key1 + glfw.Key(index))
 }
 
+// Keys is every key the viewer knows how to name, which is what a screen sees
+// forwarded to it and what a bind may claim
+var Keys = [...]Key{
+	KeyW, KeyA, KeyS, KeyD,
+	KeyE, KeyT, KeyP, KeySlash,
+	KeyEnter, KeyEscape, KeyBackspace,
+	KeySpace, KeyShift, KeyCtrl,
+}
+
 type Button int
 
 const (

@@ -7,21 +7,18 @@ import (
 	"image/png"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/atlas"
 	"github.com/lrnxzz/go-craft/codec/v765/items"
 	"github.com/lrnxzz/go-craft/viewer/gpu"
 )
+
+//go:generate go run github.com/lrnxzz/go-craft/cli gen icons 765
 
 //go:embed assets/icons.png
 var iconsImage []byte
 
 //go:embed assets/icons.json
 var iconsMapping []byte
-
-type iconsFile struct {
-	Columns int            `json:"columns"`
-	Rows    int            `json:"rows"`
-	Items   map[string]int `json:"items"`
-}
 
 type Iconset struct {
 	atlas *gpu.Atlas
@@ -34,7 +31,7 @@ func LoadIconset() (*Iconset, error) {
 		return nil, err
 	}
 
-	var file iconsFile
+	var file atlas.ItemSheet
 	if err := json.Unmarshal(iconsMapping, &file); err != nil {
 		return nil, err
 	}
@@ -43,6 +40,10 @@ func LoadIconset() (*Iconset, error) {
 		atlas: gpu.NewAtlas(gpu.NewTexture(img), file.Columns, file.Rows),
 		items: file.Items,
 	}, nil
+}
+
+func (s *Iconset) Delete() {
+	s.atlas.Delete()
 }
 
 func (s *Iconset) Atlas() *gpu.Atlas {

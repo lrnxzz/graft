@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-gl/mathgl/mgl32"
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/agent"
 	"github.com/lrnxzz/go-craft/viewer/gpu"
 )
 
@@ -33,7 +34,11 @@ var (
 	}
 )
 
+// Route is a WorldLayer that brings its own shader: the dashed ribbon cannot be
+// expressed as painter lines, which is exactly why a layer is free to draw its
+// own geometry instead of being forced through the painter
 type Route struct {
+	bot     *agent.Agent
 	program *gpu.Program
 	mesh    *gpu.Mesh
 	points  []mgl32.Vec3
@@ -43,16 +48,34 @@ type Route struct {
 	walked  float32
 }
 
-func NewRoute() (*Route, error) {
+func NewRoute(bot *agent.Agent) (*Route, error) {
 	program, err := gpu.NewProgram(routeVertexShader, routeFragmentShader)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Route{program: program}, nil
+	return &Route{
+		bot:     bot,
+		program: program,
+	}, nil
 }
 
-func (r *Route) Update(waypoints []gocraft.Position, next int, feet gocraft.Vec3d) {
+func (r *Route) DrawWorld(painter *Painter) {
+	waypoints, next := r.bot.Route()
+	r.update(waypoints, next, r.bot.Snapshot().Position)
+
+	if r.mesh == nil {
+		return
+	}
+
+	r.program.Use()
+	r.program.Mat4("viewProjection", painter.Camera().ViewProjection())
+	r.program.Float("walked", r.walked)
+	r.program.Float("time", float32(painter.Time()))
+	r.mesh.Draw()
+}
+
+func (r *Route) update(waypoints []gocraft.Position, next int, feet gocraft.Vec3d) {
 	if len(waypoints) < 2 {
 		r.clear()
 
@@ -66,20 +89,9 @@ func (r *Route) Update(waypoints []gocraft.Position, next int, feet gocraft.Vec3
 	r.walked = r.progress(next, feet)
 }
 
-func (r *Route) Draw(camera Camera, time float64) {
-	if r.mesh == nil {
-		return
-	}
-
-	r.program.Use()
-	r.program.Mat4("viewProjection", camera.ViewProjection())
-	r.program.Float("walked", r.walked)
-	r.program.Float("time", float32(time))
-	r.mesh.Draw()
-}
-
 func (r *Route) Close() {
 	r.clear()
+	r.program.Delete()
 }
 
 func (r *Route) rebuild(waypoints []gocraft.Position) {

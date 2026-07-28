@@ -18,6 +18,14 @@ func (a *Atlas) Bind(unit uint32) {
 	a.texture.Bind(unit)
 }
 
+func (a *Atlas) Texture() *Texture {
+	return a.texture
+}
+
+func (a *Atlas) Delete() {
+	a.texture.Delete()
+}
+
 func (a *Atlas) Tile(index int) UV {
 	column := float32(index % a.columns)
 	row := float32(index / a.columns)

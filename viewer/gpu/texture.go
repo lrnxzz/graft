@@ -32,3 +32,7 @@ func (t *Texture) Bind(unit uint32) {
 	gl.ActiveTexture(gl.TEXTURE0 + unit)
 	gl.BindTexture(gl.TEXTURE_2D, t.id)
 }
+
+func (t *Texture) Delete() {
+	gl.DeleteTextures(1, &t.id)
+}

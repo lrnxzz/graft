@@ -6,6 +6,7 @@ import (
 	"image/png"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/agent"
 	"github.com/lrnxzz/go-craft/viewer/gpu"
 	"github.com/lrnxzz/go-craft/viewer/mesh"
 )
@@ -19,7 +20,10 @@ const (
 	noStage      = -1
 )
 
+// Crack is a WorldLayer with its own shader too: the break overlay is a textured
+// cube, not an outline
 type Crack struct {
+	bot     *agent.Agent
 	program *gpu.Program
 	texture *gpu.Texture
 	model   *gpu.Mesh
@@ -27,7 +31,7 @@ type Crack struct {
 	stage   int
 }
 
-func NewCrack() (*Crack, error) {
+func NewCrack(bot *agent.Agent) (*Crack, error) {
 	program, err := gpu.NewProgram(vertexShader, fragmentShader)
 	if err != nil {
 		return nil, err
@@ -39,13 +43,29 @@ func NewCrack() (*Crack, error) {
 	}
 
 	return &Crack{
+		bot:     bot,
 		program: program,
 		texture: gpu.NewTexture(img),
 		stage:   noStage,
 	}, nil
 }
 
-func (c *Crack) Update(block gocraft.Position, progress float64, digging bool) {
+func (c *Crack) DrawWorld(painter *Painter) {
+	block, progress, digging := c.bot.Excavation()
+	c.update(block, progress, digging)
+
+	if c.model == nil {
+		return
+	}
+
+	c.program.Use()
+	c.program.Mat4("viewProjection", painter.Camera().ViewProjection())
+	c.texture.Bind(0)
+	c.program.Int("atlas", 0)
+	c.model.Draw()
+}
+
+func (c *Crack) update(block gocraft.Position, progress float64, digging bool) {
 	if !digging {
 		c.clear()
 
@@ -72,20 +92,10 @@ func stageTile(stage int) gpu.UV {
 	}
 }
 
-func (c *Crack) Draw(camera Camera) {
-	if c.model == nil {
-		return
-	}
-
-	c.program.Use()
-	c.program.Mat4("viewProjection", camera.ViewProjection())
-	c.texture.Bind(0)
-	c.program.Int("atlas", 0)
-	c.model.Draw()
-}
-
 func (c *Crack) Close() {
 	c.clear()
+	c.texture.Delete()
+	c.program.Delete()
 }
 
 func (c *Crack) clear() {

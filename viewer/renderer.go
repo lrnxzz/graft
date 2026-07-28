@@ -145,4 +145,10 @@ func (r *Renderer) Draw(camera Camera) {
 
 func (r *Renderer) Close() {
 	close(r.jobs)
+
+	for key, chunk := range r.chunks {
+		chunk.Delete()
+		delete(r.chunks, key)
+	}
+	r.program.Delete()
 }

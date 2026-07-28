@@ -22,11 +22,10 @@ const (
 )
 
 var (
-	untextured   = gpu.UV{U0: -1, V0: -1, U1: -1, V1: -1}
-	chatBacking  = shade(0, 0, 0, 0.4)
-	inputBacking = shade(0, 0, 0, 0.5)
-	textFill     = shade(1, 1, 1, 1)
-	textShadow   = shade(0.25, 0.25, 0.25, 1)
+	chatBacking  = gpu.RGBA(0, 0, 0, 0.4)
+	inputBacking = gpu.RGBA(0, 0, 0, 0.5)
+	textFill     = gpu.White
+	textShadow   = gpu.Shade(0.25, 0.25, 0.25)
 )
 
 type chatLine struct {
@@ -34,32 +33,18 @@ type chatLine struct {
 	at   float64
 }
 
+// Chat is a Layer: it paints on whatever canvas the viewer hands it and owns no
+// GPU resource of its own, the font belonging to the canvas
 type Chat struct {
-	mu      sync.Mutex
-	program *gpu.Program
-	font    *Font
-	clock   func() float64
-	lines   []chatLine
-	input   []rune
-	typing  bool
+	mu     sync.Mutex
+	clock  func() float64
+	lines  []chatLine
+	input  []rune
+	typing bool
 }
 
-func NewChat(clock func() float64) (*Chat, error) {
-	program, err := gpu.NewProgram(hudVertexShader, hudFragmentShader)
-	if err != nil {
-		return nil, err
-	}
-
-	font, err := LoadFont()
-	if err != nil {
-		return nil, err
-	}
-
-	return &Chat{
-		program: program,
-		font:    font,
-		clock:   clock,
-	}, nil
+func NewChat(clock func() float64) *Chat {
+	return &Chat{clock: clock}
 }
 
 func (c *Chat) Push(text string) {
@@ -114,40 +99,18 @@ func (c *Chat) history() []chatLine {
 	return c.lines
 }
 
-func (c *Chat) Draw(screen gpu.Rect, now float64) {
-	vertices := c.layout(screen, now)
-	if len(vertices) == 0 {
-		return
-	}
-
-	c.program.Use()
-	c.program.Vec2("screen", screen.Width(), screen.Height())
-	c.program.Int("icons", 0)
-	c.font.Bind(0)
-
-	batch := uploadHud(vertices)
-	batch.Draw()
-	batch.Delete()
-}
-
-func (c *Chat) layout(screen gpu.Rect, now float64) []float32 {
-	var vertices []float32
-
-	backdrop := func(area gpu.Rect, tint hudColor) {
-		vertices = hudTintedQuad(vertices, area, untextured, tint)
-	}
-	shadowed := func(text string, pen gpu.Point) {
-		vertices = c.font.Emit(vertices, text, pen.Offset(chatScale, chatScale), chatScale, textShadow)
-		vertices = c.font.Emit(vertices, text, pen, chatScale, textFill)
-	}
-
+func (c *Chat) Draw(canvas *Canvas) {
+	now := c.clock()
+	screen := canvas.Screen()
 	bottom := screen.Max.Y - chatMargin
+
 	if c.typing {
 		input := gpu.RectAt(
 			gpu.At(chatMargin, bottom-chatInputSpan*chatScale),
 			screen.Width()-2*chatMargin, chatInputSpan*chatScale)
-		backdrop(input, inputBacking)
-		shadowed(c.prompt(now), input.Min.Offset(chatMargin+chatScale, 2*chatScale))
+
+		canvas.Fill(input, inputBacking)
+		canvas.Shadowed(c.prompt(now), input.Min.Offset(chatMargin+chatScale, 2*chatScale), chatScale, textFill)
 
 		bottom = input.Min.Y - chatMargin
 	}
@@ -163,12 +126,11 @@ func (c *Chat) layout(screen gpu.Rect, now float64) []float32 {
 		line := gpu.RectAt(
 			gpu.At(chatMargin, bottom-float32((shown+1)*chatLineSpan)*chatScale),
 			chatWidth*chatScale, chatLineSpan*chatScale)
-		backdrop(line, chatBacking)
-		shadowed(lines[index].text, line.Min.Offset(chatMargin+chatScale, chatScale))
+
+		canvas.Fill(line, chatBacking)
+		canvas.Shadowed(lines[index].text, line.Min.Offset(chatMargin+chatScale, chatScale), chatScale, textFill)
 		shown++
 	}
-
-	return vertices
 }
 
 func (c *Chat) prompt(now float64) string {

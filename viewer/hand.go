@@ -171,6 +171,7 @@ func (h *Hand) pose(time, swing float64) mgl32.Mat4 {
 		Mul4(center)
 }
 
+// the tileset and iconset are borrowed from the viewer, so they are not freed here
 func (h *Hand) Close() {
 	h.clear()
 
@@ -178,6 +179,9 @@ func (h *Hand) Close() {
 		h.arm.Delete()
 		h.arm = nil
 	}
+
+	h.skin.Delete()
+	h.program.Delete()
 }
 
 func (h *Hand) clear() {

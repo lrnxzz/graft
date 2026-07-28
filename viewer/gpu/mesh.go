@@ -13,6 +13,16 @@ type Mesh struct {
 	ebo     uint32
 	count   int32
 	indexed bool
+	mode    uint32
+}
+
+// NewLines uploads the vertices as unconnected segments, which is what the world
+// painter draws its boxes and rays with
+func NewLines(vertices []float32, layout ...Attribute) *Mesh {
+	mesh := NewMesh(vertices, nil, layout...)
+	mesh.mode = gl.LINES
+
+	return mesh
 }
 
 func NewMesh(vertices []float32, indices []uint32, layout ...Attribute) *Mesh {
@@ -39,7 +49,12 @@ func NewMesh(vertices []float32, indices []uint32, layout ...Attribute) *Mesh {
 		offset += attr.Size
 	}
 
-	mesh := &Mesh{vao: vao, vbo: vbo, count: int32(len(vertices)) / stride}
+	mesh := &Mesh{
+		vao:   vao,
+		vbo:   vbo,
+		count: int32(len(vertices)) / stride,
+		mode:  gl.TRIANGLES,
+	}
 	if len(indices) > 0 {
 		gl.GenBuffers(1, &mesh.ebo)
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ebo)
@@ -66,12 +81,12 @@ func (m *Mesh) Draw() {
 
 	gl.BindVertexArray(m.vao)
 	if m.indexed {
-		gl.DrawElements(gl.TRIANGLES, m.count, gl.UNSIGNED_INT, nil)
+		gl.DrawElements(m.mode, m.count, gl.UNSIGNED_INT, nil)
 
 		return
 	}
 
-	gl.DrawArrays(gl.TRIANGLES, 0, m.count)
+	gl.DrawArrays(m.mode, 0, m.count)
 }
 
 func QuadIndices(quads int) []uint32 {

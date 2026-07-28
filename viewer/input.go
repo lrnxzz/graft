@@ -68,28 +68,19 @@ func (v *Viewer) control(ctx context.Context) {
 		return
 	}
 
-	if v.edges.key(gpu.KeyE).started {
-		v.toggleInventory()
-	}
-
-	if v.inventoryOpen {
+	if v.Showing() {
 		v.bot.SetControls(gocraft.Controls{})
-		v.pickSlot()
+		v.drive()
 
 		return
 	}
 
-	if v.edges.key(gpu.KeyP).started {
-		v.togglePathfinder()
-	}
+	v.fire()
 
-	if v.edges.key(gpu.KeyT).started {
-		v.openChat("")
-
-		return
-	}
-	if v.edges.key(gpu.KeySlash).started {
-		v.openChat("/")
+	// a bind may have just opened the chat or a menu, and neither wants the
+	// keystroke that opened it to also reach the game
+	if v.chat.Typing() || v.Showing() {
+		v.bot.SetControls(gocraft.Controls{})
 
 		return
 	}
@@ -99,6 +90,40 @@ func (v *Viewer) control(ctx context.Context) {
 	v.aim()
 	v.strike(ctx, now)
 	v.hotkeys()
+}
+
+// fire runs whatever bind claimed a key this frame, the viewer's own included
+func (v *Viewer) fire() {
+	for key, action := range v.binds {
+		if v.edges.key(key).started {
+			action()
+		}
+	}
+}
+
+// drive hands the frame to the menu on top; escape and the key that opened it
+// always dismiss, so a screen can never trap the player
+func (v *Viewer) drive() {
+	if v.edges.key(gpu.KeyEscape).started {
+		v.Dismiss()
+
+		return
+	}
+
+	top := v.screens[len(v.screens)-1]
+
+	if v.edges.button(gpu.ButtonLeft).started {
+		top.Click(v.window.Cursor(), v.window.Viewport())
+	}
+
+	for _, key := range gpu.Keys {
+		if key == gpu.KeyEscape {
+			continue
+		}
+		if v.edges.key(key).started {
+			top.Key(key)
+		}
+	}
 }
 
 func (v *Viewer) walk(now float64) {
@@ -177,16 +202,17 @@ func (v *Viewer) togglePathfinder() {
 	v.chat.Push("pathfinder resumed")
 }
 
-func (v *Viewer) toggleInventory() {
-	v.inventoryOpen = !v.inventoryOpen
-
-	if v.inventoryOpen {
-		v.window.ReleaseCursor()
+// the inventory is built fresh each time so its texture follows the Closer
+// contract every other screen obeys
+func (v *Viewer) openInventory() {
+	screen, err := NewInventoryScreen(v.bot)
+	if err != nil {
+		v.chat.Push("inventory unavailable: " + err.Error())
 
 		return
 	}
 
-	v.window.GrabCursor()
+	v.Open(screen)
 }
 
 func (v *Viewer) openChat(prefill string) {
@@ -210,17 +236,6 @@ func (v *Viewer) compose() {
 	message, sendable := v.chat.Submit()
 	if sendable {
 		_ = v.bot.Chat(message)
-	}
-}
-
-func (v *Viewer) pickSlot() {
-	if !v.edges.button(gpu.ButtonLeft).started {
-		return
-	}
-
-	slot, hit := v.hud.SlotAt(v.window.Cursor(), v.window.Viewport())
-	if hit {
-		_ = v.bot.ClickSlot(slot)
 	}
 }
 

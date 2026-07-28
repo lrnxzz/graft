@@ -60,6 +60,10 @@ func glyphWidth(img image.Image, glyph int) float32 {
 	return float32(width + 1)
 }
 
+func (f *Font) Close() {
+	f.texture.Delete()
+}
+
 func (f *Font) Bind(unit uint32) {
 	f.texture.Bind(unit)
 }
@@ -75,24 +79,19 @@ func (f *Font) Width(text string) float32 {
 	return width
 }
 
-func (f *Font) Emit(vertices []float32, text string, pen gpu.Point, scale float32, tint hudColor) []float32 {
-	for _, glyph := range text {
-		if glyph >= glyphCount {
-			continue
-		}
-
-		uv := gpu.UV{
-			U0: float32(int(glyph)%glyphColumns) / glyphColumns,
-			V0: float32(int(glyph)/glyphColumns) / glyphColumns,
-		}
-		uv.U1 = uv.U0 + 1.0/glyphColumns
-		uv.V1 = uv.V0 + 1.0/glyphColumns
-
-		size := glyphSize * scale
-		vertices = hudTintedQuad(vertices, gpu.RectAt(pen, size, size), uv, tint)
-
-		pen = pen.Offset(f.widths[glyph]*scale, 0)
+// glyph answers where a letter sits on the sheet and how far the pen advances
+// past it, leaving the emitting to whoever is batching
+func (f *Font) glyph(letter rune) (gpu.UV, float32, bool) {
+	if letter >= glyphCount {
+		return gpu.UV{}, 0, false
 	}
 
-	return vertices
+	uv := gpu.UV{
+		U0: float32(int(letter)%glyphColumns) / glyphColumns,
+		V0: float32(int(letter)/glyphColumns) / glyphColumns,
+	}
+	uv.U1 = uv.U0 + 1.0/glyphColumns
+	uv.V1 = uv.V0 + 1.0/glyphColumns
+
+	return uv, f.widths[letter], true
 }

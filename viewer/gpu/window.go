@@ -56,7 +56,19 @@ func OpenWindow(title string, width, height int, visible bool) (*Window, error) 
 		window.typed = append(window.typed, char)
 	})
 
+	// GL does not follow the window on its own: without this the viewport keeps
+	// the size it was created with and everything drawn after a resize is skewed
+	handle.SetFramebufferSizeCallback(func(_ *glfw.Window, width, height int) {
+		window.resize(width, height)
+	})
+	window.resize(handle.GetFramebufferSize())
+
 	return window, nil
+}
+
+func (w *Window) resize(width, height int) {
+	w.width, w.height = width, height
+	gl.Viewport(0, 0, int32(width), int32(height))
 }
 
 func (w *Window) ShouldClose() bool {

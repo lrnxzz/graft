@@ -59,6 +59,10 @@ func (p *Program) Vec2(name string, x, y float32) {
 	gl.Uniform2f(p.uniform(name), x, y)
 }
 
+func (p *Program) Delete() {
+	gl.DeleteProgram(p.id)
+}
+
 func (p *Program) uniform(name string) int32 {
 	return gl.GetUniformLocation(p.id, gl.Str(name+"\x00"))
 }
