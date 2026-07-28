@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/codec/v765/blocks"
@@ -389,8 +390,12 @@ func (s *Session) onConfigDisconnect(c *gocraft.Client, p *ConfigDisconnect) err
 func (s *Session) onJoinGame(c *gocraft.Client, p *JoinGame) error {
 	p.Apply(s.player)
 
-	bounds, ok := s.dimensions[p.DimensionType]
-	if !ok {
+	// falling back keeps the session alive, but the wrong minY and height would
+	// silently corrupt every chunk decoded from here on, so it is worth saying
+	bounds, known := s.dimensions[p.DimensionType]
+	if !known {
+		slog.Warn("unknown dimension, assuming overworld bounds", "dimension", p.DimensionType)
+
 		bounds = overworld
 	}
 	s.bounds = bounds
