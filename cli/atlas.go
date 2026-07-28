@@ -300,11 +300,11 @@ func assignTiles(faces map[string]faceNames) map[string]int {
 
 func writeAtlas(pathname string, textures map[string]image.Image, index map[string]int) error {
 	columns := atlasColumns(len(index))
-	rows := (len(index) + columns - 1) / columns
+	rows := atlasRows(len(index), columns)
 	canvas := image.NewRGBA(image.Rect(0, 0, columns*tileSize, rows*tileSize))
 
-	for name, i := range index {
-		originX, originY := (i%columns)*tileSize, (i/columns)*tileSize
+	for name, tile := range index {
+		originX, originY := (tile%columns)*tileSize, (tile/columns)*tileSize
 		src := textures[name]
 		tinted := foliage(name)
 		for y := range tileSize {
@@ -315,12 +315,7 @@ func writeAtlas(pathname string, textures map[string]image.Image, index map[stri
 		}
 	}
 
-	var encoded bytes.Buffer
-	if err := png.Encode(&encoded, canvas); err != nil {
-		return err
-	}
-
-	return os.WriteFile(pathname, encoded.Bytes(), 0o644)
+	return writePNG(pathname, canvas)
 }
 
 func writeBlocks(pathname string, faces map[string]faceNames, index map[string]int) error {
@@ -328,7 +323,7 @@ func writeBlocks(pathname string, faces map[string]faceNames, index map[string]i
 	data := atlasFile{
 		Tile:    tileSize,
 		Columns: columns,
-		Rows:    (len(index) + columns - 1) / columns,
+		Rows:    atlasRows(len(index), columns),
 		Blocks:  make(map[string]faceTiles, len(faces)),
 	}
 	for name, face := range faces {
@@ -345,6 +340,28 @@ func writeBlocks(pathname string, faces map[string]faceNames, index map[string]i
 
 func atlasColumns(tiles int) int {
 	return int(math.Ceil(math.Sqrt(float64(tiles))))
+}
+
+func atlasRows(tiles, columns int) int {
+	return (tiles + columns - 1) / columns
+}
+
+func blit(canvas *image.RGBA, src image.Image, originX, originY int) {
+	bounds := src.Bounds()
+	for y := range tileSize {
+		for x := range tileSize {
+			canvas.Set(originX+x, originY+y, src.At(bounds.Min.X+x, bounds.Min.Y+y))
+		}
+	}
+}
+
+func writePNG(pathname string, canvas image.Image) error {
+	var encoded bytes.Buffer
+	if err := png.Encode(&encoded, canvas); err != nil {
+		return err
+	}
+
+	return os.WriteFile(pathname, encoded.Bytes(), 0o644)
 }
 
 func foliage(name string) bool {

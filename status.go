@@ -19,7 +19,7 @@ const (
 	stateStatus   VarInt = 1
 	statusVersion VarInt = -1
 
-	defaultPort UShort = 25565
+	DefaultPort UShort = 25565
 )
 
 type StatusVersion struct {
@@ -173,7 +173,7 @@ func measureLatency(conn *Conn) (time.Duration, error) {
 func splitAddress(address string) (String, UShort, error) {
 	host, port, err := net.SplitHostPort(address)
 	if err != nil {
-		return String(address), defaultPort, nil
+		return String(address), DefaultPort, nil
 	}
 
 	parsed, err := strconv.ParseUint(port, 10, 16)

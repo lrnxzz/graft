@@ -2,6 +2,8 @@ package gocraft
 
 type ItemID int32
 
+const MaxStackSize = 64
+
 type Item struct {
 	ID        ItemID     `json:"id"`
 	Name      Identifier `json:"name"`

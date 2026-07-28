@@ -6,7 +6,6 @@ import (
 
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/codec/v765/blocks"
-	"github.com/lrnxzz/go-craft/lib"
 )
 
 var errDigAbandoned = errors.New("agent: digging abandoned")
@@ -21,7 +20,8 @@ type excavation struct {
 	hit      gocraft.RayHit
 	reach    float64
 	progress float64
-	future   *lib.Future[gocraft.RayHit]
+	instant  bool
+	finished chan error
 }
 
 type miner struct {
@@ -29,47 +29,62 @@ type miner struct {
 	dig    *excavation
 }
 
-func (m *miner) begin(hit gocraft.RayHit, reach float64, mode gocraft.GameMode, held gocraft.ItemID) *lib.Future[gocraft.RayHit] {
+// begin refuses outright when the block cannot be mined at all; whatever depends
+// on the world lands on the returned channel instead, which already carries the
+// answer when the block gave way on the first strike
+func (m *miner) begin(hit gocraft.RayHit, reach float64, mode gocraft.GameMode, held gocraft.ItemID) (<-chan error, error) {
 	if err := m.abandon(); err != nil {
-		return lib.FailedFuture[gocraft.RayHit](err)
+		return nil, err
 	}
 
-	if mode == gocraft.Creative {
-		if err := m.digger.StartDigging(hit); err != nil {
-			return lib.FailedFuture[gocraft.RayHit](err)
+	// creative breaks on the start packet alone, so its first strike is total
+	instant := mode == gocraft.Creative
+	damage := 1.0
+
+	if !instant {
+		dealt, breakable := blocks.DigDamage(hit.State, held)
+		if !breakable {
+			return nil, fmt.Errorf("agent: block state %d cannot be broken", hit.State)
 		}
 
-		future := lib.NewFuture[gocraft.RayHit]()
-		future.Complete(hit, nil)
-
-		return future
-	}
-
-	damage, breakable := blocks.DigDamage(hit.State, held)
-	if !breakable {
-		return lib.FailedFuture[gocraft.RayHit](fmt.Errorf("agent: block state %d cannot be broken", hit.State))
+		damage = dealt
 	}
 
 	if err := m.digger.StartDigging(hit); err != nil {
-		return lib.FailedFuture[gocraft.RayHit](err)
+		return nil, err
 	}
 
-	future := lib.NewFuture[gocraft.RayHit]()
-
-	if damage >= 1 {
-		future.Complete(hit, m.digger.FinishDigging(hit))
-
-		return future
-	}
-
-	m.dig = &excavation{
+	dig := &excavation{
 		hit:      hit,
 		reach:    reach,
 		progress: damage,
-		future:   future,
+		instant:  instant,
+		finished: make(chan error, 1),
+	}
+	m.dig = dig
+
+	if damage < 1 {
+		return dig.finished, nil
 	}
 
-	return future
+	return dig.finished, m.finish()
+}
+
+// finish retires the dig in progress and tells whoever asked for the block how it
+// went; the channel is buffered for exactly this one send, so the tick loop that
+// calls it never waits for a reader
+func (m *miner) finish() error {
+	dig := m.dig
+	m.dig = nil
+
+	var err error
+	if !dig.instant {
+		err = m.digger.FinishDigging(dig.hit)
+	}
+
+	dig.finished <- err
+
+	return err
 }
 
 func (m *miner) abandon() error {
@@ -79,7 +94,7 @@ func (m *miner) abandon() error {
 	}
 
 	m.dig = nil
-	dig.future.Complete(gocraft.RayHit{}, errDigAbandoned)
+	dig.finished <- errDigAbandoned
 
 	return m.digger.CancelDigging(dig.hit)
 }
@@ -90,6 +105,14 @@ func (m *miner) excavating() (float64, bool) {
 	}
 
 	return m.dig.reach, true
+}
+
+func (m *miner) excavation() (gocraft.Position, float64, bool) {
+	if m.dig == nil {
+		return gocraft.Position{}, 0, false
+	}
+
+	return m.dig.hit.Block, m.dig.progress, true
 }
 
 func (m *miner) tick(target gocraft.RayHit, sighted bool, held gocraft.ItemID) error {
@@ -112,9 +135,5 @@ func (m *miner) tick(target gocraft.RayHit, sighted bool, held gocraft.ItemID) e
 		return nil
 	}
 
-	m.dig = nil
-	err := m.digger.FinishDigging(dig.hit)
-	dig.future.Complete(dig.hit, err)
-
-	return err
+	return m.finish()
 }

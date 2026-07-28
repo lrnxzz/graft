@@ -1,5 +1,7 @@
 package gocraft
 
+import "math"
+
 const (
 	gravity      = 0.08
 	verticalDrag = 0.98
@@ -10,6 +12,8 @@ const (
 )
 
 type Collider func(BlockState) []AABB
+
+type clamper = func(obstacle, moving AABB, delta float64) float64
 
 type Physics struct {
 	Velocity Vec3d
@@ -82,22 +86,29 @@ func (p *Physics) stepUp(world *World, box AABB, velocity, moved Vec3d) Vec3d {
 func (p *Physics) collide(world *World, box AABB, velocity Vec3d) Vec3d {
 	obstacles := p.obstacles(world, box.Stretch(velocity.X, velocity.Y, velocity.Z))
 
-	dy := velocity.Y
-	for _, o := range obstacles {
-		dy = o.ClampY(box, dy)
+	slide := func(box AABB, delta float64, clamp clamper) float64 {
+		for _, obstacle := range obstacles {
+			delta = clamp(obstacle, box, delta)
+		}
+
+		return delta
 	}
+
+	dy := slide(box, velocity.Y, AABB.ClampY)
 	box = box.OffsetXYZ(0, dy, 0)
 
-	dx := velocity.X
-	for _, o := range obstacles {
-		dx = o.ClampX(box, dx)
-	}
-	box = box.OffsetXYZ(dx, 0, 0)
+	// vanilla resolves the larger horizontal axis first; matching it keeps
+	// corner slides identical to the server and avoids "moved wrongly" resets
+	dx, dz := velocity.X, velocity.Z
+	if math.Abs(dx) < math.Abs(dz) {
+		dz = slide(box, dz, AABB.ClampZ)
+		dx = slide(box.OffsetXYZ(0, 0, dz), dx, AABB.ClampX)
 
-	dz := velocity.Z
-	for _, o := range obstacles {
-		dz = o.ClampZ(box, dz)
+		return Vec3(dx, dy, dz)
 	}
+
+	dx = slide(box, dx, AABB.ClampX)
+	dz = slide(box.OffsetXYZ(dx, 0, 0), dz, AABB.ClampZ)
 
 	return Vec3(dx, dy, dz)
 }

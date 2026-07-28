@@ -600,3 +600,85 @@ func (p SetPlayerPositionRotation) Append(dst []byte) []byte {
 func (p *SetPlayerPositionRotation) Decode(r *gocraft.Reader) error {
 	return gocraft.DecodeAll(r, &p.X, &p.Y, &p.Z, &p.Yaw, &p.Pitch, &p.OnGround)
 }
+
+type ChunkBatchStart struct{}
+
+func (*ChunkBatchStart) ID() int32 {
+	return 0x0D
+}
+
+func (*ChunkBatchStart) Name() string {
+	return "ChunkBatchStart"
+}
+
+func (*ChunkBatchStart) State() gocraft.State {
+	return gocraft.StatePlay
+}
+
+func (*ChunkBatchStart) Direction() gocraft.Direction {
+	return gocraft.Clientbound
+}
+
+func (ChunkBatchStart) Append(dst []byte) []byte {
+	return dst
+}
+
+func (*ChunkBatchStart) Decode(*gocraft.Reader) error {
+	return nil
+}
+
+type ChunkBatchFinished struct {
+	BatchSize gocraft.VarInt
+}
+
+func (*ChunkBatchFinished) ID() int32 {
+	return 0x0C
+}
+
+func (*ChunkBatchFinished) Name() string {
+	return "ChunkBatchFinished"
+}
+
+func (*ChunkBatchFinished) State() gocraft.State {
+	return gocraft.StatePlay
+}
+
+func (*ChunkBatchFinished) Direction() gocraft.Direction {
+	return gocraft.Clientbound
+}
+
+func (p ChunkBatchFinished) Append(dst []byte) []byte {
+	return gocraft.AppendAll(dst, p.BatchSize)
+}
+
+func (p *ChunkBatchFinished) Decode(r *gocraft.Reader) error {
+	return gocraft.DecodeAll(r, &p.BatchSize)
+}
+
+type ChunkBatchReceived struct {
+	ChunksPerTick gocraft.Float
+}
+
+func (*ChunkBatchReceived) ID() int32 {
+	return 0x07
+}
+
+func (*ChunkBatchReceived) Name() string {
+	return "ChunkBatchReceived"
+}
+
+func (*ChunkBatchReceived) State() gocraft.State {
+	return gocraft.StatePlay
+}
+
+func (*ChunkBatchReceived) Direction() gocraft.Direction {
+	return gocraft.Serverbound
+}
+
+func (p ChunkBatchReceived) Append(dst []byte) []byte {
+	return gocraft.AppendAll(dst, p.ChunksPerTick)
+}
+
+func (p *ChunkBatchReceived) Decode(r *gocraft.Reader) error {
+	return gocraft.DecodeAll(r, &p.ChunksPerTick)
+}

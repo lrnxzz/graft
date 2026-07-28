@@ -2,42 +2,30 @@ package gocraft
 
 import "sync"
 
-type chunkPos struct {
-	X int32
-	Z int32
-}
-
-func chunkAt(x, z int32) chunkPos {
-	return chunkPos{
-		X: x,
-		Z: z,
-	}
-}
-
 type World struct {
 	mu      sync.RWMutex
-	columns map[chunkPos]*Column
+	columns map[ChunkPos]*Column
 }
 
 func NewWorld() *World {
-	return &World{columns: make(map[chunkPos]*Column)}
+	return &World{columns: make(map[ChunkPos]*Column)}
 }
 
 func (w *World) LoadColumn(c *Column) {
 	w.mu.Lock()
-	w.columns[chunkAt(c.X, c.Z)] = c
+	w.columns[c.Pos()] = c
 	w.mu.Unlock()
 }
 
-func (w *World) UnloadColumn(x, z int32) {
+func (w *World) UnloadColumn(at ChunkPos) {
 	w.mu.Lock()
-	delete(w.columns, chunkAt(x, z))
+	delete(w.columns, at)
 	w.mu.Unlock()
 }
 
-func (w *World) Column(x, z int32) (*Column, bool) {
+func (w *World) Column(at ChunkPos) (*Column, bool) {
 	w.mu.RLock()
-	c, ok := w.columns[chunkAt(x, z)]
+	c, ok := w.columns[at]
 	w.mu.RUnlock()
 
 	return c, ok
@@ -48,6 +36,27 @@ func (w *World) Loaded() int {
 	defer w.mu.RUnlock()
 
 	return len(w.columns)
+}
+
+// Surrounds reports whether every column within radius of the block has arrived,
+// which is what a planner needs before it can read the terrain around a player
+func (w *World) Surrounds(p Position, radius int) bool {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+
+	center := p.Chunk()
+	span := int32(radius)
+
+	for x := -span; x <= span; x++ {
+		for z := -span; z <= span; z++ {
+			_, loaded := w.columns[center.Offset(x, z)]
+			if !loaded {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 func (w *World) Columns() []*Column {
@@ -70,11 +79,11 @@ func (w *World) Block(x, y, z int) (BlockState, bool) {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
-	c, ok := w.columns[chunkAt(int32(x>>4), int32(z>>4))]
+	c, ok := w.columns[At(x, y, z).Chunk()]
 	if !ok {
 		return 0, false
 	}
-	if y < c.minY || y >= c.minY+len(c.sections)*16 {
+	if y < c.minY || y >= c.minY+len(c.sections)*chunkWidth {
 		return 0, false
 	}
 
@@ -85,7 +94,7 @@ func (w *World) SetBlock(x, y, z int, state BlockState) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	c, ok := w.columns[chunkAt(int32(x>>4), int32(z>>4))]
+	c, ok := w.columns[At(x, y, z).Chunk()]
 	if !ok {
 		return
 	}

@@ -17,29 +17,27 @@ var fragmentShader string
 
 const uploadsPerFrame = 2
 
-type chunkKey struct {
-	x int32
-	z int32
-}
-
 type meshJob struct {
-	key    chunkKey
-	world  *gocraft.World
-	column *gocraft.Column
+	key      gocraft.ChunkPos
+	revision int
+	world    *gocraft.World
+	column   *gocraft.Column
 }
 
 type meshResult struct {
-	key      chunkKey
+	key      gocraft.ChunkPos
+	revision int
 	geometry mesh.Geometry
 }
 
 type Renderer struct {
-	program *gpu.Program
-	tileset *Tileset
-	chunks  map[chunkKey]*gpu.Mesh
-	pending map[chunkKey]bool
-	jobs    chan meshJob
-	results chan meshResult
+	program   *gpu.Program
+	tileset   *Tileset
+	chunks    map[gocraft.ChunkPos]*gpu.Mesh
+	revisions map[gocraft.ChunkPos]int
+	pending   map[gocraft.ChunkPos]bool
+	jobs      chan meshJob
+	results   chan meshResult
 }
 
 func NewRenderer(tileset *Tileset) (*Renderer, error) {
@@ -49,12 +47,13 @@ func NewRenderer(tileset *Tileset) (*Renderer, error) {
 	}
 
 	renderer := &Renderer{
-		program: program,
-		tileset: tileset,
-		chunks:  map[chunkKey]*gpu.Mesh{},
-		pending: map[chunkKey]bool{},
-		jobs:    make(chan meshJob, 512),
-		results: make(chan meshResult, 512),
+		program:   program,
+		tileset:   tileset,
+		chunks:    map[gocraft.ChunkPos]*gpu.Mesh{},
+		revisions: map[gocraft.ChunkPos]int{},
+		pending:   map[gocraft.ChunkPos]bool{},
+		jobs:      make(chan meshJob, 512),
+		results:   make(chan meshResult, 512),
 	}
 	for range runtime.NumCPU() {
 		go renderer.mesher()
@@ -65,21 +64,34 @@ func NewRenderer(tileset *Tileset) (*Renderer, error) {
 
 func (r *Renderer) mesher() {
 	for job := range r.jobs {
-		r.results <- meshResult{key: job.key, geometry: mesh.Chunk(job.world, job.column, r.tileset)}
+		r.results <- meshResult{
+			key:      job.key,
+			revision: job.revision,
+			geometry: mesh.Chunk(job.world, job.column, r.tileset),
+		}
 	}
 }
 
 func (r *Renderer) Build(world *gocraft.World) {
-	loaded := map[chunkKey]bool{}
+	loaded := map[gocraft.ChunkPos]bool{}
 	for _, column := range world.Columns() {
-		key := chunkKey{column.X, column.Z}
+		key := column.Pos()
 		loaded[key] = true
-		if r.chunks[key] != nil || r.pending[key] {
+
+		revision := column.Revision()
+		meshed, ok := r.revisions[key]
+		if r.pending[key] || (ok && meshed == revision) {
 			continue
 		}
 
+		job := meshJob{
+			key:      key,
+			revision: revision,
+			world:    world,
+			column:   column,
+		}
 		select {
-		case r.jobs <- meshJob{key: key, world: world, column: column}:
+		case r.jobs <- job:
 			r.pending[key] = true
 		default:
 		}
@@ -89,6 +101,7 @@ func (r *Renderer) Build(world *gocraft.World) {
 		if !loaded[key] {
 			chunk.Delete()
 			delete(r.chunks, key)
+			delete(r.revisions, key)
 		}
 	}
 }
@@ -97,8 +110,7 @@ func (r *Renderer) Collect() {
 	for range uploadsPerFrame {
 		select {
 		case result := <-r.results:
-			delete(r.pending, result.key)
-			r.chunks[result.key] = result.geometry.Upload()
+			r.install(result)
 		default:
 			return
 		}
@@ -107,10 +119,18 @@ func (r *Renderer) Collect() {
 
 func (r *Renderer) Flush() {
 	for len(r.pending) > 0 {
-		result := <-r.results
-		delete(r.pending, result.key)
-		r.chunks[result.key] = result.geometry.Upload()
+		r.install(<-r.results)
 	}
+}
+
+func (r *Renderer) install(result meshResult) {
+	delete(r.pending, result.key)
+	if previous := r.chunks[result.key]; previous != nil {
+		previous.Delete()
+	}
+
+	r.chunks[result.key] = result.geometry.Upload()
+	r.revisions[result.key] = result.revision
 }
 
 func (r *Renderer) Draw(camera Camera) {

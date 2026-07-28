@@ -1,14 +1,46 @@
 package gocraft
 
 import (
+	"errors"
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 )
 
 type Position struct {
 	X int
 	Y int
 	Z int
+}
+
+func At(x, y, z int) Position {
+	return Position{
+		X: x,
+		Y: y,
+		Z: z,
+	}
+}
+
+var errPositionFormat = errors.New("gocraft: position must be written as x,y,z")
+
+func ParsePosition(text string) (Position, error) {
+	parts := strings.Split(text, ",")
+	if len(parts) != 3 {
+		return Position{}, errPositionFormat
+	}
+
+	var coordinates [3]int
+	for index, part := range parts {
+		value, err := strconv.Atoi(strings.TrimSpace(part))
+		if err != nil {
+			return Position{}, fmt.Errorf("gocraft: invalid position coordinate %q", part)
+		}
+
+		coordinates[index] = value
+	}
+
+	return At(coordinates[0], coordinates[1], coordinates[2]), nil
 }
 
 func (p Position) Append(dst []byte) []byte {
@@ -31,17 +63,21 @@ func (p *Position) Decode(r *Reader) error {
 }
 
 func (p Position) Add(dx, dy, dz int) Position {
-	return Position{
-		X: p.X + dx,
-		Y: p.Y + dy,
-		Z: p.Z + dz,
-	}
+	return At(p.X+dx, p.Y+dy, p.Z+dz)
 }
 
 func (p Position) Neighbor(face BlockFace) Position {
 	offset := face.Offset()
 
 	return p.Add(offset.X, offset.Y, offset.Z)
+}
+
+func (p Position) Chunk() ChunkPos {
+	return Chunk(int32(p.X>>4), int32(p.Z>>4))
+}
+
+func (p Position) Horizontal() Vec2d {
+	return Vec2(float64(p.X), float64(p.Z))
 }
 
 func (p Position) Corner() Vec3d {

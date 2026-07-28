@@ -34,17 +34,25 @@ func joinCommand() *cobra.Command {
 				return err
 			}
 
+			finished := make(chan error, 1)
+			go func() {
+				finished <- bot.Run(ctx)
+			}()
+
 			var start gocraft.Vec3d
 			if walk {
-				bot.OnSpawn(func() {
+				select {
+				case <-bot.Spawned():
 					start = bot.Player().Position
 					bot.Look(0, 0)
 					bot.SetControls(gocraft.Controls{Forward: true})
 					slog.Info("walking forward", "from", start)
-				})
+				case err := <-finished:
+					return err
+				}
 			}
 
-			if err := bot.Run(ctx); err != nil && !errors.Is(err, context.DeadlineExceeded) {
+			if err := <-finished; err != nil && !errors.Is(err, context.DeadlineExceeded) {
 				return err
 			}
 

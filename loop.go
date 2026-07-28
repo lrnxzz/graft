@@ -10,7 +10,11 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-const packetBuffer = 256
+const (
+	packetBuffer = 256
+
+	TickRate = 50 * time.Millisecond
+)
 
 var errClientClosed = errors.New("gocraft: client closed")
 

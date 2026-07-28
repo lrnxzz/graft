@@ -4,21 +4,31 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"net"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	gocraft "github.com/lrnxzz/go-craft"
 	v765 "github.com/lrnxzz/go-craft/codec/v765"
 	"github.com/lrnxzz/go-craft/codec/v765/blocks"
-	"github.com/lrnxzz/go-craft/lib"
+	"github.com/lrnxzz/go-craft/pathfinder"
 )
 
 const (
-	tickRate     = 50 * time.Millisecond
-	arriveRadius = 0.6
+	readyPoll = 100 * time.Millisecond
+
+	// the planner reads the terrain around the bot, so being spawned is not
+	// enough: the columns it will look at have to arrive first. A server may
+	// advertise a view distance far wider than that, so whichever is smaller
+	// decides how long the wait lasts.
+	readyRadius = 3
+)
+
+var (
+	errNoRoute        = errors.New("agent: no route toward the goal")
+	errNoBlockInReach = errors.New("agent: no block within reach")
 )
 
 type Agent struct {
@@ -26,18 +36,19 @@ type Agent struct {
 	session *v765.Session
 	physics *gocraft.Physics
 
-	mu       sync.Mutex
-	controls gocraft.Controls
-	yaw      float32
-	pitch    float32
-	look     bool
-	goal     *gocraft.Vec3d
-	miner    miner
+	spawns  sync.Once
+	spawned chan struct{}
 
-	onSpawn      func()
-	spawnedFired bool
-	ticks        uint64
-	snapshot     Snapshot
+	mu        sync.Mutex
+	controls  gocraft.Controls
+	yaw       float32
+	pitch     float32
+	look      bool
+	miner     miner
+	navigator navigator
+
+	ticks    uint64
+	snapshot Snapshot
 }
 
 type Snapshot struct {
@@ -68,7 +79,11 @@ func Join(ctx context.Context, address, username string) (*Agent, error) {
 	}
 
 	client := gocraft.NewClient(conn, v765.Protocol())
-	a := &Agent{client: client, physics: gocraft.NewPhysics(blocks.Collision)}
+	a := &Agent{
+		client:  client,
+		physics: gocraft.NewPhysics(blocks.Collision),
+		spawned: make(chan struct{}),
+	}
 
 	session, err := v765.Join(client, host, port, username, nil)
 	if err != nil {
@@ -79,13 +94,36 @@ func Join(ctx context.Context, address, username string) (*Agent, error) {
 	a.session = session
 	a.miner = miner{digger: session}
 
-	client.Tick(tickRate, a.tick)
+	client.Tick(gocraft.TickRate, a.tick)
 
 	return a, nil
 }
 
 func (a *Agent) Run(ctx context.Context) error {
 	return a.client.Run(ctx)
+}
+
+func (a *Agent) Spawned() <-chan struct{} {
+	return a.spawned
+}
+
+func (a *Agent) Ready(ctx context.Context) error {
+	select {
+	case <-a.spawned:
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+
+	radius := min(readyRadius, a.session.ViewDistance())
+	for !a.session.World().Surrounds(a.session.Player().Position.Floor(), radius) {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(readyPoll):
+		}
+	}
+
+	return nil
 }
 
 func (a *Agent) World() *gocraft.World {
@@ -156,16 +194,55 @@ func (a *Agent) SwapHands() error {
 	return a.session.SwapWithOffhand(gocraft.HotbarSlot(inventory.HeldIndex()))
 }
 
-func (a *Agent) Dig(reach float64) *lib.Future[gocraft.RayHit] {
+func (a *Agent) ClickSlot(slot int) error {
+	return a.session.ClickSlot(slot)
+}
+
+func (a *Agent) Chat(message string) error {
+	command, addressed := strings.CutPrefix(message, "/")
+	if addressed {
+		return a.session.SendCommand(command)
+	}
+
+	return a.session.SendChat(message)
+}
+
+func (a *Agent) OnChat(listener v765.ChatListener) {
+	a.session.OnChat(listener)
+}
+
+func (a *Agent) Carried() gocraft.ItemStack {
+	return a.session.Carried()
+}
+
+// Dig blocks until the world settles the block, so a caller that must not wait
+// runs it in a goroutine and drops the result
+func (a *Agent) Dig(ctx context.Context, reach float64) (gocraft.RayHit, error) {
 	hit, ok := a.Target(reach)
 	if !ok {
-		return lib.FailedFuture[gocraft.RayHit](errors.New("agent: no block within reach"))
+		return gocraft.RayHit{}, errNoBlockInReach
 	}
 
 	a.mu.Lock()
-	defer a.mu.Unlock()
+	finished, err := a.miner.begin(hit, reach, a.session.Player().GameMode, a.session.Inventory().Held().Item)
+	a.mu.Unlock()
 
-	return a.miner.begin(hit, reach, a.session.Player().GameMode, a.session.Inventory().Held().Item)
+	if err != nil {
+		return gocraft.RayHit{}, err
+	}
+
+	select {
+	case err := <-finished:
+		if err != nil {
+			return gocraft.RayHit{}, err
+		}
+
+		return hit, nil
+	case <-ctx.Done():
+		_ = a.StopDigging()
+
+		return gocraft.RayHit{}, ctx.Err()
+	}
 }
 
 func (a *Agent) StopDigging() error {
@@ -184,6 +261,13 @@ func (a *Agent) Digging() bool {
 	return active
 }
 
+func (a *Agent) Excavation() (gocraft.Position, float64, bool) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	return a.miner.excavation()
+}
+
 func (a *Agent) excavate() {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -200,25 +284,65 @@ func (a *Agent) excavate() {
 func (a *Agent) Place(reach float64) error {
 	hit, ok := a.Target(reach)
 	if !ok {
-		return errors.New("agent: no block within reach")
+		return errNoBlockInReach
 	}
 
 	return a.session.PlaceBlock(hit)
 }
 
-func (a *Agent) OnSpawn(fn func()) {
-	a.onSpawn = fn
+// Navigate blocks until the bot arrives, gives up, or the context ends; the walk
+// itself is driven by the tick loop, so a caller that wants to do something else
+// meanwhile runs this in a goroutine
+func (a *Agent) Navigate(ctx context.Context, goal pathfinder.Goal) (gocraft.Position, error) {
+	from := a.session.Player().Position.Floor()
+	planner := pathfinder.NewPlanner(a.session.World(), blocks.Terrain(), a.loadout())
+
+	route, ok := planner.Plan(from, goal)
+	if !ok {
+		return gocraft.Position{}, errNoRoute
+	}
+
+	done := make(chan arrival, 1)
+
+	a.mu.Lock()
+	a.navigator.follow(route, done)
+	a.mu.Unlock()
+
+	select {
+	case reached := <-done:
+		return reached.at, reached.err
+	case <-ctx.Done():
+		a.Stop()
+
+		return gocraft.Position{}, ctx.Err()
+	}
 }
 
-func (a *Agent) MoveTo(target gocraft.Vec3d) {
+// the route is planned against what the bot is carrying right now, and the held
+// tool is what sets how expensive mining looks.
+//
+// Scaffold stays at zero on purpose: the planner can bridge, but placing the
+// first block over a drop needs the vanilla sneak-bridge stance — body hanging
+// past the edge, aiming back and down — because from on top of the support the
+// crosshair always reaches its upper face first. Until the navigator can hold
+// that stance, asking for a bridge would only plan a step it cannot carry out.
+func (a *Agent) loadout() pathfinder.Loadout {
+	return pathfinder.Loadout{
+		Tool:    a.session.Inventory().Held().Item,
+		Digging: a.session.Player().GameMode != gocraft.Adventure,
+	}
+}
+
+func (a *Agent) Route() ([]gocraft.Position, int) {
 	a.mu.Lock()
-	a.goal = &target
-	a.mu.Unlock()
+	defer a.mu.Unlock()
+
+	return a.navigator.route()
 }
 
 func (a *Agent) Stop() {
 	a.mu.Lock()
-	a.goal = nil
+	a.navigator.abandon(errNavigationStopped)
 	a.controls = gocraft.Controls{}
 	a.mu.Unlock()
 }
@@ -227,24 +351,26 @@ func (a *Agent) tick() {
 	if !a.session.Spawned() {
 		return
 	}
-	if a.onSpawn != nil && !a.spawnedFired {
-		a.spawnedFired = true
-		a.onSpawn()
-	}
 
 	player := a.session.Player()
-	a.pursue(player)
-	a.excavate()
+	a.spawns.Do(func() {
+		close(a.spawned)
+	})
+	a.navigate(player)
 
 	a.mu.Lock()
 	controls := a.controls
 	yaw, pitch, look := a.yaw, a.pitch, a.look
 	a.mu.Unlock()
 
+	// the aim has to land on the player before the miner raycasts, otherwise a
+	// dig started this tick is judged against last tick's crosshair and dropped
 	if look {
 		player.Yaw = yaw
 		player.Pitch = pitch
 	}
+
+	a.excavate()
 
 	a.physics.Tick(a.session.World(), player, controls)
 	_ = a.session.SendPosition()
@@ -262,33 +388,68 @@ func (a *Agent) tick() {
 	a.mu.Unlock()
 }
 
-func (a *Agent) pursue(player *gocraft.Player) {
+func (a *Agent) navigate(player *gocraft.Player) {
+	a.mu.Lock()
+	command, navigating := a.navigator.tick(a.session.World(), player)
+	if navigating {
+		a.controls = command.controls
+		a.yaw = command.yaw
+		a.pitch = command.pitch
+		a.look = true
+	}
+	a.mu.Unlock()
+
+	if !navigating {
+		return
+	}
+
+	switch command.action {
+	case pathfinder.Break:
+		a.mine(player, command)
+	case pathfinder.Place:
+		a.build(player, command)
+	}
+}
+
+// the crosshair only lands on the block a tick after the look is sent, so both
+// actions verify what they are actually pointing at before committing
+func (a *Agent) mine(player *gocraft.Player, command order) {
+	if a.Digging() {
+		return
+	}
+
+	hit, sighted := a.sight(player, command)
+	if !sighted || hit.Block != command.target {
+		return
+	}
+
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	if a.goal == nil {
+	// the navigator watches the world to know the block fell, so the dig channel
+	// has no reader here and the buffered send simply drops on the floor
+	_, _ = a.miner.begin(hit, gocraft.BlockReach, player.GameMode, a.session.Inventory().Held().Item)
+}
+
+func (a *Agent) build(player *gocraft.Player, command order) {
+	hit, sighted := a.sight(player, command)
+	if !sighted || hit.Block.Neighbor(hit.Face) != command.target {
 		return
 	}
 
-	dx := a.goal.X - player.Position.X
-	dz := a.goal.Z - player.Position.Z
-	if dx*dx+dz*dz < arriveRadius*arriveRadius {
-		a.goal = nil
-		a.controls.Forward = false
+	_ = a.session.PlaceBlock(hit)
+}
 
-		return
-	}
+func (a *Agent) sight(player *gocraft.Player, command order) (gocraft.RayHit, bool) {
+	direction := command.aim.Sub(player.Eye())
 
-	a.yaw = float32(math.Atan2(-dx, dz) * 180 / math.Pi)
-	a.pitch = 0
-	a.look = true
-	a.controls.Forward = true
+	return a.session.World().Raycast(player.Eye(), direction, gocraft.BlockReach, blocks.Solid)
 }
 
 func splitAddress(address string) (string, uint16, error) {
 	host, raw, err := net.SplitHostPort(address)
 	if err != nil {
-		return address, 25565, nil
+		return address, gocraft.DefaultPort.Uint16(), nil
 	}
 
 	port, err := strconv.ParseUint(raw, 10, 16)

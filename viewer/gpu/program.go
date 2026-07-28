@@ -51,6 +51,14 @@ func (p *Program) Int(name string, value int32) {
 	gl.Uniform1i(p.uniform(name), value)
 }
 
+func (p *Program) Float(name string, value float32) {
+	gl.Uniform1f(p.uniform(name), value)
+}
+
+func (p *Program) Vec2(name string, x, y float32) {
+	gl.Uniform2f(p.uniform(name), x, y)
+}
+
 func (p *Program) uniform(name string) int32 {
 	return gl.GetUniformLocation(p.id, gl.Str(name+"\x00"))
 }

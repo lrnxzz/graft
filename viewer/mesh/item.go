@@ -1,0 +1,34 @@
+package mesh
+
+import (
+	"github.com/go-gl/mathgl/mgl32"
+	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/viewer/gpu"
+)
+
+var spriteFace = cubeFace{
+	face: Side,
+	corners: [4]mgl32.Vec3{
+		vec3(0, 0, 0),
+		vec3(1, 0, 0),
+		vec3(1, 1, 0),
+		vec3(0, 1, 0),
+	},
+	shade: 1.0,
+}
+
+func Block(state gocraft.BlockState, tiles Tiles) Geometry {
+	b := newBuilder()
+	for _, face := range cubeFaces {
+		b.quad(mgl32.Vec3{}, face, tiles.Tile(state, face.face))
+	}
+
+	return b.geometry()
+}
+
+func Sprite(uv gpu.UV) Geometry {
+	b := newBuilder()
+	b.quad(mgl32.Vec3{}, spriteFace, uv)
+
+	return b.geometry()
+}

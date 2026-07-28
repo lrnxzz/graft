@@ -121,6 +121,7 @@ func (p *HeldItemChange) Decode(r *gocraft.Reader) error {
 }
 
 const (
+	clickPickup   gocraft.VarInt = 0
 	clickSwap     gocraft.VarInt = 2
 	offhandButton gocraft.Byte   = 40
 )

@@ -3,13 +3,13 @@ package agent_test
 import (
 	"context"
 	"errors"
-	"math"
 	"os"
 	"testing"
 	"time"
 
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/agent"
+	"github.com/lrnxzz/go-craft/pathfinder"
 )
 
 func TestAgentWalksOnServer(t *testing.T) {
@@ -26,23 +26,23 @@ func TestAgentWalksOnServer(t *testing.T) {
 		t.Fatalf("join: %v", err)
 	}
 
-	var (
-		start   gocraft.Vec3d
-		spawned bool
-	)
-	bot.OnSpawn(func() {
-		start = bot.Player().Position
-		spawned = true
-		bot.Look(0, 0)
-		bot.SetControls(gocraft.Controls{Forward: true})
-	})
+	finished := make(chan error, 1)
+	go func() {
+		finished <- bot.Run(ctx)
+	}()
 
-	if err := bot.Run(ctx); err != nil && !errors.Is(err, context.DeadlineExceeded) {
-		t.Fatalf("run: %v", err)
+	select {
+	case <-bot.Spawned():
+	case err := <-finished:
+		t.Fatalf("bot never reached play / received its spawn position: %v", err)
 	}
 
-	if !spawned {
-		t.Fatal("bot never reached play / received its spawn position")
+	start := bot.Player().Position
+	bot.Look(0, 0)
+	bot.SetControls(gocraft.Controls{Forward: true})
+
+	if err := <-finished; err != nil && !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("run: %v", err)
 	}
 
 	end := bot.Player().Position
@@ -76,26 +76,36 @@ func TestAgentMovesToTarget(t *testing.T) {
 		t.Fatalf("join: %v", err)
 	}
 
-	var (
-		target  gocraft.Vec3d
-		spawned bool
-	)
-	bot.OnSpawn(func() {
-		spawned = true
-		target = bot.Player().Position.Offset(6, 0, 10)
-		bot.MoveTo(target)
-	})
+	finished := make(chan error, 1)
+	go func() {
+		finished <- bot.Run(ctx)
+	}()
 
-	if err := bot.Run(ctx); err != nil && !errors.Is(err, context.DeadlineExceeded) {
+	select {
+	case <-bot.Spawned():
+	case err := <-finished:
+		t.Fatalf("bot never reached play / received its spawn position: %v", err)
+	}
+
+	target := bot.Player().Position.Offset(6, 0, 10)
+
+	walked := make(chan error, 1)
+	go func() {
+		_, err := bot.Navigate(ctx, pathfinder.GoalAt(target.Floor()))
+		walked <- err
+	}()
+
+	select {
+	case err := <-walked:
+		if err != nil {
+			t.Fatalf("navigate: %v", err)
+		}
+	case err := <-finished:
 		t.Fatalf("run: %v", err)
 	}
 
-	if !spawned {
-		t.Fatal("bot never reached play / received its spawn position")
-	}
-
 	end := bot.Player().Position
-	gap := math.Hypot(end.X-target.X, end.Z-target.Z)
+	gap := end.Horizontal().Distance(target.Horizontal())
 
 	t.Logf("target %v, arrived at %v (gap %.2f blocks)", target, end, gap)
 

@@ -26,6 +26,8 @@ var overworld = dimensionBounds{
 
 type JoinHandler func(*gocraft.Client, *JoinGame) error
 
+type ChatListener func(line string)
+
 type Session struct {
 	client     *gocraft.Client
 	world      *gocraft.World
@@ -34,10 +36,12 @@ type Session struct {
 	spawned    bool
 	dimensions map[gocraft.Identifier]dimensionBounds
 	bounds     dimensionBounds
+	view       int
 	inventory  gocraft.Inventory
 	carried    gocraft.ItemStack
 	stateID    int32
 	pending    lib.Pending[blockPrediction]
+	chat       ChatListener
 }
 
 type blockPrediction struct {
@@ -89,6 +93,10 @@ func (s *Session) World() *gocraft.World {
 	return s.world
 }
 
+func (s *Session) ViewDistance() int {
+	return s.view
+}
+
 func (s *Session) Player() *gocraft.Player {
 	return s.player
 }
@@ -110,6 +118,7 @@ func (s *Session) listen() {
 	gocraft.On(s.client, s.onConfigDisconnect)
 
 	gocraft.On(s.client, s.onJoinGame)
+	gocraft.On(s.client, s.onChunkBatch)
 	gocraft.On(s.client, s.onKeepAlive)
 	gocraft.On(s.client, s.onSyncPosition)
 	gocraft.On(s.client, s.onChunkData)
@@ -122,8 +131,61 @@ func (s *Session) listen() {
 	gocraft.On(s.client, s.onContainerContent)
 	gocraft.On(s.client, s.onContainerSlot)
 	gocraft.On(s.client, s.onHeldItem)
+	gocraft.On(s.client, s.onSystemChat)
+	gocraft.On(s.client, s.onPlayerChat)
+	gocraft.On(s.client, s.onDisguisedChat)
 	gocraft.On(s.client, s.onBlockAck)
 	gocraft.On(s.client, s.onPlayDisconnect)
+}
+
+func (s *Session) OnChat(listener ChatListener) {
+	s.chat = listener
+}
+
+func (s *Session) notifyChat(line string) {
+	if s.chat != nil {
+		s.chat(line)
+	}
+}
+
+func (s *Session) onSystemChat(c *gocraft.Client, p *SystemChat) error {
+	if !p.Overlay.Bool() {
+		s.notifyChat(plainText(p.Content.Tag))
+	}
+
+	return nil
+}
+
+func (s *Session) onPlayerChat(c *gocraft.Client, p *PlayerChat) error {
+	s.notifyChat(fmt.Sprintf(formatChat, plainText(p.NetworkName.Tag), p.Message))
+
+	return nil
+}
+
+func (s *Session) onDisguisedChat(c *gocraft.Client, p *DisguisedChat) error {
+	s.notifyChat(fmt.Sprintf(formatAnnouncement, plainText(p.SenderName.Tag), plainText(p.Message.Tag)))
+
+	return nil
+}
+
+func (s *Session) SendChat(message string) error {
+	stamp := stampChat()
+
+	return s.client.Send(&ChatMessage{
+		Message:   gocraft.String(message),
+		Timestamp: stamp.timestamp,
+		Salt:      stamp.salt,
+	})
+}
+
+func (s *Session) SendCommand(command string) error {
+	stamp := stampChat()
+
+	return s.client.Send(&ChatCommand{
+		Command:   gocraft.String(command),
+		Timestamp: stamp.timestamp,
+		Salt:      stamp.salt,
+	})
 }
 
 func (s *Session) onBlockAck(c *gocraft.Client, p *AcknowledgeBlockChange) error {
@@ -332,6 +394,7 @@ func (s *Session) onJoinGame(c *gocraft.Client, p *JoinGame) error {
 		bounds = overworld
 	}
 	s.bounds = bounds
+	s.view = p.ViewDistance.Int()
 
 	if s.ready != nil {
 		return s.ready(c, p)
@@ -366,6 +429,14 @@ func (s *Session) SendPosition() error {
 	})
 }
 
+// the server paces chunk delivery from this number; a bot has no frame budget
+// to protect, so it asks for as much as the vanilla client ever would
+const chunkBatchRate gocraft.Float = 64
+
+func (s *Session) onChunkBatch(c *gocraft.Client, p *ChunkBatchFinished) error {
+	return c.Send(&ChunkBatchReceived{ChunksPerTick: chunkBatchRate})
+}
+
 func (s *Session) onChunkData(c *gocraft.Client, p *ChunkData) error {
 	column, err := p.Column(s.bounds.minY, s.bounds.height)
 	if err != nil {
@@ -378,7 +449,7 @@ func (s *Session) onChunkData(c *gocraft.Client, p *ChunkData) error {
 }
 
 func (s *Session) onUnloadChunk(c *gocraft.Client, p *UnloadChunk) error {
-	s.world.UnloadColumn(p.X.Int32(), p.Z.Int32())
+	s.world.UnloadColumn(gocraft.Chunk(p.X.Int32(), p.Z.Int32()))
 
 	return nil
 }
@@ -505,6 +576,67 @@ func (s *Session) swap(slot int, button gocraft.Byte, other int) error {
 	s.inventory.Swap(slot, other)
 
 	return nil
+}
+
+func (s *Session) Carried() gocraft.ItemStack {
+	return s.carried
+}
+
+func (s *Session) ClickSlot(slot int) error {
+	if slot < 0 || slot >= gocraft.InventorySize {
+		return fmt.Errorf("v765: inventory slot %d is out of range", slot)
+	}
+	if slot == gocraft.SlotCraftingOutput && !s.carried.Empty() {
+		return nil
+	}
+
+	current := s.inventory.Slot(slot)
+	if current.Empty() && s.carried.Empty() {
+		return nil
+	}
+
+	landed, carried := land(current, s.carried)
+
+	changed := ChangedSlot{
+		Index: gocraft.Short(slot),
+		Item:  slotOf(landed),
+	}
+	click := &ClickContainer{
+		StateID: gocraft.VarInt(s.stateID),
+		Index:   gocraft.Short(slot),
+		Mode:    clickPickup,
+		Changed: gocraft.Slice[ChangedSlot]{changed},
+		Carried: slotOf(carried),
+	}
+	if err := s.client.Send(click); err != nil {
+		return err
+	}
+
+	s.inventory.SetSlot(slot, landed)
+	s.carried = carried
+
+	return nil
+}
+
+func land(slot, carried gocraft.ItemStack) (gocraft.ItemStack, gocraft.ItemStack) {
+	if carried.Empty() || slot.Empty() || slot.Item != carried.Item {
+		return carried, slot
+	}
+
+	size := gocraft.MaxStackSize
+	item, known := items.Of(slot.Item)
+	if known {
+		size = item.StackSize
+	}
+
+	total := slot.Count + carried.Count
+	slot.Count = min(total, size)
+	carried.Count = total - slot.Count
+	if carried.Count == 0 {
+		carried = gocraft.ItemStack{}
+	}
+
+	return slot, carried
 }
 
 func (s *Session) onAbilities(c *gocraft.Client, p *PlayerAbilities) error {

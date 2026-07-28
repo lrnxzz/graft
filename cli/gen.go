@@ -17,6 +17,7 @@ func genCommand() *cobra.Command {
 	command.AddCommand(itemsCommand())
 	command.AddCommand(materialsCommand())
 	command.AddCommand(atlasCommand())
+	command.AddCommand(iconsCommand())
 
 	return command
 }

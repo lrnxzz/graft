@@ -7,7 +7,15 @@ import (
 	"github.com/lrnxzz/go-craft/viewer/gpu"
 )
 
-var vertexPool = sync.Pool{New: func() any { return make([]float32, 0, 8192) }}
+const vertexPoolCapacity = 8192
+
+var vertexPool = sync.Pool{
+	New: func() any {
+		buffer := make([]float32, 0, vertexPoolCapacity)
+
+		return &buffer
+	},
+}
 
 type Geometry struct {
 	vertices []float32
@@ -19,7 +27,9 @@ func (g Geometry) Upload() *gpu.Mesh {
 		gpu.Attribute{Location: 0, Size: 3},
 		gpu.Attribute{Location: 1, Size: 2},
 		gpu.Attribute{Location: 2, Size: 1})
-	vertexPool.Put(g.vertices[:0])
+
+	recycled := g.vertices[:0]
+	vertexPool.Put(&recycled)
 
 	return mesh
 }
@@ -30,7 +40,12 @@ type builder struct {
 }
 
 func newBuilder() builder {
-	return builder{vertices: vertexPool.Get().([]float32)[:0]}
+	buffer, pooled := vertexPool.Get().(*[]float32)
+	if !pooled {
+		return builder{}
+	}
+
+	return builder{vertices: (*buffer)[:0]}
 }
 
 func (b *builder) quad(origin mgl32.Vec3, face cubeFace, uv gpu.UV) {

@@ -11,11 +11,13 @@ import (
 )
 
 type Window struct {
-	handle  *glfw.Window
-	width   int
-	height  int
-	cursorX float64
-	cursorY float64
+	handle   *glfw.Window
+	width    int
+	height   int
+	cursorX  float64
+	cursorY  float64
+	scrolled float64
+	typed    []rune
 }
 
 func OpenWindow(title string, width, height int, visible bool) (*Window, error) {
@@ -46,7 +48,15 @@ func OpenWindow(title string, width, height int, visible bool) (*Window, error) 
 	}
 	gl.Enable(gl.DEPTH_TEST)
 
-	return &Window{handle: handle, width: width, height: height}, nil
+	window := &Window{handle: handle, width: width, height: height}
+	handle.SetScrollCallback(func(_ *glfw.Window, _, dy float64) {
+		window.scrolled += dy
+	})
+	handle.SetCharCallback(func(_ *glfw.Window, char rune) {
+		window.typed = append(window.typed, char)
+	})
+
+	return window, nil
 }
 
 func (w *Window) ShouldClose() bool {
@@ -58,13 +68,30 @@ func (w *Window) Clear(r, g, b float32) {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 }
 
+func (w *Window) ClearDepth() {
+	gl.Clear(gl.DEPTH_BUFFER_BIT)
+}
+
+func (w *Window) Overlay(enabled bool) {
+	if enabled {
+		gl.Disable(gl.DEPTH_TEST)
+		gl.Enable(gl.BLEND)
+		gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
+		return
+	}
+
+	gl.Disable(gl.BLEND)
+	gl.Enable(gl.DEPTH_TEST)
+}
+
 func (w *Window) Present() {
 	w.handle.SwapBuffers()
 	glfw.PollEvents()
 }
 
-func (w *Window) Size() (int, int) {
-	return w.width, w.height
+func (w *Window) Viewport() Rect {
+	return RectAt(Point{}, float32(w.width), float32(w.height))
 }
 
 func (w *Window) Close() {
@@ -87,7 +114,12 @@ func (w *Window) Capture(path string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 
-	return png.Encode(file, img)
+	if err := png.Encode(file, img); err != nil {
+		_ = file.Close()
+
+		return err
+	}
+
+	return file.Close()
 }

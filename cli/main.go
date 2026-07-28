@@ -32,6 +32,7 @@ func main() {
 	root.AddCommand(pingCommand())
 	root.AddCommand(loginCommand())
 	root.AddCommand(joinCommand())
+	root.AddCommand(gotoCommand())
 	root.AddCommand(genCommand())
 
 	if err := root.Execute(); err != nil {

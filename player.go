@@ -32,7 +32,9 @@ func (m GameMode) String() string {
 const (
 	playerWidth  = 0.6
 	playerHeight = 1.8
-	eyeHeight    = 1.62
+
+	EyeHeight  = 1.62
+	BlockReach = 4.5
 )
 
 type Abilities struct {
@@ -64,7 +66,7 @@ type Player struct {
 }
 
 func (p *Player) Eye() Vec3d {
-	return p.Position.Offset(0, eyeHeight, 0)
+	return p.Position.Offset(0, EyeHeight, 0)
 }
 
 func (p *Player) LookDirection() Vec3d {
