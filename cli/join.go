@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"time"
 
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/agent"
 	"github.com/lrnxzz/go-craft/codec/v765/blocks"
+	"github.com/lrnxzz/go-craft/host"
 	"github.com/spf13/cobra"
 )
 
@@ -29,41 +29,28 @@ func joinCommand() *cobra.Command {
 
 			slog.Info("connecting", "server", args[0], "as", username)
 
-			bot, err := agent.Join(ctx, args[0], username)
-			if err != nil {
-				return err
-			}
-
-			finished := make(chan error, 1)
-			go func() {
-				finished <- bot.Run(ctx)
-			}()
-
-			var start gocraft.Vec3d
-			if walk {
-				select {
-				case <-bot.Spawned():
+			observe := func(ctx context.Context, bot *agent.Agent) error {
+				var start gocraft.Vec3d
+				if walk {
 					start = bot.Player().Position
 					bot.Look(0, 0)
 					bot.SetControls(gocraft.Controls{Forward: true})
 					slog.Info("walking forward", "from", start)
-				case err := <-finished:
-					return err
 				}
+
+				<-ctx.Done()
+
+				report(bot)
+				if walk {
+					end := bot.Player().Position
+					slog.Info("walked", "to", end, "distance", end.Distance(start))
+				}
+				slog.Info("disconnected")
+
+				return nil
 			}
 
-			if err := <-finished; err != nil && !errors.Is(err, context.DeadlineExceeded) {
-				return err
-			}
-
-			report(bot)
-			if walk {
-				end := bot.Player().Position
-				slog.Info("walked", "to", end, "distance", end.Distance(start))
-			}
-			slog.Info("disconnected")
-
-			return nil
+			return host.Run(ctx, args[0], username, observe)
 		},
 	}
 

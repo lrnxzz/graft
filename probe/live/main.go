@@ -9,8 +9,11 @@ import (
 
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/agent"
+	"github.com/lrnxzz/go-craft/host"
 	"github.com/lrnxzz/go-craft/pathfinder"
 )
+
+const address = "localhost:25565"
 
 func main() {
 	if err := run(); err != nil {
@@ -32,32 +35,20 @@ func run() error {
 		legs = append(legs, leg)
 	}
 
-	bot, err := agent.Join(ctx, "localhost:25565", "gocraft_live")
-	if err != nil {
-		return err
-	}
+	course := func(ctx context.Context, bot *agent.Agent) error {
+		for _, leg := range legs {
+			fmt.Printf("navigating to %v from %v\n", leg, bot.Snapshot().Position)
 
-	go func() {
-		if err := bot.Run(ctx); err != nil {
-			log.Println("run:", err)
+			if err := march(ctx, bot, leg); err != nil {
+				return err
+			}
 		}
-	}()
+		fmt.Println("all legs complete")
 
-	if err := bot.Ready(ctx); err != nil {
-		return err
+		return nil
 	}
-	time.Sleep(time.Second)
 
-	for _, leg := range legs {
-		fmt.Printf("navigating to %v from %v\n", leg, bot.Snapshot().Position)
-
-		if err := march(ctx, bot, leg); err != nil {
-			return err
-		}
-	}
-	fmt.Println("all legs complete")
-
-	return nil
+	return host.Run(ctx, address, "gocraft_live", course)
 }
 
 func march(ctx context.Context, bot *agent.Agent, leg gocraft.Position) error {

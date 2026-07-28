@@ -7,6 +7,7 @@ import (
 
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/agent"
+	"github.com/lrnxzz/go-craft/host"
 	"github.com/lrnxzz/go-craft/pathfinder"
 	"github.com/spf13/cobra"
 )
@@ -31,51 +32,33 @@ func gotoCommand() *cobra.Command {
 			ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
 			defer cancel()
 
-			bot, err := agent.Join(ctx, args[0], username)
-			if err != nil {
-				return err
-			}
+			march := func(ctx context.Context, bot *agent.Agent) error {
+				slog.Info("navigating", "from", bot.Snapshot().Position, "to", target)
 
-			finished := make(chan error, 1)
-			go func() {
-				finished <- bot.Run(ctx)
-			}()
+				walked := make(chan error, 1)
+				go func() {
+					arrived, err := bot.Navigate(ctx, pathfinder.GoalAt(target))
+					if err == nil {
+						slog.Info("arrived", "at", arrived)
+					}
 
-			select {
-			case <-bot.Spawned():
-			case err := <-finished:
-				return err
-			}
+					walked <- err
+				}()
 
-			if err := bot.Ready(ctx); err != nil {
-				return err
-			}
+				progress := time.NewTicker(time.Second)
+				defer progress.Stop()
 
-			slog.Info("navigating", "from", bot.Snapshot().Position, "to", target)
-
-			walked := make(chan error, 1)
-			go func() {
-				arrived, err := bot.Navigate(ctx, pathfinder.GoalAt(target))
-				if err == nil {
-					slog.Info("arrived", "at", arrived)
-				}
-
-				walked <- err
-			}()
-
-			progress := time.NewTicker(time.Second)
-			defer progress.Stop()
-
-			for {
-				select {
-				case <-progress.C:
-					slog.Info("walking", "at", bot.Snapshot().Position)
-				case err := <-walked:
-					return err
-				case err := <-finished:
-					return err
+				for {
+					select {
+					case <-progress.C:
+						slog.Info("walking", "at", bot.Snapshot().Position)
+					case err := <-walked:
+						return err
+					}
 				}
 			}
+
+			return host.Run(ctx, args[0], username, march)
 		},
 	}
 

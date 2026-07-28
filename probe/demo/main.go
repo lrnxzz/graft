@@ -7,6 +7,7 @@ import (
 
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/agent"
+	"github.com/lrnxzz/go-craft/host"
 	"github.com/lrnxzz/go-craft/pathfinder"
 )
 
@@ -47,36 +48,13 @@ func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	bot, err := agent.Join(ctx, address, "gocraft_bot")
-	if err != nil {
-		return err
-	}
+	laps := func(ctx context.Context, bot *agent.Agent) error {
+		for lap := 1; ; lap++ {
+			fmt.Printf("=== lap %d ===\n", lap)
 
-	finished := make(chan error, 1)
-	go func() {
-		finished <- bot.Run(ctx)
-	}()
+			for _, goal := range course {
+				fmt.Printf("heading to %v from %v\n", goal, bot.Snapshot().Position)
 
-	select {
-	case <-bot.Spawned():
-	case err := <-finished:
-		return err
-	}
-
-	fmt.Println("spawned, loading chunks...")
-	if err := bot.Ready(ctx); err != nil {
-		return err
-	}
-	time.Sleep(time.Second)
-
-	for lap := 1; ; lap++ {
-		fmt.Printf("=== lap %d ===\n", lap)
-
-		for _, goal := range course {
-			fmt.Printf("heading to %v from %v\n", goal, bot.Snapshot().Position)
-
-			walked := make(chan error, 1)
-			go func() {
 				arrived, err := bot.Navigate(ctx, pathfinder.GoalAt(goal))
 				if err != nil {
 					fmt.Println("leg failed:", err)
@@ -84,16 +62,16 @@ func run() error {
 					fmt.Println("arrived at", arrived)
 				}
 
-				walked <- err
-			}()
+				// a dropped session fails every leg from here on, so the lap
+				// ends rather than spinning on a dead connection
+				if ctx.Err() != nil {
+					return ctx.Err()
+				}
 
-			select {
-			case <-walked:
-			case err := <-finished:
-				return err
+				time.Sleep(time.Second)
 			}
-
-			time.Sleep(time.Second)
 		}
 	}
+
+	return host.Run(ctx, address, "gocraft_bot", laps)
 }

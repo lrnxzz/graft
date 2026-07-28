@@ -11,14 +11,12 @@ import (
 
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/agent"
+	"github.com/lrnxzz/go-craft/host"
 	"github.com/lrnxzz/go-craft/pathfinder"
 	"github.com/lrnxzz/go-craft/viewer"
 )
 
-const (
-	settleDelay = 3 * time.Second
-	manualPoll  = 500 * time.Millisecond
-)
+const manualPoll = 500 * time.Millisecond
 
 func init() {
 	runtime.LockOSThread()
@@ -49,56 +47,43 @@ func run() error {
 		return errors.New("usage: view [flags] <host[:port]>")
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	bot, err := agent.Join(ctx, address, *username)
+	targets, err := parseGoals(*goal)
 	if err != nil {
 		return err
 	}
 
-	go func() {
-		if err := bot.Run(ctx); err != nil {
-			log.Println("run:", err)
-		}
-	}()
-
-	if err := bot.Ready(ctx); err != nil {
-		return err
-	}
-	time.Sleep(settleDelay)
-
-	view, err := viewer.New(bot, *screenshot == "")
-	if err != nil {
-		return err
-	}
-
-	if *goal != "" {
-		targets, err := parseGoals(*goal)
+	// the plugin is what a user of the project writes; the host owns everything
+	// around it, and the window opens here because this is still main's goroutine
+	render := func(ctx context.Context, bot *agent.Agent) error {
+		view, err := viewer.New(bot, *screenshot == "")
 		if err != nil {
 			return err
 		}
 
-		legs := course{
-			targets: targets,
-			delay:   *wait,
-			repeat:  *loop,
+		if len(targets) > 0 {
+			legs := course{
+				targets: targets,
+				delay:   *wait,
+				repeat:  *loop,
+			}
+			go walk(ctx, bot, view, legs)
 		}
-		go walk(ctx, bot, view, legs)
-	}
 
-	if *screenshot != "" {
-		if err := view.Screenshot(*screenshot); err != nil {
-			return err
+		if *screenshot != "" {
+			if err := view.Screenshot(*screenshot); err != nil {
+				return err
+			}
+			log.Printf("wrote %s", *screenshot)
+
+			return nil
 		}
-		log.Printf("wrote %s", *screenshot)
+
+		view.Run(ctx)
 
 		return nil
 	}
 
-	view.Run(ctx)
-
-	return nil
+	return host.Run(context.Background(), address, *username, render)
 }
 
 func walk(ctx context.Context, bot *agent.Agent, view *viewer.Viewer, legs course) {
@@ -133,6 +118,10 @@ func navigate(ctx context.Context, bot *agent.Agent, target gocraft.Position) {
 }
 
 func parseGoals(goals string) ([]gocraft.Position, error) {
+	if goals == "" {
+		return nil, nil
+	}
+
 	var targets []gocraft.Position
 	for _, leg := range strings.Split(goals, ";") {
 		target, err := gocraft.ParsePosition(leg)
