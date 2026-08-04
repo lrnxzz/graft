@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"sync"
+
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/pathfinder"
 )
@@ -136,14 +138,14 @@ func (*Navigating) Name() string {
 func On[N Notice](a *Agent, handle func(N)) {
 	var prototype N
 
-	a.mu.Lock()
-	a.watching[prototype.Name()] = append(a.watching[prototype.Name()], func(raised Notice) {
-		typed, ok := raised.(N)
-		if ok {
-			handle(typed)
+	typed := func(raised Notice) {
+		only, is := raised.(N)
+		if is {
+			handle(only)
 		}
-	})
-	a.mu.Unlock()
+	}
+
+	a.audience.watch(prototype.Name(), typed)
 }
 
 // Before subscribes to something about to happen, with the chance to refuse it.
@@ -152,37 +154,26 @@ func On[N Notice](a *Agent, handle func(N)) {
 func Before[I Intent](a *Agent, handle func(I)) {
 	var prototype I
 
-	a.mu.Lock()
-	a.guarding[prototype.Name()] = append(a.guarding[prototype.Name()], func(proposed Intent) {
-		typed, ok := proposed.(I)
-		if ok {
-			handle(typed)
+	typed := func(proposed Intent) {
+		only, is := proposed.(I)
+		if is {
+			handle(only)
 		}
-	})
-	a.mu.Unlock()
+	}
+
+	a.audience.guard(prototype.Name(), typed)
 }
 
 // post queues a notice for the next tick
 func (a *Agent) post(raised Notice) {
-	a.mu.Lock()
-	a.pending = append(a.pending, raised)
-	a.mu.Unlock()
+	a.audience.queue(raised)
 }
 
 // deliver drains the queue on the tick. Handlers run outside the lock so one is
 // free to call back into the bot.
 func (a *Agent) deliver() {
-	a.mu.Lock()
-	queued := a.pending
-	a.pending = nil
-	a.mu.Unlock()
-
-	for _, raised := range queued {
-		a.mu.Lock()
-		handlers := a.watching[raised.Name()]
-		a.mu.Unlock()
-
-		for _, handle := range handlers {
+	for _, raised := range a.audience.drain() {
+		for _, handle := range a.audience.watchers(raised.Name()) {
 			handle(raised)
 		}
 	}
@@ -190,11 +181,7 @@ func (a *Agent) deliver() {
 
 // allowed runs the guards for an intent and reports whether it survived them
 func (a *Agent) allowed(proposed Intent) error {
-	a.mu.Lock()
-	handlers := a.guarding[proposed.Name()]
-	a.mu.Unlock()
-
-	for _, handle := range handlers {
+	for _, handle := range a.audience.guards(proposed.Name()) {
 		handle(proposed)
 	}
 
@@ -222,4 +209,66 @@ func (r *Refusal) Error() string {
 	}
 
 	return "agent: " + r.Intent + " was refused: " + r.Reason
+}
+
+// audience is who is listening. It carries its own lock because a handler runs
+// outside it and is free to call back into the bot: holding the agent's lock
+// across a plugin's code would deadlock the tick on the first one that did.
+type audience struct {
+	mu       sync.Mutex
+	watching map[string][]func(Notice)
+	guarding map[string][]func(Intent)
+	pending  []Notice
+}
+
+func newAudience() audience {
+	return audience{
+		watching: map[string][]func(Notice){},
+		guarding: map[string][]func(Intent){},
+	}
+}
+
+func (a *audience) watch(name string, handle func(Notice)) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	a.watching[name] = append(a.watching[name], handle)
+}
+
+func (a *audience) guard(name string, handle func(Intent)) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	a.guarding[name] = append(a.guarding[name], handle)
+}
+
+func (a *audience) queue(raised Notice) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	a.pending = append(a.pending, raised)
+}
+
+func (a *audience) drain() []Notice {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	queued := a.pending
+	a.pending = nil
+
+	return queued
+}
+
+func (a *audience) watchers(name string) []func(Notice) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	return a.watching[name]
+}
+
+func (a *audience) guards(name string) []func(Intent) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	return a.guarding[name]
 }

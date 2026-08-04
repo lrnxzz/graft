@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"sync"
+
 	"errors"
 	"math"
 
@@ -44,7 +46,13 @@ type arrival struct {
 	err error
 }
 
+// the lock lives here rather than on the agent: the tick walks the route while a
+// caller may abandon it, and nothing else waits on that.
+//
+// follow and tick take it and then call what abandon does, so the giving up is
+// an unlocked core rather than a second lock the same goroutine would wait on.
 type navigator struct {
+	mu       sync.Mutex
 	steps    []pathfinder.Step
 	next     int
 	complete bool
@@ -54,7 +62,10 @@ type navigator struct {
 }
 
 func (n *navigator) follow(route pathfinder.Route, done chan<- arrival) {
-	n.abandon(errNavigationStopped)
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.give(errNavigationStopped)
 
 	n.steps = route.Steps
 	n.next = 0
@@ -65,6 +76,13 @@ func (n *navigator) follow(route pathfinder.Route, done chan<- arrival) {
 }
 
 func (n *navigator) abandon(err error) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.give(err)
+}
+
+func (n *navigator) give(err error) {
 	if n.done == nil {
 		return
 	}
@@ -92,6 +110,9 @@ func (n *navigator) settle() {
 }
 
 func (n *navigator) route() ([]gocraft.Position, int) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
 	waypoints := make([]gocraft.Position, 0, len(n.steps))
 	walked := 0
 
@@ -125,6 +146,9 @@ func (n *navigator) advance(reached gocraft.Position, patience int) bool {
 }
 
 func (n *navigator) tick(world *gocraft.World, player *gocraft.Player) (order, bool) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
 	for n.done != nil {
 		current := n.steps[n.next]
 
@@ -161,14 +185,14 @@ func (n *navigator) work(world *gocraft.World, player *gocraft.Player, current p
 
 	n.patience--
 	if n.patience <= 0 {
-		n.abandon(errNavigationStuck)
+		n.give(errNavigationStuck)
 
 		return order{}, false
 	}
 
 	aim, reachable := aimFor(world, current)
 	if !reachable {
-		n.abandon(errNavigationStuck)
+		n.give(errNavigationStuck)
 
 		return order{}, false
 	}
@@ -240,7 +264,7 @@ func (n *navigator) stride(player *gocraft.Player, waypoint gocraft.Position) (o
 	}
 
 	if !n.progressing(horizontal + vertical) {
-		n.abandon(errNavigationStuck)
+		n.give(errNavigationStuck)
 
 		return order{}, false
 	}

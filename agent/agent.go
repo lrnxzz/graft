@@ -39,20 +39,12 @@ type Agent struct {
 	spawns  sync.Once
 	spawned chan struct{}
 
-	mu        sync.Mutex
-	controls  gocraft.Controls
-	yaw       float32
-	pitch     float32
-	look      bool
+	steering  steering
+	latest    latest
 	miner     miner
 	navigator navigator
 
-	watching map[string][]func(Notice)
-	guarding map[string][]func(Intent)
-	pending  []Notice
-
-	ticks    uint64
-	snapshot Snapshot
+	audience audience
 }
 
 type Snapshot struct {
@@ -65,10 +57,7 @@ type Snapshot struct {
 }
 
 func (a *Agent) Snapshot() Snapshot {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	return a.snapshot
+	return a.latest.read()
 }
 
 func Join(ctx context.Context, address, username string) (*Agent, error) {
@@ -87,8 +76,7 @@ func Join(ctx context.Context, address, username string) (*Agent, error) {
 		client:   client,
 		physics:  gocraft.NewPhysics(blocks.Collision),
 		spawned:  make(chan struct{}),
-		watching: map[string][]func(Notice){},
-		guarding: map[string][]func(Intent){},
+		audience: newAudience(),
 	}
 
 	session, err := v765.Join(client, host, port, username, nil)
@@ -142,15 +130,11 @@ func (a *Agent) Player() *gocraft.Player {
 }
 
 func (a *Agent) SetControls(controls gocraft.Controls) {
-	a.mu.Lock()
-	a.controls = controls
-	a.mu.Unlock()
+	a.steering.hold(controls)
 }
 
 func (a *Agent) Look(yaw, pitch float32) {
-	a.mu.Lock()
-	a.yaw, a.pitch, a.look = yaw, pitch, true
-	a.mu.Unlock()
+	a.steering.aim(yaw, pitch)
 }
 
 func (a *Agent) LookAt(target gocraft.Vec3d) {
@@ -272,10 +256,7 @@ func (a *Agent) Dig(ctx context.Context, reach float64) (gocraft.RayHit, error) 
 		return gocraft.RayHit{}, err
 	}
 
-	a.mu.Lock()
 	finished, err := a.miner.begin(hit, reach, a.session.Player().GameMode, a.session.Inventory().Held().Item)
-	a.mu.Unlock()
-
 	if err != nil {
 		return gocraft.RayHit{}, err
 	}
@@ -295,32 +276,20 @@ func (a *Agent) Dig(ctx context.Context, reach float64) (gocraft.RayHit, error) 
 }
 
 func (a *Agent) StopDigging() error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
 	return a.miner.abandon()
 }
 
 func (a *Agent) Digging() bool {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
 	_, active := a.miner.excavating()
 
 	return active
 }
 
 func (a *Agent) Excavation() (gocraft.Position, float64, bool) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
 	return a.miner.excavation()
 }
 
 func (a *Agent) excavate() {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
 	reach, active := a.miner.excavating()
 	if !active {
 		return
@@ -366,9 +335,7 @@ func (a *Agent) Navigate(ctx context.Context, goal pathfinder.Goal) (gocraft.Pos
 
 	done := make(chan arrival, 1)
 
-	a.mu.Lock()
 	a.navigator.follow(route, done)
-	a.mu.Unlock()
 
 	select {
 	case reached := <-done:
@@ -401,17 +368,12 @@ func (a *Agent) loadout() pathfinder.Loadout {
 }
 
 func (a *Agent) Route() ([]gocraft.Position, int) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
 	return a.navigator.route()
 }
 
 func (a *Agent) Stop() {
-	a.mu.Lock()
 	a.navigator.abandon(errNavigationStopped)
-	a.controls = gocraft.Controls{}
-	a.mu.Unlock()
+	a.steering.hold(gocraft.Controls{})
 }
 
 func (a *Agent) tick() {
@@ -428,14 +390,11 @@ func (a *Agent) tick() {
 	a.deliver()
 	a.navigate(player)
 
-	a.mu.Lock()
-	controls := a.controls
-	yaw, pitch, look := a.yaw, a.pitch, a.look
-	a.mu.Unlock()
+	controls, yaw, pitch, aimed := a.steering.wanted()
 
 	// the aim has to land on the player before the miner raycasts, otherwise a
 	// dig started this tick is judged against last tick's crosshair and dropped
-	if look {
+	if aimed {
 		player.Yaw = yaw
 		player.Pitch = pitch
 	}
@@ -445,33 +404,19 @@ func (a *Agent) tick() {
 	a.physics.Tick(a.session.World(), player, controls)
 	_ = a.session.SendPosition()
 
-	a.mu.Lock()
-	a.ticks++
-	a.snapshot = Snapshot{
-		Tick:     a.ticks,
-		Position: player.Position,
-		Yaw:      player.Yaw,
-		Pitch:    player.Pitch,
-		OnGround: player.OnGround,
-		Health:   player.Health,
-	}
-	a.mu.Unlock()
+	a.latest.publish(player)
 }
 
 func (a *Agent) navigate(player *gocraft.Player) {
-	a.mu.Lock()
 	command, navigating := a.navigator.tick(a.session.World(), player)
-	if navigating {
-		a.controls = command.controls
-		a.yaw = command.yaw
-		a.pitch = command.pitch
-		a.look = true
-	}
-	a.mu.Unlock()
-
 	if !navigating {
 		return
 	}
+
+	// the pathfinder drives through the same steering a player would, so the two
+	// can never disagree about what the body was last told
+	a.steering.hold(command.controls)
+	a.steering.aim(command.yaw, command.pitch)
 
 	switch command.action {
 	case pathfinder.Break:
@@ -492,9 +437,6 @@ func (a *Agent) mine(player *gocraft.Player, command order) {
 	if !sighted || hit.Block != command.target {
 		return
 	}
-
-	a.mu.Lock()
-	defer a.mu.Unlock()
 
 	// the navigator watches the world to know the block fell, so the dig channel
 	// has no reader here and the buffered send simply drops on the floor

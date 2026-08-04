@@ -9,8 +9,7 @@ import (
 
 func newBus() *Agent {
 	return &Agent{
-		watching: map[string][]func(Notice){},
-		guarding: map[string][]func(Intent){},
+		audience: newAudience(),
 	}
 }
 

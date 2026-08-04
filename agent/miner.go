@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"sync"
+
 	"errors"
 	"fmt"
 
@@ -24,7 +26,13 @@ type excavation struct {
 	finished chan error
 }
 
+// the lock lives here rather than on the agent: the tick and a caller reach the
+// same excavation from different goroutines, and nothing else waits on it.
+//
+// Every method that takes it delegates to an unlocked core, because tick calls
+// what abandon and finish do and a mutex here is not reentrant.
 type miner struct {
+	mu     sync.Mutex
 	digger excavator
 	dig    *excavation
 }
@@ -33,7 +41,10 @@ type miner struct {
 // on the world lands on the returned channel instead, which already carries the
 // answer when the block gave way on the first strike
 func (m *miner) begin(hit gocraft.RayHit, reach float64, mode gocraft.GameMode, held gocraft.ItemID) (<-chan error, error) {
-	if err := m.abandon(); err != nil {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if err := m.stop(); err != nil {
 		return nil, err
 	}
 
@@ -67,13 +78,13 @@ func (m *miner) begin(hit gocraft.RayHit, reach float64, mode gocraft.GameMode, 
 		return dig.finished, nil
 	}
 
-	return dig.finished, m.finish()
+	return dig.finished, m.complete()
 }
 
 // finish retires the dig in progress and tells whoever asked for the block how it
 // went; the channel is buffered for exactly this one send, so the tick loop that
 // calls it never waits for a reader
-func (m *miner) finish() error {
+func (m *miner) complete() error {
 	dig := m.dig
 	m.dig = nil
 
@@ -88,6 +99,13 @@ func (m *miner) finish() error {
 }
 
 func (m *miner) abandon() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	return m.stop()
+}
+
+func (m *miner) stop() error {
 	dig := m.dig
 	if dig == nil {
 		return nil
@@ -100,6 +118,9 @@ func (m *miner) abandon() error {
 }
 
 func (m *miner) excavating() (float64, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.dig == nil {
 		return 0, false
 	}
@@ -108,6 +129,9 @@ func (m *miner) excavating() (float64, bool) {
 }
 
 func (m *miner) excavation() (gocraft.Position, float64, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.dig == nil {
 		return gocraft.Position{}, 0, false
 	}
@@ -116,18 +140,21 @@ func (m *miner) excavation() (gocraft.Position, float64, bool) {
 }
 
 func (m *miner) tick(target gocraft.RayHit, sighted bool, held gocraft.ItemID) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	dig := m.dig
 	if dig == nil {
 		return nil
 	}
 
 	if !sighted || target.Block != dig.hit.Block {
-		return m.abandon()
+		return m.stop()
 	}
 
 	damage, breakable := blocks.DigDamage(target.State, held)
 	if !breakable {
-		return m.abandon()
+		return m.stop()
 	}
 
 	dig.progress += damage
@@ -135,5 +162,5 @@ func (m *miner) tick(target gocraft.RayHit, sighted bool, held gocraft.ItemID) e
 		return nil
 	}
 
-	return m.finish()
+	return m.complete()
 }
