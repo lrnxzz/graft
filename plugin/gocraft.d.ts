@@ -45,7 +45,7 @@ declare module "gocraft" {
   }
 
   export interface Intents {
-    dig: { block: Vec3; kind: Block; tool: Item }
+    dig: { block: Vec3; type: Block; tool: Item }
     place: { block: Vec3; item: Item }
     chat: { text: string }
     move: { to: Vec3 }
@@ -80,7 +80,7 @@ declare module "gocraft" {
   }
 
   export interface Goal {
-    readonly kind: string
+    readonly type: string
   }
 
   export function at(block: Vec3): Goal
@@ -97,7 +97,7 @@ declare module "gocraft" {
   export function until(goal: Goal, done: (bot: Bot) => boolean): Goal
 
   export interface Reaction {
-    readonly kind: "reaction"
+    readonly type: "reaction"
   }
 
   export function when(
@@ -105,9 +105,9 @@ declare module "gocraft" {
     act: (bot: Bot) => void | Promise<void>,
   ): Reaction
 
-  export type ArgKind = "string" | "number" | "block" | "item" | "player" | "position"
+  export type ArgType = "string" | "number" | "block" | "item" | "player" | "position"
 
-  type ArgValue<K extends ArgKind> = K extends "number"
+  type ArgValue<K extends ArgType> = K extends "number"
     ? number
     : K extends "position"
       ? Vec3
@@ -117,19 +117,19 @@ declare module "gocraft" {
           ? Item
           : string
 
-  export type ArgSpec = Record<string, ArgKind | `${ArgKind}?`>
+  export type ArgSpec = Record<string, ArgType | `${ArgType}?`>
 
   type Optional<K> = K extends `${string}?` ? true : false
   type Bare<K> = K extends `${infer B}?` ? B : K
 
   export type Args<S extends ArgSpec> = {
-    [K in keyof S as Optional<S[K]> extends true ? never : K]: ArgValue<Bare<S[K]> & ArgKind>
+    [K in keyof S as Optional<S[K]> extends true ? never : K]: ArgValue<Bare<S[K]> & ArgType>
   } & {
-    [K in keyof S as Optional<S[K]> extends true ? K : never]?: ArgValue<Bare<S[K]> & ArgKind>
+    [K in keyof S as Optional<S[K]> extends true ? K : never]?: ArgValue<Bare<S[K]> & ArgType>
   }
 
   export interface Command {
-    readonly kind: "command"
+    readonly type: "command"
   }
 
   export function command<S extends ArgSpec>(
@@ -144,7 +144,7 @@ declare module "gocraft" {
     | "bottom-left" | "bottom" | "bottom-right"
 
   export interface Element {
-    readonly kind: "element"
+    readonly type: "element"
   }
 
   export interface PanelProps {
@@ -210,7 +210,7 @@ declare module "gocraft" {
   }
 
   export interface Marker {
-    readonly kind: "marker"
+    readonly type: "marker"
   }
 
   export function highlight(block: Vec3, color?: Color): Marker

@@ -7,16 +7,16 @@ import (
 	"io"
 )
 
-type kind int32
+type frameType int32
 
 const (
-	kindResponse kind = 0
-	kindCommand  kind = 2
-	kindLogin    kind = 3
+	frameResponse frameType = 0
+	frameCommand  frameType = 2
+	frameLogin    frameType = 3
 )
 
 const (
-	// every header field is a little-endian int32: the request id, then the kind
+	// every header field is a little-endian int32: the request id, then the type
 	fieldSize  = 4
 	headerSize = 2 * fieldSize
 	terminator = 2
@@ -32,7 +32,7 @@ var (
 
 type frame struct {
 	id      int32
-	kind    kind
+	typed   frameType
 	payload string
 }
 
@@ -43,7 +43,7 @@ func (f frame) encode() []byte {
 
 	dst = binary.LittleEndian.AppendUint32(dst, uint32(length))
 	dst = binary.LittleEndian.AppendUint32(dst, uint32(f.id))
-	dst = binary.LittleEndian.AppendUint32(dst, uint32(f.kind))
+	dst = binary.LittleEndian.AppendUint32(dst, uint32(f.typed))
 	dst = append(dst, f.payload...)
 
 	return append(dst, make([]byte, terminator)...)
@@ -68,7 +68,7 @@ func readFrame(reader io.Reader) (frame, error) {
 
 	return frame{
 		id:      int32(binary.LittleEndian.Uint32(body[:fieldSize])),
-		kind:    kind(binary.LittleEndian.Uint32(body[fieldSize:headerSize])),
+		typed:   frameType(binary.LittleEndian.Uint32(body[fieldSize:headerSize])),
 		payload: string(body[headerSize : len(body)-terminator]),
 	}, nil
 }

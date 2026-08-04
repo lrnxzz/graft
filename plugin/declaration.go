@@ -72,19 +72,19 @@ type Command struct {
 
 type Argument struct {
 	Name     string
-	Kind     ArgKind
+	Type     ArgType
 	Optional bool
 }
 
-type ArgKind string
+type ArgType string
 
 const (
-	ArgText     ArgKind = "string"
-	ArgNumber   ArgKind = "number"
-	ArgBlock    ArgKind = "block"
-	ArgItem     ArgKind = "item"
-	ArgPlayer   ArgKind = "player"
-	ArgPosition ArgKind = "position"
+	ArgText     ArgType = "string"
+	ArgNumber   ArgType = "number"
+	ArgBlock    ArgType = "block"
+	ArgItem     ArgType = "item"
+	ArgPlayer   ArgType = "player"
+	ArgPosition ArgType = "position"
 )
 
 func (c Command) Usage(name string) string {
@@ -129,7 +129,7 @@ func (c Command) Parse(vm *goja.Runtime, words []string) (goja.Value, error) {
 }
 
 func (a Argument) coerce(word string) (any, error) {
-	switch a.Kind {
+	switch a.Type {
 	case ArgNumber:
 		number, err := strconv.ParseFloat(word, 64)
 		if err != nil {
@@ -147,7 +147,7 @@ func (a Argument) coerce(word string) (any, error) {
 	case ArgText, ArgBlock, ArgItem, ArgPlayer:
 		return word, nil
 	default:
-		return nil, fmt.Errorf("%s declares an unknown kind %q", a.Name, a.Kind)
+		return nil, fmt.Errorf("%s declares an unknown type %q", a.Name, a.Type)
 	}
 }
 
@@ -187,12 +187,12 @@ func (r *Runtime) command(call goja.FunctionCall) goja.Value {
 
 	spec := r.reading(call.Argument(0))
 	for _, name := range spec.keys() {
-		kind := spec.field(name).text()
+		written := spec.field(name).text()
 
 		built.Args = append(built.Args, Argument{
 			Name:     name,
-			Kind:     ArgKind(strings.TrimSuffix(kind, "?")),
-			Optional: strings.HasSuffix(kind, "?"),
+			Type:     ArgType(strings.TrimSuffix(written, "?")),
+			Optional: strings.HasSuffix(written, "?"),
 		})
 	}
 

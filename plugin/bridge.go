@@ -19,10 +19,10 @@ func (r *Runtime) install() error {
 		bridge.set(spec.Tag, r.component(spec.Build))
 	}
 	for _, spec := range Goals() {
-		bridge.set(string(spec.Kind), r.goal(spec.Build))
+		bridge.set(string(spec.Type), r.goal(spec.Build))
 	}
 	for _, spec := range Markers() {
-		bridge.set(string(spec.Kind), r.marker(spec.Build))
+		bridge.set(string(spec.Type), r.marker(spec.Build))
 	}
 
 	bridge.all(map[string]any{
@@ -81,9 +81,9 @@ func (r *Runtime) goal(build func(reading, reading) Goal) func(goja.FunctionCall
 	}
 }
 
-func (r *Runtime) nesting(kind GoalKind) func(goja.FunctionCall) goja.Value {
+func (r *Runtime) nesting(wanted GoalType) func(goja.FunctionCall) goja.Value {
 	return func(call goja.FunctionCall) goja.Value {
-		goal := Goal{Kind: kind}
+		goal := Goal{Type: wanted}
 		for _, argument := range call.Arguments {
 			goal.Inner = append(goal.Inner, asGoal(r.reading(argument)))
 		}
@@ -94,7 +94,7 @@ func (r *Runtime) nesting(kind GoalKind) func(goja.FunctionCall) goja.Value {
 
 func (r *Runtime) repeat(call goja.FunctionCall) goja.Value {
 	return r.vm.ToValue(Goal{
-		Kind:  GoalRepeat,
+		Type:  GoalRepeat,
 		Times: r.reading(call.Argument(1)).count(),
 		Inner: []Goal{asGoal(r.reading(call.Argument(0)))},
 	})

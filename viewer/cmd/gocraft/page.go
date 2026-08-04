@@ -25,7 +25,7 @@ func (r repaint) Draw(*viewer.Canvas) {
 	r.engine.Render()
 }
 
-// paged is the other kind of plugin menu: HTML and CSS drawn by the engine
+// paged is the other sort of plugin menu: HTML and CSS drawn by the engine
 // rather than a tree of nodes drawn by the canvas. Clicks and the wheel go to
 // the document, and what the document sends comes back to the plugin.
 type paged struct {

@@ -67,8 +67,8 @@ func (p *Program) uniform(name string) int32 {
 	return gl.GetUniformLocation(p.id, gl.Str(name+"\x00"))
 }
 
-func compileShader(source string, kind uint32) (uint32, error) {
-	shader := gl.CreateShader(kind)
+func compileShader(source string, stage uint32) (uint32, error) {
+	shader := gl.CreateShader(stage)
 
 	sources, free := gl.Strs(source + "\x00")
 	gl.ShaderSource(shader, 1, sources, nil)

@@ -9,7 +9,7 @@ import (
 func TestFrameRoundTrips(t *testing.T) {
 	sent := frame{
 		id:      7,
-		kind:    kindCommand,
+		typed:   frameCommand,
 		payload: "setblock 1 2 3 stone",
 	}
 
@@ -21,8 +21,8 @@ func TestFrameRoundTrips(t *testing.T) {
 	if got.id != sent.id {
 		t.Errorf("id = %d, want %d", got.id, sent.id)
 	}
-	if got.kind != sent.kind {
-		t.Errorf("kind = %d, want %d", got.kind, sent.kind)
+	if got.typed != sent.typed {
+		t.Errorf("type = %d, want %d", got.typed, sent.typed)
 	}
 	if got.payload != sent.payload {
 		t.Errorf("payload = %q, want %q", got.payload, sent.payload)
@@ -32,7 +32,7 @@ func TestFrameRoundTrips(t *testing.T) {
 func TestFrameLengthCountsTheHeaderAndTerminator(t *testing.T) {
 	sent := frame{
 		id:      1,
-		kind:    kindLogin,
+		typed:   frameLogin,
 		payload: "secret",
 	}
 
@@ -56,8 +56,8 @@ func TestReadFrameRejectsTruncatedLengths(t *testing.T) {
 
 func TestReadFrameKeepsEmptyPayloads(t *testing.T) {
 	sent := frame{
-		id:   3,
-		kind: kindResponse,
+		id:    3,
+		typed: frameResponse,
 	}
 
 	got, err := readFrame(bytes.NewReader(sent.encode()))

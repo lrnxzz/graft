@@ -54,7 +54,7 @@ func paint(painter *viewer.Painter, mark plugin.Marker) {
 	from := gocraft.Vec3(mark.From.X, mark.From.Y, mark.From.Z)
 	to := gocraft.Vec3(mark.To.X, mark.To.Y, mark.To.Z)
 
-	switch mark.Kind {
+	switch mark.Type {
 	case plugin.MarkHighlight:
 		painter.Highlight(from.Floor(), color)
 	case plugin.MarkBeacon:

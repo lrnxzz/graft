@@ -33,7 +33,7 @@ func Dial(address, password string) (*Client, error) {
 // a rejected password comes back as a frame carrying the sentinel request id
 // instead of an error, which is the only way to tell the two apart
 func (c *Client) login(password string) error {
-	sent, err := c.send(kindLogin, password)
+	sent, err := c.send(frameLogin, password)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (c *Client) login(password string) error {
 }
 
 func (c *Client) Run(command string) (string, error) {
-	if _, err := c.send(kindCommand, command); err != nil {
+	if _, err := c.send(frameCommand, command); err != nil {
 		return "", err
 	}
 
@@ -62,12 +62,12 @@ func (c *Client) Run(command string) (string, error) {
 	return answer.payload, nil
 }
 
-func (c *Client) send(request kind, payload string) (int32, error) {
+func (c *Client) send(request frameType, payload string) (int32, error) {
 	c.counter++
 
 	outgoing := frame{
 		id:      c.counter,
-		kind:    request,
+		typed:   request,
 		payload: payload,
 	}
 

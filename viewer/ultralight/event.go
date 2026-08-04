@@ -37,8 +37,8 @@ func (v *View) Released(x, y int, button Button) {
 	v.mouse(C.kMouseEventType_MouseUp, x, y, button)
 }
 
-func (v *View) mouse(kind C.ULMouseEventType, x, y int, button Button) {
-	event := C.ulCreateMouseEvent(kind, C.int(x), C.int(y), C.ULMouseButton(button))
+func (v *View) mouse(moved C.ULMouseEventType, x, y int, button Button) {
+	event := C.ulCreateMouseEvent(moved, C.int(x), C.int(y), C.ULMouseButton(button))
 	defer C.ulDestroyMouseEvent(event)
 
 	C.ulViewFireMouseEvent(v.handle, event)
@@ -75,8 +75,8 @@ func (v *View) KeyUp(code int, held Modifier) {
 	v.key(C.kKeyEventType_KeyUp, code, held, empty)
 }
 
-func (v *View) key(kind C.ULKeyEventType, code int, held Modifier, written C.ULString) {
-	event := C.ulCreateKeyEvent(kind, C.uint(held), C.int(code), 0,
+func (v *View) key(struck C.ULKeyEventType, code int, held Modifier, written C.ULString) {
+	event := C.ulCreateKeyEvent(struck, C.uint(held), C.int(code), 0,
 		written, written, C.bool(false), C.bool(false), C.bool(false))
 	defer C.ulDestroyKeyEvent(event)
 

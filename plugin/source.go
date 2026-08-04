@@ -17,7 +17,7 @@ const (
 	apiModule = "gocraft"
 )
 
-var sourceKinds = [...]string{".ts", ".tsx", ".js", ".jsx"}
+var sourceTypes = [...]string{".ts", ".tsx", ".js", ".jsx"}
 
 type Source struct {
 	Name string
@@ -56,7 +56,7 @@ func plugable(name string) bool {
 		return false
 	}
 
-	return slices.Contains(sourceKinds[:], filepath.Ext(name))
+	return slices.Contains(sourceTypes[:], filepath.Ext(name))
 }
 
 func Compile(path string) (Source, error) {

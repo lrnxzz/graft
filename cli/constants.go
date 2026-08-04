@@ -50,18 +50,18 @@ import gocraft "github.com/lrnxzz/go-craft"
 
 const (
 {{- range .Values}}
-	{{.Ident}} {{$.Kind}} = {{.Value}}
+	{{.Ident}} {{$.Type}} = {{.Value}}
 {{- end}}
 )
 `))
 
 // a registry is named after the package it generates into, and its asset and
 // output files follow that same name
-func constants[T constant](name, kind string) generator[[]T] {
+func constants[T constant](name, scalar string) generator[[]T] {
 	return generator[[]T]{
 		name:     name,
 		pkg:      name,
-		kind:     kind,
+		scalar:   scalar,
 		asset:    name + ".json",
 		output:   name + ".go",
 		template: constantSource,

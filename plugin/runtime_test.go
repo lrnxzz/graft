@@ -221,20 +221,20 @@ func TestTheCataloguesDoNotOverlap(t *testing.T) {
 		claimed[spec.Tag] = "component"
 	}
 	for _, spec := range plugin.Goals() {
-		where, taken := claimed[string(spec.Kind)]
+		where, taken := claimed[string(spec.Type)]
 		if taken {
-			t.Errorf("goal %s is already a %s", spec.Kind, where)
+			t.Errorf("goal %s is already a %s", spec.Type, where)
 		}
 
-		claimed[string(spec.Kind)] = "goal"
+		claimed[string(spec.Type)] = "goal"
 	}
 	for _, spec := range plugin.Markers() {
-		where, taken := claimed[string(spec.Kind)]
+		where, taken := claimed[string(spec.Type)]
 		if taken {
-			t.Errorf("marker %s is already a %s", spec.Kind, where)
+			t.Errorf("marker %s is already a %s", spec.Type, where)
 		}
 
-		claimed[string(spec.Kind)] = "marker"
+		claimed[string(spec.Type)] = "marker"
 	}
 }
 

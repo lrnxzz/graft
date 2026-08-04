@@ -40,7 +40,7 @@ func TestNoticesReachEveryWatcherOnlyOnDelivery(t *testing.T) {
 	}
 }
 
-func TestNoticesOnlyReachTheirOwnKind(t *testing.T) {
+func TestNoticesOnlyReachTheirOwnType(t *testing.T) {
 	bot := newBus()
 
 	chats := 0

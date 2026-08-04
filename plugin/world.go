@@ -1,49 +1,49 @@
 package plugin
 
 type Marker struct {
-	Kind  MarkerKind
+	Type  MarkerType
 	From  Vec3
 	To    Vec3
 	Color Color
 }
 
-type MarkerKind string
+type MarkerType string
 
 const (
-	MarkHighlight MarkerKind = "highlight"
-	MarkBox       MarkerKind = "box"
-	MarkLine      MarkerKind = "line"
-	MarkBeacon    MarkerKind = "beacon"
+	MarkHighlight MarkerType = "highlight"
+	MarkBox       MarkerType = "box"
+	MarkLine      MarkerType = "line"
+	MarkBeacon    MarkerType = "beacon"
 )
 
 type MarkerSpec struct {
-	Kind  MarkerKind
+	Type  MarkerType
 	Build func(args []reading) Marker
 }
 
 func Markers() []MarkerSpec {
 	return []MarkerSpec{
-		{Kind: MarkHighlight, Build: markSpot(MarkHighlight)},
-		{Kind: MarkBeacon, Build: markSpot(MarkBeacon)},
-		{Kind: MarkBox, Build: markSpan(MarkBox)},
-		{Kind: MarkLine, Build: markSpan(MarkLine)},
+		{Type: MarkHighlight, Build: markSpot(MarkHighlight)},
+		{Type: MarkBeacon, Build: markSpot(MarkBeacon)},
+		{Type: MarkBox, Build: markSpan(MarkBox)},
+		{Type: MarkLine, Build: markSpan(MarkLine)},
 	}
 }
 
-func markSpot(kind MarkerKind) func([]reading) Marker {
+func markSpot(drawn MarkerType) func([]reading) Marker {
 	return func(args []reading) Marker {
 		return Marker{
-			Kind:  kind,
+			Type:  drawn,
 			From:  vec3Of(argument(args, 0)),
 			Color: argument(args, 1).color().or(white),
 		}
 	}
 }
 
-func markSpan(kind MarkerKind) func([]reading) Marker {
+func markSpan(drawn MarkerType) func([]reading) Marker {
 	return func(args []reading) Marker {
 		return Marker{
-			Kind:  kind,
+			Type:  drawn,
 			From:  vec3Of(argument(args, 0)),
 			To:    vec3Of(argument(args, 1)),
 			Color: argument(args, 2).color().or(white),

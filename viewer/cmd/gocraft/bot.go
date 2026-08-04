@@ -160,13 +160,13 @@ func (b bot) Abandon() {
 }
 
 func aim(goal plugin.Goal) (pathfinder.Goal, error) {
-	switch goal.Kind {
+	switch goal.Type {
 	case plugin.GoalAt:
 		return pathfinder.GoalAt(block(goal.At)), nil
 	case plugin.GoalNear:
 		return pathfinder.GoalNear(block(goal.At), int(goal.Radius)), nil
 	default:
-		return nil, fmt.Errorf("gocraft: the %s goal is not served yet", goal.Kind)
+		return nil, fmt.Errorf("gocraft: the %s goal is not served yet", goal.Type)
 	}
 }
 

@@ -16,7 +16,7 @@ import (
 type generator[T any] struct {
 	name     string
 	pkg      string
-	kind     string
+	scalar   string
 	asset    string
 	output   string
 	template *template.Template
@@ -27,7 +27,7 @@ type source[T any] struct {
 	Name    string
 	Version string
 	Package string
-	Kind    string
+	Type    string
 	Values  T
 }
 
@@ -66,7 +66,7 @@ func (g generator[T]) render(protocol string) error {
 		Name:    g.name,
 		Version: protocol,
 		Package: g.pkg,
-		Kind:    g.kind,
+		Type:    g.scalar,
 		Values:  values,
 	}
 

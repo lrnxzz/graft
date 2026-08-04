@@ -1,7 +1,7 @@
 package plugin
 
 type Goal struct {
-	Kind   GoalKind
+	Type   GoalType
 	At     Vec3
 	Radius float64
 	Ore    Block
@@ -12,70 +12,70 @@ type Goal struct {
 	Inner  []Goal
 }
 
-type GoalKind string
+type GoalType string
 
 const (
-	GoalAt       GoalKind = "at"
-	GoalNear     GoalKind = "near"
-	GoalMine     GoalKind = "mine"
-	GoalCollect  GoalKind = "collect"
-	GoalFollow   GoalKind = "follow"
-	GoalFlee     GoalKind = "flee"
-	GoalSequence GoalKind = "sequence"
-	GoalRepeat   GoalKind = "repeat"
-	GoalRace     GoalKind = "race"
+	GoalAt       GoalType = "at"
+	GoalNear     GoalType = "near"
+	GoalMine     GoalType = "mine"
+	GoalCollect  GoalType = "collect"
+	GoalFollow   GoalType = "follow"
+	GoalFlee     GoalType = "flee"
+	GoalSequence GoalType = "sequence"
+	GoalRepeat   GoalType = "repeat"
+	GoalRace     GoalType = "race"
 )
 
 type GoalSpec struct {
-	Kind  GoalKind
+	Type  GoalType
 	Build func(reading, reading) Goal
 }
 
 func Goals() []GoalSpec {
 	return []GoalSpec{
-		{Kind: GoalAt, Build: spotGoal(GoalAt)},
-		{Kind: GoalNear, Build: spotGoal(GoalNear)},
-		{Kind: GoalFlee, Build: spotGoal(GoalFlee)},
-		{Kind: GoalMine, Build: minedGoal(GoalMine)},
-		{Kind: GoalFollow, Build: followGoal(GoalFollow)},
-		{Kind: GoalCollect, Build: countedGoal(GoalCollect)},
+		{Type: GoalAt, Build: spotGoal(GoalAt)},
+		{Type: GoalNear, Build: spotGoal(GoalNear)},
+		{Type: GoalFlee, Build: spotGoal(GoalFlee)},
+		{Type: GoalMine, Build: minedGoal(GoalMine)},
+		{Type: GoalFollow, Build: followGoal(GoalFollow)},
+		{Type: GoalCollect, Build: countedGoal(GoalCollect)},
 	}
 }
 
-func spotGoal(kind GoalKind) func(reading, reading) Goal {
+func spotGoal(wanted GoalType) func(reading, reading) Goal {
 	return func(first, second reading) Goal {
 		return Goal{
-			Kind:   kind,
+			Type:   wanted,
 			At:     vec3Of(first),
 			Radius: second.decimal(),
 		}
 	}
 }
 
-func minedGoal(kind GoalKind) func(reading, reading) Goal {
+func minedGoal(wanted GoalType) func(reading, reading) Goal {
 	return func(first, second reading) Goal {
 		return Goal{
-			Kind:   kind,
+			Type:   wanted,
 			Ore:    Block(first.text()),
 			Radius: second.field("radius").decimal(),
 		}
 	}
 }
 
-func followGoal(kind GoalKind) func(reading, reading) Goal {
+func followGoal(wanted GoalType) func(reading, reading) Goal {
 	return func(first, second reading) Goal {
 		return Goal{
-			Kind:   kind,
+			Type:   wanted,
 			Player: Player(first.text()),
 			Radius: second.field("distance").decimal(),
 		}
 	}
 }
 
-func countedGoal(kind GoalKind) func(reading, reading) Goal {
+func countedGoal(wanted GoalType) func(reading, reading) Goal {
 	return func(first, second reading) Goal {
 		return Goal{
-			Kind:  kind,
+			Type:  wanted,
 			Item:  Item(first.text()),
 			Count: second.count(),
 		}
