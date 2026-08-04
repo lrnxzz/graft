@@ -11,7 +11,7 @@ type Controls struct {
 	Sprint  bool
 }
 
-func (c Controls) heading(yaw float32) Vec3d {
+func (c Controls) Heading(yaw float32) Vec3d {
 	var forward, strafe float64
 	if c.Forward {
 		forward++

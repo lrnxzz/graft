@@ -1,9 +1,10 @@
-package gocraft_test
+package physics_test
 
 import (
 	"testing"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/physics"
 )
 
 func TestPhysicsLandsOnGround(t *testing.T) {
@@ -14,7 +15,7 @@ func TestPhysicsLandsOnGround(t *testing.T) {
 	world.LoadColumn(column)
 
 	player := &gocraft.Player{Position: gocraft.Vec3(0.5, 5, 0.5)}
-	physics := gocraft.NewPhysics(func(state gocraft.BlockState) []gocraft.AABB {
+	body := physics.New(func(state gocraft.BlockState) []gocraft.AABB {
 		if state == 0 {
 			return nil
 		}
@@ -25,7 +26,7 @@ func TestPhysicsLandsOnGround(t *testing.T) {
 	})
 
 	for range 200 {
-		physics.Tick(world, player, gocraft.Controls{})
+		body.Tick(world, player, gocraft.Controls{})
 	}
 
 	if !player.OnGround {
@@ -41,7 +42,7 @@ func TestPhysicsFallsThroughAir(t *testing.T) {
 	world.LoadColumn(gocraft.ChunkColumn(0, 0, -64, 384))
 
 	player := &gocraft.Player{Position: gocraft.Vec3(0.5, 100, 0.5)}
-	physics := gocraft.NewPhysics(func(state gocraft.BlockState) []gocraft.AABB {
+	body := physics.New(func(state gocraft.BlockState) []gocraft.AABB {
 		if state == 0 {
 			return nil
 		}
@@ -52,7 +53,7 @@ func TestPhysicsFallsThroughAir(t *testing.T) {
 	})
 
 	for range 3 {
-		physics.Tick(world, player, gocraft.Controls{})
+		body.Tick(world, player, gocraft.Controls{})
 	}
 
 	if player.OnGround {
@@ -75,7 +76,7 @@ func TestPhysicsWalksForward(t *testing.T) {
 	world.LoadColumn(column)
 
 	player := &gocraft.Player{Position: gocraft.Vec3(8, 1, 8), OnGround: true}
-	physics := gocraft.NewPhysics(func(state gocraft.BlockState) []gocraft.AABB {
+	body := physics.New(func(state gocraft.BlockState) []gocraft.AABB {
 		if state == 0 {
 			return nil
 		}
@@ -86,7 +87,7 @@ func TestPhysicsWalksForward(t *testing.T) {
 	})
 
 	for range 20 {
-		physics.Tick(world, player, gocraft.Controls{Forward: true})
+		body.Tick(world, player, gocraft.Controls{Forward: true})
 	}
 
 	if player.Position.Z <= 8.5 {
@@ -109,7 +110,7 @@ func TestPhysicsJumpClearsOneBlock(t *testing.T) {
 	world.LoadColumn(column)
 
 	player := &gocraft.Player{Position: gocraft.Vec3(8, 1, 8), OnGround: true}
-	physics := gocraft.NewPhysics(func(state gocraft.BlockState) []gocraft.AABB {
+	body := physics.New(func(state gocraft.BlockState) []gocraft.AABB {
 		if state == 0 {
 			return nil
 		}
@@ -121,7 +122,7 @@ func TestPhysicsJumpClearsOneBlock(t *testing.T) {
 
 	peak := player.Position.Y
 	for range 12 {
-		physics.Tick(world, player, gocraft.Controls{Jump: true})
+		body.Tick(world, player, gocraft.Controls{Jump: true})
 		peak = max(peak, player.Position.Y)
 	}
 
@@ -146,7 +147,7 @@ func TestPhysicsStepsOntoSlab(t *testing.T) {
 		Position: gocraft.Vec3(8.5, 1, 8.5),
 		OnGround: true,
 	}
-	physics := gocraft.NewPhysics(func(state gocraft.BlockState) []gocraft.AABB {
+	body := physics.New(func(state gocraft.BlockState) []gocraft.AABB {
 		switch state {
 		case 1:
 			return []gocraft.AABB{
@@ -162,7 +163,7 @@ func TestPhysicsStepsOntoSlab(t *testing.T) {
 	})
 
 	for range 8 {
-		physics.Tick(world, player, gocraft.Controls{Forward: true})
+		body.Tick(world, player, gocraft.Controls{Forward: true})
 	}
 
 	if got := player.Position.Y; got != 1.5 {

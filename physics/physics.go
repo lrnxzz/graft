@@ -1,6 +1,10 @@
-package gocraft
+package physics
 
-import "math"
+import (
+	"math"
+
+	gocraft "github.com/lrnxzz/go-craft"
+)
 
 const (
 	gravity      = 0.08
@@ -11,23 +15,25 @@ const (
 	stepHeight   = 0.6
 )
 
-type Collider func(BlockState) []AABB
+type Collider func(gocraft.BlockState) []gocraft.AABB
 
-type clamper = func(obstacle, moving AABB, delta float64) float64
+type clamper = func(obstacle, moving gocraft.AABB, delta float64) float64
 
-type Physics struct {
-	Velocity Vec3d
+type Body struct {
+	Velocity gocraft.Vec3d
 	collider Collider
 }
 
-func NewPhysics(collider Collider) *Physics {
-	return &Physics{
+func New(collider Collider) *Body {
+	simulated := Body{
 		collider: collider,
 	}
+
+	return &simulated
 }
 
-func (p *Physics) Tick(world *World, player *Player, controls Controls) {
-	heading := controls.heading(player.Yaw)
+func (p *Body) Tick(world *gocraft.World, player *gocraft.Player, controls gocraft.Controls) {
+	heading := controls.Heading(player.Yaw)
 	speed := walkSpeed
 	if controls.Sprint {
 		speed = sprintSpeed
@@ -62,18 +68,18 @@ func (p *Physics) Tick(world *World, player *Player, controls Controls) {
 	p.Velocity.Y *= verticalDrag
 }
 
-func (p *Physics) stepUp(world *World, box AABB, velocity, moved Vec3d) Vec3d {
+func (p *Body) stepUp(world *gocraft.World, box gocraft.AABB, velocity, moved gocraft.Vec3d) gocraft.Vec3d {
 	blocked := moved.X != velocity.X || moved.Z != velocity.Z
 	if !blocked {
 		return moved
 	}
 
-	climb := p.collide(world, box, Vec3(velocity.X, stepHeight, velocity.Z))
+	climb := p.collide(world, box, gocraft.Vec3(velocity.X, stepHeight, velocity.Z))
 	if climb.Y <= 0 {
 		return moved
 	}
 
-	settle := p.collide(world, box.Offset(climb), Vec3(0, -climb.Y, 0))
+	settle := p.collide(world, box.Offset(climb), gocraft.Vec3(0, -climb.Y, 0))
 	stepped := climb.Add(settle)
 
 	if stepped.HorizontalLength() <= moved.HorizontalLength() {
@@ -83,10 +89,10 @@ func (p *Physics) stepUp(world *World, box AABB, velocity, moved Vec3d) Vec3d {
 	return stepped
 }
 
-func (p *Physics) collide(world *World, box AABB, velocity Vec3d) Vec3d {
+func (p *Body) collide(world *gocraft.World, box gocraft.AABB, velocity gocraft.Vec3d) gocraft.Vec3d {
 	obstacles := p.obstacles(world, box.Stretch(velocity.X, velocity.Y, velocity.Z))
 
-	slide := func(box AABB, delta float64, clamp clamper) float64 {
+	slide := func(box gocraft.AABB, delta float64, clamp clamper) float64 {
 		for _, obstacle := range obstacles {
 			delta = clamp(obstacle, box, delta)
 		}
@@ -94,37 +100,37 @@ func (p *Physics) collide(world *World, box AABB, velocity Vec3d) Vec3d {
 		return delta
 	}
 
-	dy := slide(box, velocity.Y, AABB.ClampY)
+	dy := slide(box, velocity.Y, gocraft.AABB.ClampY)
 	box = box.OffsetXYZ(0, dy, 0)
 
 	// vanilla resolves the larger horizontal axis first; matching it keeps
 	// corner slides identical to the server and avoids "moved wrongly" resets
 	dx, dz := velocity.X, velocity.Z
 	if math.Abs(dx) < math.Abs(dz) {
-		dz = slide(box, dz, AABB.ClampZ)
-		dx = slide(box.OffsetXYZ(0, 0, dz), dx, AABB.ClampX)
+		dz = slide(box, dz, gocraft.AABB.ClampZ)
+		dx = slide(box.OffsetXYZ(0, 0, dz), dx, gocraft.AABB.ClampX)
 
-		return Vec3(dx, dy, dz)
+		return gocraft.Vec3(dx, dy, dz)
 	}
 
-	dx = slide(box, dx, AABB.ClampX)
-	dz = slide(box.OffsetXYZ(dx, 0, 0), dz, AABB.ClampZ)
+	dx = slide(box, dx, gocraft.AABB.ClampX)
+	dz = slide(box.OffsetXYZ(dx, 0, 0), dz, gocraft.AABB.ClampZ)
 
-	return Vec3(dx, dy, dz)
+	return gocraft.Vec3(dx, dy, dz)
 }
 
-func (p *Physics) obstacles(world *World, region AABB) []AABB {
+func (p *Body) obstacles(world *gocraft.World, region gocraft.AABB) []gocraft.AABB {
 	lo, hi := region.Min.Floor(), region.Max.Floor()
 
-	var boxes []AABB
+	var boxes []gocraft.AABB
 	for x := lo.X; x <= hi.X; x++ {
 		for y := lo.Y; y <= hi.Y; y++ {
 			for z := lo.Z; z <= hi.Z; z++ {
-				corner := Vec3(float64(x), float64(y), float64(z))
+				corner := gocraft.Vec3(float64(x), float64(y), float64(z))
 
 				state, ok := world.Block(x, y, z)
 				if !ok {
-					boxes = append(boxes, Box(corner, corner.Offset(1, 1, 1)))
+					boxes = append(boxes, gocraft.Box(corner, corner.Offset(1, 1, 1)))
 
 					continue
 				}

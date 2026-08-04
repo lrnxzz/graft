@@ -5,6 +5,7 @@ import (
 
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/pathfinder"
+	"github.com/lrnxzz/go-craft/physics"
 )
 
 type simTerrain struct{}
@@ -36,7 +37,7 @@ func simCollider(state gocraft.BlockState) []gocraft.AABB {
 func walk(world *gocraft.World, route pathfinder.Route, budget int) (gocraft.Vec3d, <-chan arrival) {
 	start := route.Waypoints()[0]
 	player := &gocraft.Player{Position: start.Center().Offset(0, -0.5, 0)}
-	physics := gocraft.NewPhysics(simCollider)
+	body := physics.New(simCollider)
 
 	var nav navigator
 	done := make(chan arrival, 1)
@@ -49,7 +50,7 @@ func walk(world *gocraft.World, route pathfinder.Route, budget int) (gocraft.Vec
 		}
 
 		player.Yaw = command.yaw
-		physics.Tick(world, player, command.controls)
+		body.Tick(world, player, command.controls)
 	}
 
 	return player.Position, done

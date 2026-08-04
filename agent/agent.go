@@ -14,6 +14,7 @@ import (
 	v765 "github.com/lrnxzz/go-craft/codec/v765"
 	"github.com/lrnxzz/go-craft/codec/v765/blocks"
 	"github.com/lrnxzz/go-craft/pathfinder"
+	"github.com/lrnxzz/go-craft/physics"
 )
 
 const (
@@ -34,7 +35,7 @@ var (
 type Agent struct {
 	client  *gocraft.Client
 	session *v765.Session
-	physics *gocraft.Physics
+	physics *physics.Body
 
 	spawns  sync.Once
 	spawned chan struct{}
@@ -74,7 +75,7 @@ func Join(ctx context.Context, address, username string) (*Agent, error) {
 	client := gocraft.NewClient(conn, v765.Protocol())
 	a := &Agent{
 		client:   client,
-		physics:  gocraft.NewPhysics(blocks.Collision),
+		physics:  physics.New(blocks.Collision),
 		spawned:  make(chan struct{}),
 		audience: newAudience(),
 	}
