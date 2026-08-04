@@ -26,15 +26,42 @@ type Component struct {
 
 func Components() []Component {
 	return []Component{
-		{Tag: "Panel", Build: buildStack},
-		{Tag: "Column", Build: buildStack},
-		{Tag: "Row", Build: buildRow},
-		{Tag: "Text", Build: buildText},
-		{Tag: "Bar", Build: buildBar},
-		{Tag: "Icon", Build: buildIcon},
-		{Tag: "List", Build: buildList},
-		{Tag: "Option", Build: buildOption},
-		{Tag: "Raw", Build: buildRaw},
+		{
+			Tag:   "Panel",
+			Build: buildStack,
+		},
+		{
+			Tag:   "Column",
+			Build: buildStack,
+		},
+		{
+			Tag:   "Row",
+			Build: buildRow,
+		},
+		{
+			Tag:   "Text",
+			Build: buildText,
+		},
+		{
+			Tag:   "Bar",
+			Build: buildBar,
+		},
+		{
+			Tag:   "Icon",
+			Build: buildIcon,
+		},
+		{
+			Tag:   "List",
+			Build: buildList,
+		},
+		{
+			Tag:   "Option",
+			Build: buildOption,
+		},
+		{
+			Tag:   "Raw",
+			Build: buildRaw,
+		},
 	}
 }
 

@@ -34,7 +34,12 @@ func LoadAll(dir string, bot Bot) (*Plugins, []Failure) {
 
 	sources, err := Collect(dir)
 	if err != nil {
-		return plugins, []Failure{{Plugin: dir, Err: err}}
+		unreadable := Failure{
+			Plugin: dir,
+			Err:    err,
+		}
+
+		return plugins, []Failure{unreadable}
 	}
 
 	var refused []Failure

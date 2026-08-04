@@ -33,12 +33,30 @@ type GoalSpec struct {
 
 func Goals() []GoalSpec {
 	return []GoalSpec{
-		{Type: GoalAt, Build: spotGoal(GoalAt)},
-		{Type: GoalNear, Build: spotGoal(GoalNear)},
-		{Type: GoalFlee, Build: spotGoal(GoalFlee)},
-		{Type: GoalMine, Build: minedGoal(GoalMine)},
-		{Type: GoalFollow, Build: followGoal(GoalFollow)},
-		{Type: GoalCollect, Build: countedGoal(GoalCollect)},
+		{
+			Type:  GoalAt,
+			Build: spotGoal(GoalAt),
+		},
+		{
+			Type:  GoalNear,
+			Build: spotGoal(GoalNear),
+		},
+		{
+			Type:  GoalFlee,
+			Build: spotGoal(GoalFlee),
+		},
+		{
+			Type:  GoalMine,
+			Build: minedGoal(GoalMine),
+		},
+		{
+			Type:  GoalFollow,
+			Build: followGoal(GoalFollow),
+		},
+		{
+			Type:  GoalCollect,
+			Build: countedGoal(GoalCollect),
+		},
 	}
 }
 

@@ -11,7 +11,13 @@ type Atlas struct {
 }
 
 func NewAtlas(texture *Texture, columns, rows int) *Atlas {
-	return &Atlas{texture: texture, columns: columns, rows: rows}
+	cut := Atlas{
+		texture: texture,
+		columns: columns,
+		rows:    rows,
+	}
+
+	return &cut
 }
 
 func (a *Atlas) Bind(unit uint32) {

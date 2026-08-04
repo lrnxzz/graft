@@ -48,6 +48,18 @@ type Route struct {
 	walked  float32
 }
 
+// a route vertex is a position and how far along the path it sits
+var routeLayout = []gpu.Attribute{
+	{
+		Location: 0,
+		Size:     3,
+	},
+	{
+		Location: 1,
+		Size:     1,
+	},
+}
+
 func NewRoute(bot *agent.Agent) (*Route, error) {
 	program, err := gpu.NewProgram(routeVertexShader, routeFragmentShader)
 	if err != nil {
@@ -145,8 +157,7 @@ func (r *Route) rebuild(waypoints []gocraft.Position) {
 
 	quads := len(vertices) / routeFloatsPerQuad
 	r.mesh = gpu.NewMesh(vertices, gpu.QuadIndices(quads),
-		gpu.Attribute{Location: 0, Size: 3},
-		gpu.Attribute{Location: 1, Size: 1})
+		routeLayout...)
 }
 
 func (r *Route) progress(next int, feet gocraft.Vec3d) float32 {

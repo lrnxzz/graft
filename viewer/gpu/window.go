@@ -48,7 +48,11 @@ func OpenWindow(title string, width, height int, visible bool) (*Window, error) 
 	}
 	gl.Enable(gl.DEPTH_TEST)
 
-	window := &Window{handle: handle, width: width, height: height}
+	window := &Window{
+		handle: handle,
+		width:  width,
+		height: height,
+	}
 	handle.SetScrollCallback(func(_ *glfw.Window, _, dy float64) {
 		window.scrolled += dy
 	})

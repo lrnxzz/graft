@@ -23,7 +23,9 @@ func sensed[C any](read func(C) any) func(Bot) func() any {
 			return nil
 		}
 
-		return func() any { return read(capable) }
+		return func() any {
+			return read(capable)
+		}
 	}
 }
 
@@ -40,18 +42,78 @@ func able[C any](bind func(*Runtime, C) any) func(*Runtime, Bot) any {
 
 func Senses() []Sense {
 	return []Sense{
-		{Name: "name", Needs: always, Read: sensed(func(b Bot) any { return b.Name() })},
-		{Name: "position", Needs: always, Read: sensed(func(b Bot) any { return b.Position() })},
-		{Name: "health", Needs: always, Read: sensed(func(v Vitals) any { return v.Health() })},
-		{Name: "food", Needs: always, Read: sensed(func(v Vitals) any { return v.Food() })},
-		{Name: "onGround", Needs: always, Read: sensed(func(v Vitals) any { return v.OnGround() })},
-		{Name: "looking", Needs: always, Read: sensed(sighting)},
-		{Name: "held", Needs: MayInventory, Read: sensed(func(h Holder) any { return string(h.Held()) })},
-		{Name: "inventory", Needs: MayInventory, Read: sensed(func(h Holder) any { return h.Inventory() })},
+		{
+			Name:  "name",
+			Needs: always,
+			Read:  sensed(readName),
+		},
+		{
+			Name:  "position",
+			Needs: always,
+			Read:  sensed(readPosition),
+		},
+		{
+			Name:  "health",
+			Needs: always,
+			Read:  sensed(readHealth),
+		},
+		{
+			Name:  "food",
+			Needs: always,
+			Read:  sensed(readFood),
+		},
+		{
+			Name:  "onGround",
+			Needs: always,
+			Read:  sensed(readOnGround),
+		},
+		{
+			Name:  "looking",
+			Needs: always,
+			Read:  sensed(readLooking),
+		},
+		{
+			Name:  "held",
+			Needs: MayInventory,
+			Read:  sensed(readHeld),
+		},
+		{
+			Name:  "inventory",
+			Needs: MayInventory,
+			Read:  sensed(readInventory),
+		},
 	}
 }
 
-func sighting(eyes Sighted) any {
+func readName(bot Bot) any {
+	return bot.Name()
+}
+
+func readPosition(bot Bot) any {
+	return bot.Position()
+}
+
+func readHealth(vitals Vitals) any {
+	return vitals.Health()
+}
+
+func readFood(vitals Vitals) any {
+	return vitals.Food()
+}
+
+func readOnGround(vitals Vitals) any {
+	return vitals.OnGround()
+}
+
+func readHeld(holder Holder) any {
+	return string(holder.Held())
+}
+
+func readInventory(holder Holder) any {
+	return holder.Inventory()
+}
+
+func readLooking(eyes Sighted) any {
 	target, sighted := eyes.Looking()
 	if !sighted {
 		return nil
@@ -62,50 +124,142 @@ func sighting(eyes Sighted) any {
 
 func Abilities() []Ability {
 	return []Ability{
-		{Name: "goto", Needs: MayMove, Bind: able(func(r *Runtime, w Walker) any {
-			return func(at goja.Value) (Vec3, error) { return w.Goto(r.vec3(at)) }
-		})},
-		{Name: "look", Needs: MayMove, Bind: able(func(r *Runtime, w Walker) any {
-			return func(at goja.Value) { w.Look(r.vec3(at)) }
-		})},
-		{Name: "pursue", Needs: MayMove, Bind: able(func(r *Runtime, p Pursuer) any {
-			return func(goal goja.Value) error { return p.Pursue(asGoal(r.reading(goal))) }
-		})},
-		{Name: "abandon", Needs: MayMove, Bind: able(func(_ *Runtime, p Pursuer) any {
-			return p.Abandon
-		})},
-		{Name: "dig", Needs: MayDig, Bind: able(func(r *Runtime, d Digger) any {
-			return func(at goja.Value) error { return d.Dig(r.vec3(at)) }
-		})},
-		{Name: "place", Needs: MayPlace, Bind: able(func(r *Runtime, b Builder) any {
-			return func(at goja.Value) error { return b.Place(r.vec3(at)) }
-		})},
-		{Name: "say", Needs: MayChat, Bind: able(func(_ *Runtime, s Speaker) any {
-			return s.Say
-		})},
-		{Name: "hold", Needs: MayInventory, Bind: able(func(_ *Runtime, h Holder) any {
-			return func(item string) error { return h.Hold(Item(item)) }
-		})},
-		{Name: "count", Needs: MayInventory, Bind: able(func(_ *Runtime, h Holder) any {
-			return func(item string) int { return h.Count(Item(item)) }
-		})},
-		{Name: "blockAt", Needs: always, Bind: able(func(r *Runtime, s Sighted) any {
-			return func(at goja.Value) string { return string(s.BlockAt(r.vec3(at))) }
-		})},
-		{Name: "on", Needs: always, Bind: able(func(r *Runtime, w Watcher) any {
-			return func(event string, handle goja.Callable) bool {
-				return w.Watch(event, func(data map[string]any) {
-					_, _ = handle(goja.Undefined(), r.vm.ToValue(data))
-				})
-			}
-		})},
-		{Name: "before", Needs: always, Bind: able(func(r *Runtime, g Guard) any {
-			return func(intent string, handle goja.Callable) bool {
-				return g.Guard(intent, func(data map[string]any) string {
-					return r.veto(handle, data)
-				})
-			}
-		})},
+		{
+			Name:  "goto",
+			Needs: MayMove,
+			Bind:  able(bindGoto),
+		},
+		{
+			Name:  "look",
+			Needs: MayMove,
+			Bind:  able(bindLook),
+		},
+		{
+			Name:  "pursue",
+			Needs: MayMove,
+			Bind:  able(bindPursue),
+		},
+		{
+			Name:  "abandon",
+			Needs: MayMove,
+			Bind:  able(bindAbandon),
+		},
+		{
+			Name:  "dig",
+			Needs: MayDig,
+			Bind:  able(bindDig),
+		},
+		{
+			Name:  "place",
+			Needs: MayPlace,
+			Bind:  able(bindPlace),
+		},
+		{
+			Name:  "say",
+			Needs: MayChat,
+			Bind:  able(bindSay),
+		},
+		{
+			Name:  "hold",
+			Needs: MayInventory,
+			Bind:  able(bindHold),
+		},
+		{
+			Name:  "count",
+			Needs: MayInventory,
+			Bind:  able(bindCount),
+		},
+		{
+			Name:  "blockAt",
+			Needs: always,
+			Bind:  able(bindBlockAt),
+		},
+		{
+			Name:  "on",
+			Needs: always,
+			Bind:  able(bindOn),
+		},
+		{
+			Name:  "before",
+			Needs: always,
+			Bind:  able(bindBefore),
+		},
+	}
+}
+
+func bindGoto(r *Runtime, walker Walker) any {
+	return func(at goja.Value) (Vec3, error) {
+		return walker.Goto(r.vec3(at))
+	}
+}
+
+func bindLook(r *Runtime, walker Walker) any {
+	return func(at goja.Value) {
+		walker.Look(r.vec3(at))
+	}
+}
+
+func bindPursue(r *Runtime, pursuer Pursuer) any {
+	return func(goal goja.Value) error {
+		return pursuer.Pursue(asGoal(r.reading(goal)))
+	}
+}
+
+func bindAbandon(_ *Runtime, pursuer Pursuer) any {
+	return pursuer.Abandon
+}
+
+func bindDig(r *Runtime, digger Digger) any {
+	return func(at goja.Value) error {
+		return digger.Dig(r.vec3(at))
+	}
+}
+
+func bindPlace(r *Runtime, builder Builder) any {
+	return func(at goja.Value) error {
+		return builder.Place(r.vec3(at))
+	}
+}
+
+func bindSay(_ *Runtime, speaker Speaker) any {
+	return speaker.Say
+}
+
+func bindHold(_ *Runtime, holder Holder) any {
+	return func(item string) error {
+		return holder.Hold(Item(item))
+	}
+}
+
+func bindCount(_ *Runtime, holder Holder) any {
+	return func(item string) int {
+		return holder.Count(Item(item))
+	}
+}
+
+func bindBlockAt(r *Runtime, eyes Sighted) any {
+	return func(at goja.Value) string {
+		return string(eyes.BlockAt(r.vec3(at)))
+	}
+}
+
+func bindOn(r *Runtime, watcher Watcher) any {
+	return func(event string, handle goja.Callable) bool {
+		raise := func(payload map[string]any) {
+			_, _ = handle(goja.Undefined(), r.vm.ToValue(payload))
+		}
+
+		return watcher.Watch(event, raise)
+	}
+}
+
+func bindBefore(r *Runtime, guard Guard) any {
+	return func(intent string, handle goja.Callable) bool {
+		ask := func(payload map[string]any) string {
+			return r.veto(handle, payload)
+		}
+
+		return guard.Guard(intent, ask)
 	}
 }
 
@@ -113,18 +267,22 @@ func (r *Runtime) vec3(value goja.Value) Vec3 {
 	return vec3Of(r.reading(value))
 }
 
-func (r *Runtime) veto(handle goja.Callable, data map[string]any) string {
+// an empty answer lets the intent through; anything else is the refusal
+func (r *Runtime) veto(handle goja.Callable, payload map[string]any) string {
 	refused := ""
 
-	event := r.vm.NewObject()
-	bridge := into(r.vm, event).all(data)
-	bridge.set("cancel", func(reason string) {
+	cancel := func(reason string) {
 		if reason == "" {
 			reason = "refused by a plugin"
 		}
 
 		refused = reason
-	})
+	}
+
+	event := r.vm.NewObject()
+	bridge := into(r.vm, event).all(payload)
+	bridge.set("cancel", cancel)
+
 	if bridge.done() != nil {
 		return ""
 	}

@@ -13,6 +13,18 @@ var paintVertexShader string
 //go:embed assets/shaders/paint.frag
 var paintFragmentShader string
 
+// a world-space line vertex is a position and a tint
+var paintLayout = []gpu.Attribute{
+	{
+		Location: 0,
+		Size:     3,
+	},
+	{
+		Location: 1,
+		Size:     4,
+	},
+}
+
 // a block outline sits a hair outside the block so it does not fight the face it
 // traces for the same depth
 const outlineSwell = 0.002
@@ -77,9 +89,54 @@ type boxEdge struct {
 
 // the bottom ring, the top ring, then the four uprights joining them
 var boxEdges = [...]boxEdge{
-	{from: 0, to: 1}, {from: 1, to: 2}, {from: 2, to: 3}, {from: 3, to: 0},
-	{from: 4, to: 5}, {from: 5, to: 6}, {from: 6, to: 7}, {from: 7, to: 4},
-	{from: 0, to: 4}, {from: 1, to: 5}, {from: 2, to: 6}, {from: 3, to: 7},
+	{
+		from: 0,
+		to:   1,
+	},
+	{
+		from: 1,
+		to:   2,
+	},
+	{
+		from: 2,
+		to:   3,
+	},
+	{
+		from: 3,
+		to:   0,
+	},
+	{
+		from: 4,
+		to:   5,
+	},
+	{
+		from: 5,
+		to:   6,
+	},
+	{
+		from: 6,
+		to:   7,
+	},
+	{
+		from: 7,
+		to:   4,
+	},
+	{
+		from: 0,
+		to:   4,
+	},
+	{
+		from: 1,
+		to:   5,
+	},
+	{
+		from: 2,
+		to:   6,
+	},
+	{
+		from: 3,
+		to:   7,
+	},
 }
 
 func (p *Painter) vertex(at gocraft.Vec3d, tint gpu.Color) {
@@ -103,8 +160,7 @@ func (p *Painter) paint(program *gpu.Program) {
 	program.Mat4("viewProjection", p.camera.ViewProjection())
 
 	mesh := gpu.NewLines(p.segments,
-		gpu.Attribute{Location: 0, Size: 3},
-		gpu.Attribute{Location: 1, Size: 4})
+		paintLayout...)
 	mesh.Draw()
 	mesh.Delete()
 }

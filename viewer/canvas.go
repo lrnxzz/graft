@@ -27,6 +27,22 @@ const (
 	hudFloatsPerQuad   = 4 * hudFloatsPerVertex
 )
 
+// an overlay vertex is a screen point, a texture corner and a tint
+var overlayLayout = []gpu.Attribute{
+	{
+		Location: 0,
+		Size:     2,
+	},
+	{
+		Location: 1,
+		Size:     2,
+	},
+	{
+		Location: 2,
+		Size:     4,
+	},
+}
+
 // a batch is one draw call: the texture bound for it, how its colour combines
 // with what is already there, and the quads using both
 type batch struct {
@@ -191,9 +207,7 @@ func (c *Canvas) paint(program *gpu.Program) {
 		gpu.Blending(drawn.blend)
 
 		mesh := gpu.NewMesh(drawn.vertices, gpu.QuadIndices(len(drawn.vertices)/hudFloatsPerQuad),
-			gpu.Attribute{Location: 0, Size: 2},
-			gpu.Attribute{Location: 1, Size: 2},
-			gpu.Attribute{Location: 2, Size: 4})
+			overlayLayout...)
 		mesh.Draw()
 		mesh.Delete()
 	}

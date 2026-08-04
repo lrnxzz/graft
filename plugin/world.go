@@ -23,10 +23,22 @@ type MarkerSpec struct {
 
 func Markers() []MarkerSpec {
 	return []MarkerSpec{
-		{Type: MarkHighlight, Build: markSpot(MarkHighlight)},
-		{Type: MarkBeacon, Build: markSpot(MarkBeacon)},
-		{Type: MarkBox, Build: markSpan(MarkBox)},
-		{Type: MarkLine, Build: markSpan(MarkLine)},
+		{
+			Type:  MarkHighlight,
+			Build: markSpot(MarkHighlight),
+		},
+		{
+			Type:  MarkBeacon,
+			Build: markSpot(MarkBeacon),
+		},
+		{
+			Type:  MarkBox,
+			Build: markSpan(MarkBox),
+		},
+		{
+			Type:  MarkLine,
+			Build: markSpan(MarkLine),
+		},
 	}
 }
 

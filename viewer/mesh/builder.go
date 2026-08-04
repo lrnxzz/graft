@@ -22,11 +22,25 @@ type Geometry struct {
 	indices  []uint32
 }
 
+// a world vertex is a position, a tile corner and a light level
+var layout = []gpu.Attribute{
+	{
+		Location: 0,
+		Size:     3,
+	},
+	{
+		Location: 1,
+		Size:     2,
+	},
+	{
+		Location: 2,
+		Size:     1,
+	},
+}
+
 func (g Geometry) Upload() *gpu.Mesh {
 	mesh := gpu.NewMesh(g.vertices, g.indices,
-		gpu.Attribute{Location: 0, Size: 3},
-		gpu.Attribute{Location: 1, Size: 2},
-		gpu.Attribute{Location: 2, Size: 1})
+		layout...)
 
 	recycled := g.vertices[:0]
 	vertexPool.Put(&recycled)
@@ -61,5 +75,8 @@ func (b *builder) quad(origin mgl32.Vec3, face cubeFace, uv gpu.UV) {
 }
 
 func (b *builder) geometry() Geometry {
-	return Geometry{vertices: b.vertices, indices: gpu.QuadIndices(b.quads)}
+	return Geometry{
+		vertices: b.vertices,
+		indices:  gpu.QuadIndices(b.quads),
+	}
 }
