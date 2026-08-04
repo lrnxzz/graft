@@ -27,9 +27,11 @@ const (
 	hudFloatsPerQuad   = 4 * hudFloatsPerVertex
 )
 
-// a batch is one draw call: the texture bound for it and the quads using it
+// a batch is one draw call: the texture bound for it, how its colour combines
+// with what is already there, and the quads using both
 type batch struct {
 	texture  *gpu.Texture
+	blend    gpu.Blend
 	vertices []float32
 }
 
@@ -106,8 +108,25 @@ func (c *Canvas) TextWidth(text string, scale float32) float32 {
 	return c.font.Width(text) * scale
 }
 
+// Page paints a rendered HTML page. Its colour already carries its alpha, so it
+// takes a batch of its own rather than joining the sprites around it.
+func (c *Canvas) Page(surface *gpu.Surface, area gpu.Rect) {
+	whole := gpu.UV{
+		U0: 0,
+		V0: 0,
+		U1: 1,
+		V1: 1,
+	}
+
+	c.blended(surface.Texture(), gpu.Premultiplied, area, whole, gpu.White)
+}
+
 func (c *Canvas) quad(texture *gpu.Texture, area gpu.Rect, uv gpu.UV, tint gpu.Color) {
-	target := c.open(texture)
+	c.blended(texture, gpu.Straight, area, uv, tint)
+}
+
+func (c *Canvas) blended(texture *gpu.Texture, blend gpu.Blend, area gpu.Rect, uv gpu.UV, tint gpu.Color) {
+	target := c.open(texture, blend)
 	target.vertices = append(target.vertices,
 		area.Min.X, area.Max.Y, uv.U0, uv.V1, tint.Red, tint.Green, tint.Blue, tint.Alpha,
 		area.Max.X, area.Max.Y, uv.U1, uv.V1, tint.Red, tint.Green, tint.Blue, tint.Alpha,
@@ -116,12 +135,14 @@ func (c *Canvas) quad(texture *gpu.Texture, area gpu.Rect, uv gpu.UV, tint gpu.C
 }
 
 // open answers the batch new geometry belongs to, starting a fresh one only when
-// the texture really changes; untextured quads settle for whatever is open
-func (c *Canvas) open(texture *gpu.Texture) *batch {
+// the texture or the blend really changes; untextured quads settle for whatever
+// is open, so long as it combines colour the same way
+func (c *Canvas) open(texture *gpu.Texture, blend gpu.Blend) *batch {
 	if len(c.batches) > 0 {
 		last := &c.batches[len(c.batches)-1]
 
 		switch {
+		case last.blend != blend:
 		case texture == nil || last.texture == texture:
 			return last
 		case last.texture == nil:
@@ -131,7 +152,11 @@ func (c *Canvas) open(texture *gpu.Texture) *batch {
 		}
 	}
 
-	c.batches = append(c.batches, batch{texture: texture})
+	opened := batch{
+		texture: texture,
+		blend:   blend,
+	}
+	c.batches = append(c.batches, opened)
 
 	return &c.batches[len(c.batches)-1]
 }
@@ -163,6 +188,8 @@ func (c *Canvas) paint(program *gpu.Program) {
 			drawn.texture.Bind(0)
 		}
 
+		gpu.Blending(drawn.blend)
+
 		mesh := gpu.NewMesh(drawn.vertices, gpu.QuadIndices(len(drawn.vertices)/hudFloatsPerQuad),
 			gpu.Attribute{Location: 0, Size: 2},
 			gpu.Attribute{Location: 1, Size: 2},
@@ -170,4 +197,6 @@ func (c *Canvas) paint(program *gpu.Program) {
 		mesh.Draw()
 		mesh.Delete()
 	}
+
+	gpu.Blending(gpu.Straight)
 }

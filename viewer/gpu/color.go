@@ -1,5 +1,7 @@
 package gpu
 
+import "github.com/go-gl/gl/v3.3-core/gl"
+
 // Color is a straight RGBA tint in the 0..1 range the shaders work in. It is a
 // rendering primitive like Point and Rect, shared by the overlay canvas and the
 // world painter, so both speak the same language to a plugin.
@@ -31,4 +33,24 @@ func (c Color) Fade(alpha float32) Color {
 	c.Alpha = alpha
 
 	return c
+}
+
+// Blend is how a source colour carries its own coverage. The atlas keeps the two
+// apart; a rendered page hands back colour already multiplied by its alpha, and
+// drawing one under the other's rule leaves a dark fringe on every soft edge.
+type Blend int
+
+const (
+	Straight Blend = iota
+	Premultiplied
+)
+
+func Blending(mode Blend) {
+	if mode == Premultiplied {
+		gl.BlendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+
+		return
+	}
+
+	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 }

@@ -88,7 +88,7 @@ func (w *Window) Overlay(enabled bool) {
 	if enabled {
 		gl.Disable(gl.DEPTH_TEST)
 		gl.Enable(gl.BLEND)
-		gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+		Blending(Straight)
 
 		return
 	}
