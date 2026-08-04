@@ -27,7 +27,8 @@ func NewClient(transport Transport, protocol *Protocol) *Client {
 		protocol:  protocol,
 		listeners: make(listeners),
 		loop: loop{
-			inbound:  make(chan Packet, packetBuffer),
+			inbound:  make(chan Packet),
+			handled:  make(chan struct{}),
 			outbound: make(chan Packet, packetBuffer),
 			done:     make(chan struct{}),
 		},

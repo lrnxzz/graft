@@ -25,6 +25,7 @@ type ticker struct {
 
 type loop struct {
 	inbound  chan Packet
+	handled  chan struct{}
 	outbound chan Packet
 	tick     ticker
 	done     chan struct{}
@@ -114,6 +115,15 @@ func (c *Client) receive(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		}
+
+		// nothing is read until the handlers for this packet have run: one of
+		// them may turn compression on or change the state, and both decide how
+		// the very next frame is framed and decoded
+		select {
+		case <-c.loop.handled:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
 }
 
@@ -131,7 +141,16 @@ func (c *Client) dispatch(ctx context.Context) error {
 			return nil
 		case packet := <-c.loop.inbound:
 			slog.Debug("received", "packet", packet.Name())
-			if err := c.listeners.dispatch(c, packet); err != nil {
+
+			err := c.listeners.dispatch(c, packet)
+
+			select {
+			case c.loop.handled <- struct{}{}:
+			case <-ctx.Done():
+				return nil
+			}
+
+			if err != nil {
 				return err
 			}
 		case <-pulse:
