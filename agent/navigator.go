@@ -109,7 +109,7 @@ func (n *navigator) settle() {
 	n.done = nil
 }
 
-func (n *navigator) route() ([]gocraft.Position, int) {
+func (n *navigator) route() Path {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -127,7 +127,10 @@ func (n *navigator) route() ([]gocraft.Position, int) {
 		waypoints = append(waypoints, current.Target)
 	}
 
-	return waypoints, walked
+	return Path{
+		Waypoints: waypoints,
+		Walked:    walked,
+	}
 }
 
 // advance retires the current step and reports whether that finished the route

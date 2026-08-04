@@ -51,8 +51,8 @@ func NewCrack(bot *agent.Agent) (*Crack, error) {
 }
 
 func (c *Crack) DrawWorld(painter *Painter) {
-	block, progress, digging := c.bot.Excavation()
-	c.update(block, progress, digging)
+	underway, digging := c.bot.Excavating()
+	c.update(underway, digging)
 
 	if c.model == nil {
 		return
@@ -65,22 +65,22 @@ func (c *Crack) DrawWorld(painter *Painter) {
 	c.model.Draw()
 }
 
-func (c *Crack) update(block gocraft.Position, progress float64, digging bool) {
+func (c *Crack) update(underway agent.Excavating, digging bool) {
 	if !digging {
 		c.clear()
 
 		return
 	}
 
-	stage := min(int(progress*breakStages), breakStages-1)
-	if c.model != nil && stage == c.stage && block == c.block {
+	stage := min(int(underway.Progress*breakStages), breakStages-1)
+	if c.model != nil && stage == c.stage && underway.Block == c.block {
 		return
 	}
 
 	c.clear()
-	c.block = block
+	c.block = underway.Block
 	c.stage = stage
-	c.model = mesh.Overlay(block, crackInflate, stageTile(stage)).Upload()
+	c.model = mesh.Overlay(underway.Block, crackInflate, stageTile(stage)).Upload()
 }
 
 func stageTile(stage int) gpu.UV {

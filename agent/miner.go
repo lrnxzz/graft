@@ -128,15 +128,20 @@ func (m *miner) excavating() (float64, bool) {
 	return m.dig.reach, true
 }
 
-func (m *miner) excavation() (gocraft.Position, float64, bool) {
+func (m *miner) excavation() (Excavating, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	if m.dig == nil {
-		return gocraft.Position{}, 0, false
+		return Excavating{}, false
 	}
 
-	return m.dig.hit.Block, m.dig.progress, true
+	underway := Excavating{
+		Block:    m.dig.hit.Block,
+		Progress: m.dig.progress,
+	}
+
+	return underway, true
 }
 
 func (m *miner) tick(target gocraft.RayHit, sighted bool, held gocraft.ItemID) error {

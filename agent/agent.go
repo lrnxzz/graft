@@ -285,7 +285,14 @@ func (a *Agent) Digging() bool {
 	return active
 }
 
-func (a *Agent) Excavation() (gocraft.Position, float64, bool) {
+// Excavating is the block being broken and how far through it the bot is, from
+// 0 to 1. It reports false when nothing is being dug.
+type Excavating struct {
+	Block    gocraft.Position
+	Progress float64
+}
+
+func (a *Agent) Excavating() (Excavating, bool) {
 	return a.miner.excavation()
 }
 
@@ -367,7 +374,13 @@ func (a *Agent) loadout() pathfinder.Loadout {
 	}
 }
 
-func (a *Agent) Route() ([]gocraft.Position, int) {
+// Path is where the bot is walking and how many of those waypoints are behind it
+type Path struct {
+	Waypoints []gocraft.Position
+	Walked    int
+}
+
+func (a *Agent) Path() Path {
 	return a.navigator.route()
 }
 

@@ -73,8 +73,7 @@ func NewRoute(bot *agent.Agent) (*Route, error) {
 }
 
 func (r *Route) DrawWorld(painter *Painter) {
-	waypoints, next := r.bot.Route()
-	r.update(waypoints, next, r.bot.Snapshot().Position)
+	r.update(r.bot.Path(), r.bot.Snapshot().Position)
 
 	if r.mesh == nil {
 		return
@@ -87,18 +86,18 @@ func (r *Route) DrawWorld(painter *Painter) {
 	r.mesh.Draw()
 }
 
-func (r *Route) update(waypoints []gocraft.Position, next int, feet gocraft.Vec3d) {
-	if len(waypoints) < 2 {
+func (r *Route) update(walking agent.Path, feet gocraft.Vec3d) {
+	if len(walking.Waypoints) < 2 {
 		r.clear()
 
 		return
 	}
 
-	if len(waypoints) != len(r.points) || waypoints[0] != r.first || waypoints[len(waypoints)-1] != r.last {
-		r.rebuild(waypoints)
+	if len(walking.Waypoints) != len(r.points) || walking.Waypoints[0] != r.first || walking.Waypoints[len(walking.Waypoints)-1] != r.last {
+		r.rebuild(walking.Waypoints)
 	}
 
-	r.walked = r.progress(next, feet)
+	r.walked = r.progress(walking.Walked, feet)
 }
 
 func (r *Route) Close() {
