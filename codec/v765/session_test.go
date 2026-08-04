@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 	v765 "github.com/lrnxzz/go-craft/codec/v765"
 )
 
@@ -39,15 +39,15 @@ func TestJoinReachesPlay(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	conn, err := gocraft.Dial(ctx, net.JoinHostPort(host, strconv.Itoa(int(port))))
+	conn, err := codec.Dial(ctx, net.JoinHostPort(host, strconv.Itoa(int(port))))
 	if err != nil {
 		t.Fatalf("dial: %v", err)
 	}
 
-	client := gocraft.NewClient(conn, v765.Protocol())
+	client := codec.NewClient(conn, v765.Protocol())
 
 	joined := make(chan *v765.JoinGame, 1)
-	ready := func(c *gocraft.Client, join *v765.JoinGame) error {
+	ready := func(c *codec.Client, join *v765.JoinGame) error {
 		joined <- join
 
 		return c.Close()

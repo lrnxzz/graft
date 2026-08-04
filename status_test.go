@@ -8,16 +8,17 @@ import (
 	"time"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 )
 
-func serveStatus(listener net.Listener, response gocraft.String) {
+func serveStatus(listener net.Listener, response codec.String) {
 	transport, err := listener.Accept()
 	if err != nil {
 		return
 	}
 	defer transport.Close()
 
-	server := gocraft.NewConn(transport)
+	server := codec.NewConn(transport)
 
 	if _, err := server.ReadFrame(); err != nil {
 		return
@@ -26,9 +27,9 @@ func serveStatus(listener net.Listener, response gocraft.String) {
 		return
 	}
 
-	status := gocraft.Frame{
+	status := codec.Frame{
 		ID:      0x00,
-		Payload: gocraft.Marshal(response),
+		Payload: codec.Marshal(response),
 	}
 	if err := server.WriteFrame(status); err != nil {
 		return
@@ -39,7 +40,7 @@ func serveStatus(listener net.Listener, response gocraft.String) {
 		return
 	}
 
-	pong := gocraft.Frame{
+	pong := codec.Frame{
 		ID:      0x01,
 		Payload: ping.Payload,
 	}
@@ -53,7 +54,7 @@ func TestPing(t *testing.T) {
 	}
 	defer listener.Close()
 
-	response := gocraft.String(`{
+	response := codec.String(`{
 		"version": {"name": "1.20.4", "protocol": 765},
 		"players": {"max": 20, "online": 3, "sample": [{"name": "steve", "id": "uuid"}]},
 		"description": {"text": "go-craft ", "extra": [{"text": "test"}]}

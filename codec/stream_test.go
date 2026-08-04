@@ -1,14 +1,14 @@
-package gocraft_test
+package codec_test
 
 import (
 	"errors"
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 )
 
 func TestReaderReadByte(t *testing.T) {
-	r := gocraft.NewReader(gocraft.Marshal(gocraft.UByte(7), gocraft.UByte(9)))
+	r := codec.NewReader(codec.Marshal(codec.UByte(7), codec.UByte(9)))
 	if r.Remaining() != 2 {
 		t.Fatalf("Remaining() = %d, want 2", r.Remaining())
 	}
@@ -32,14 +32,14 @@ func TestReaderReadByte(t *testing.T) {
 }
 
 func TestReaderStickyError(t *testing.T) {
-	r := gocraft.NewReader(nil)
+	r := codec.NewReader(nil)
 
 	_, first := r.ReadByte()
 	if first == nil {
 		t.Fatal("expected an error, got nil")
 	}
 
-	var v gocraft.Long
+	var v codec.Long
 	if err := v.Decode(r); !errors.Is(err, first) {
 		t.Errorf("Decode after failure: got %v, want %v", err, first)
 	}

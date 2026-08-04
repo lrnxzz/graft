@@ -11,6 +11,7 @@ import (
 	"time"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 	v765 "github.com/lrnxzz/go-craft/codec/v765"
 	"github.com/lrnxzz/go-craft/codec/v765/blocks"
 	"github.com/lrnxzz/go-craft/pathfinder"
@@ -33,7 +34,7 @@ var (
 )
 
 type Agent struct {
-	client  *gocraft.Client
+	client  *codec.Client
 	session *v765.Session
 	physics *physics.Body
 
@@ -67,12 +68,12 @@ func Join(ctx context.Context, address, username string) (*Agent, error) {
 		return nil, err
 	}
 
-	conn, err := gocraft.Dial(ctx, net.JoinHostPort(host, strconv.Itoa(int(port))))
+	conn, err := codec.Dial(ctx, net.JoinHostPort(host, strconv.Itoa(int(port))))
 	if err != nil {
 		return nil, err
 	}
 
-	client := gocraft.NewClient(conn, v765.Protocol())
+	client := codec.NewClient(conn, v765.Protocol())
 	a := &Agent{
 		client:   client,
 		physics:  physics.New(blocks.Collision),
@@ -90,7 +91,7 @@ func Join(ctx context.Context, address, username string) (*Agent, error) {
 	a.miner = miner{digger: session}
 	a.observe()
 
-	client.Tick(gocraft.TickRate, a.tick)
+	client.Tick(codec.TickRate, a.tick)
 
 	return a, nil
 }
@@ -212,11 +213,11 @@ func (a *Agent) observe() {
 		a.post(ChatReceived{Line: line})
 	})
 
-	gocraft.On(a.client, a.noticeBlock)
-	gocraft.On(a.client, a.noticeHealth)
+	codec.On(a.client, a.noticeBlock)
+	codec.On(a.client, a.noticeHealth)
 }
 
-func (a *Agent) noticeBlock(_ *gocraft.Client, p *v765.BlockUpdate) error {
+func (a *Agent) noticeBlock(_ *codec.Client, p *v765.BlockUpdate) error {
 	change := p.Change()
 
 	a.post(BlockChanged{
@@ -227,7 +228,7 @@ func (a *Agent) noticeBlock(_ *gocraft.Client, p *v765.BlockUpdate) error {
 	return nil
 }
 
-func (a *Agent) noticeHealth(_ *gocraft.Client, p *v765.SetHealth) error {
+func (a *Agent) noticeHealth(_ *codec.Client, p *v765.SetHealth) error {
 	a.post(HealthChanged{
 		Health: p.Health.Float32(),
 		Food:   float32(p.Food.Int()),

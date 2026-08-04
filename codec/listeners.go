@@ -1,4 +1,4 @@
-package gocraft
+package codec
 
 type packetHandler func(*Client, Packet) error
 

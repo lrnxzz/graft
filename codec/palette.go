@@ -1,32 +1,34 @@
-package gocraft
+package codec
 
-import "fmt"
+import (
+	"fmt"
+)
 
-type paletteType struct {
-	entries     int
-	indirectMax int
-	directBits  int
+type PaletteType struct {
+	Entries     int
+	IndirectMax int
+	DirectBits  int
 }
 
-func (k paletteType) longs(bitsPerEntry int) int {
+func (k PaletteType) longs(bitsPerEntry int) int {
 	if bitsPerEntry == 0 {
 		return 0
 	}
 
 	perLong := 64 / bitsPerEntry
 
-	return (k.entries + perLong - 1) / perLong
+	return (k.Entries + perLong - 1) / perLong
 }
 
 type PalettedContainer[T ~int32] struct {
-	paletteType
+	PaletteType
 	bitsPerEntry int
 	palette      Slice[VarInt]
 	data         Slice[Long]
 }
 
 func (c PalettedContainer[T]) Len() int {
-	return c.entries
+	return c.Entries
 }
 
 func (c PalettedContainer[T]) Get(index int) T {
@@ -92,7 +94,7 @@ func (c *PalettedContainer[T]) Set(index int, value T) {
 	slot := c.paletteSlot(value)
 	if slot < 0 {
 		if len(c.palette) == 1<<c.bitsPerEntry {
-			if c.bitsPerEntry < c.indirectMax {
+			if c.bitsPerEntry < c.IndirectMax {
 				c.repack(c.bitsPerEntry + 1)
 			} else {
 				c.toDirect()
@@ -110,7 +112,7 @@ func (c *PalettedContainer[T]) Set(index int, value T) {
 }
 
 func (c *PalettedContainer[T]) repack(bitsPerEntry int) {
-	symbols := make([]uint64, c.entries)
+	symbols := make([]uint64, c.Entries)
 	for index := range symbols {
 		if c.bitsPerEntry != 0 {
 			symbols[index] = c.symbolAt(index)
@@ -125,14 +127,14 @@ func (c *PalettedContainer[T]) repack(bitsPerEntry int) {
 }
 
 func (c *PalettedContainer[T]) toDirect() {
-	values := make([]uint64, c.entries)
+	values := make([]uint64, c.Entries)
 	for index := range values {
 		values[index] = uint64(c.Get(index))
 	}
 
 	c.palette = nil
-	c.bitsPerEntry = c.directBits
-	c.data = make(Slice[Long], c.longs(c.directBits))
+	c.bitsPerEntry = c.DirectBits
+	c.data = make(Slice[Long], c.longs(c.DirectBits))
 	for index, value := range values {
 		c.put(index, value)
 	}
@@ -152,7 +154,7 @@ func (c *PalettedContainer[T]) Decode(r *Reader) error {
 			return err
 		}
 		c.palette = Slice[VarInt]{value}
-	case c.bitsPerEntry <= c.indirectMax:
+	case c.bitsPerEntry <= c.IndirectMax:
 		if err := c.palette.Decode(r); err != nil {
 			return err
 		}

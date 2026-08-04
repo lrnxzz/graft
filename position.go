@@ -1,6 +1,8 @@
 package gocraft
 
 import (
+	"github.com/lrnxzz/go-craft/codec"
+
 	"errors"
 	"fmt"
 	"math"
@@ -46,11 +48,11 @@ func ParsePosition(text string) (Position, error) {
 func (p Position) Append(dst []byte) []byte {
 	packed := int64(p.X&0x3FFFFFF)<<38 | int64(p.Z&0x3FFFFFF)<<12 | int64(p.Y&0xFFF)
 
-	return Long(packed).Append(dst)
+	return codec.Long(packed).Append(dst)
 }
 
-func (p *Position) Decode(r *Reader) error {
-	var packed Long
+func (p *Position) Decode(r *codec.Reader) error {
+	var packed codec.Long
 	if err := packed.Decode(r); err != nil {
 		return err
 	}
@@ -148,11 +150,11 @@ func (f BlockFace) String() string {
 type Angle uint8
 
 func (a Angle) Append(dst []byte) []byte {
-	return UByte(a).Append(dst)
+	return codec.UByte(a).Append(dst)
 }
 
-func (a *Angle) Decode(r *Reader) error {
-	var raw UByte
+func (a *Angle) Decode(r *codec.Reader) error {
+	var raw codec.UByte
 	if err := raw.Decode(r); err != nil {
 		return err
 	}

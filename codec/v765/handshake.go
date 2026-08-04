@@ -1,12 +1,14 @@
 package v765
 
-import gocraft "github.com/lrnxzz/go-craft"
+import (
+	"github.com/lrnxzz/go-craft/codec"
+)
 
 type Handshake struct {
-	ProtocolVersion gocraft.VarInt
-	ServerAddress   gocraft.String
-	ServerPort      gocraft.UShort
-	NextState       gocraft.VarInt
+	ProtocolVersion codec.VarInt
+	ServerAddress   codec.String
+	ServerPort      codec.UShort
+	NextState       codec.VarInt
 }
 
 func (*Handshake) ID() int32 {
@@ -17,18 +19,18 @@ func (*Handshake) Name() string {
 	return "Handshake"
 }
 
-func (*Handshake) State() gocraft.State {
-	return gocraft.StateHandshaking
+func (*Handshake) State() codec.State {
+	return codec.StateHandshaking
 }
 
-func (*Handshake) Direction() gocraft.Direction {
-	return gocraft.Serverbound
+func (*Handshake) Direction() codec.Direction {
+	return codec.Serverbound
 }
 
 func (p Handshake) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.ProtocolVersion, p.ServerAddress, p.ServerPort, p.NextState)
+	return codec.AppendAll(dst, p.ProtocolVersion, p.ServerAddress, p.ServerPort, p.NextState)
 }
 
-func (p *Handshake) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.ProtocolVersion, &p.ServerAddress, &p.ServerPort, &p.NextState)
+func (p *Handshake) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.ProtocolVersion, &p.ServerAddress, &p.ServerPort, &p.NextState)
 }

@@ -1,5 +1,7 @@
 package gocraft
 
+import "github.com/lrnxzz/go-craft/codec"
+
 type ItemID int32
 
 const MaxStackSize = 64
@@ -13,7 +15,7 @@ type Item struct {
 type ItemStack struct {
 	Item  ItemID
 	Count int
-	Data  NBT
+	Data  codec.NBT
 }
 
 func (s ItemStack) Empty() bool {

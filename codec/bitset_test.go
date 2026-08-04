@@ -1,14 +1,14 @@
-package gocraft_test
+package codec_test
 
 import (
 	"reflect"
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 )
 
 func TestBitSetSetGetClear(t *testing.T) {
-	var set gocraft.BitSet
+	var set codec.BitSet
 
 	indices := []int{0, 1, 63, 64, 130, 200}
 	for _, i := range indices {
@@ -38,7 +38,7 @@ func TestBitSetSetGetClear(t *testing.T) {
 }
 
 func TestBitSetIgnoresNegativeIndex(t *testing.T) {
-	var set gocraft.BitSet
+	var set codec.BitSet
 
 	set.Set(-1)
 	set.Set(-30)
@@ -50,7 +50,7 @@ func TestBitSetIgnoresNegativeIndex(t *testing.T) {
 		t.Errorf("Count() = %d after negative Set, want 0", got)
 	}
 
-	fixed := gocraft.NewFixedBitSet(16)
+	fixed := codec.NewFixedBitSet(16)
 	fixed.Set(-1)
 	fixed.Set(-5)
 
@@ -60,13 +60,13 @@ func TestBitSetIgnoresNegativeIndex(t *testing.T) {
 }
 
 func TestBitSetRecoversSetBits(t *testing.T) {
-	var want gocraft.BitSet
+	var want codec.BitSet
 	for _, i := range []int{3, 70, 128, 255} {
 		want.Set(i)
 	}
 
-	var got gocraft.BitSet
-	if err := gocraft.Unmarshal(want.Append(nil), &got); err != nil {
+	var got codec.BitSet
+	if err := codec.Unmarshal(want.Append(nil), &got); err != nil {
 		t.Fatal(err)
 	}
 
@@ -78,12 +78,12 @@ func TestBitSetRecoversSetBits(t *testing.T) {
 func TestFixedBitSetRecoversSetBits(t *testing.T) {
 	const bitCount = 26
 
-	want := gocraft.NewFixedBitSet(bitCount)
+	want := codec.NewFixedBitSet(bitCount)
 	for _, i := range []int{0, 7, 8, 25} {
 		want.Set(i)
 	}
 
-	got, err := gocraft.DecodeFixedBitSet(gocraft.NewReader(want.Append(nil)), bitCount)
+	got, err := codec.DecodeFixedBitSet(codec.NewReader(want.Append(nil)), bitCount)
 	if err != nil {
 		t.Fatal(err)
 	}

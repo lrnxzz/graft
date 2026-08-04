@@ -3,19 +3,21 @@ package gocraft
 import (
 	"encoding/json"
 	"strconv"
+
+	"github.com/lrnxzz/go-craft/codec"
 )
 
 type BlockState int32
 
-var blockStates = paletteType{
-	entries:     4096,
-	indirectMax: 8,
-	directBits:  15,
+var blockStates = codec.PaletteType{
+	Entries:     4096,
+	IndirectMax: 8,
+	DirectBits:  15,
 }
 
-func BlockStates() PalettedContainer[BlockState] {
-	return PalettedContainer[BlockState]{
-		paletteType: blockStates,
+func BlockStates() codec.PalettedContainer[BlockState] {
+	return codec.PalettedContainer[BlockState]{
+		PaletteType: blockStates,
 	}
 }
 

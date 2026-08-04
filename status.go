@@ -1,6 +1,8 @@
 package gocraft
 
 import (
+	"github.com/lrnxzz/go-craft/codec"
+
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,15 +13,15 @@ import (
 )
 
 const (
-	handshakeID      VarInt = 0x00
-	statusRequestID  VarInt = 0x00
-	statusResponseID VarInt = 0x00
-	statusPingID     VarInt = 0x01
+	handshakeID      codec.VarInt = 0x00
+	statusRequestID  codec.VarInt = 0x00
+	statusResponseID codec.VarInt = 0x00
+	statusPingID     codec.VarInt = 0x01
 
-	stateStatus   VarInt = 1
-	statusVersion VarInt = -1
+	stateStatus   codec.VarInt = 1
+	statusVersion codec.VarInt = -1
 
-	DefaultPort UShort = 25565
+	DefaultPort codec.UShort = 25565
 )
 
 type StatusVersion struct {
@@ -84,7 +86,7 @@ func Ping(ctx context.Context, address string) (Status, error) {
 
 	target := net.JoinHostPort(host.String(), strconv.Itoa(port.Int()))
 
-	conn, err := Dial(ctx, target)
+	conn, err := codec.Dial(ctx, target)
 	if err != nil {
 		return Status{}, err
 	}
@@ -97,15 +99,15 @@ func Ping(ctx context.Context, address string) (Status, error) {
 		}
 	}
 
-	handshake := Frame{
+	handshake := codec.Frame{
 		ID:      handshakeID,
-		Payload: Marshal(statusVersion, host, port, stateStatus),
+		Payload: codec.Marshal(statusVersion, host, port, stateStatus),
 	}
 	if err := conn.WriteFrame(handshake); err != nil {
 		return Status{}, err
 	}
 
-	request := Frame{
+	request := codec.Frame{
 		ID: statusRequestID,
 	}
 	if err := conn.WriteFrame(request); err != nil {
@@ -120,8 +122,8 @@ func Ping(ctx context.Context, address string) (Status, error) {
 		return Status{}, fmt.Errorf("gocraft: unexpected packet 0x%02x during status exchange", response.ID)
 	}
 
-	var body String
-	if err := Unmarshal(response.Payload, &body); err != nil {
+	var body codec.String
+	if err := codec.Unmarshal(response.Payload, &body); err != nil {
 		return Status{}, err
 	}
 
@@ -140,13 +142,13 @@ func Ping(ctx context.Context, address string) (Status, error) {
 	return status, nil
 }
 
-func measureLatency(conn *Conn) (time.Duration, error) {
-	nonce := Long(time.Now().UnixMilli())
+func measureLatency(conn *codec.Conn) (time.Duration, error) {
+	nonce := codec.Long(time.Now().UnixMilli())
 	start := time.Now()
 
-	ping := Frame{
+	ping := codec.Frame{
 		ID:      statusPingID,
-		Payload: Marshal(nonce),
+		Payload: codec.Marshal(nonce),
 	}
 	if err := conn.WriteFrame(ping); err != nil {
 		return 0, err
@@ -159,8 +161,8 @@ func measureLatency(conn *Conn) (time.Duration, error) {
 
 	latency := time.Since(start)
 
-	var echoed Long
-	if err := Unmarshal(pong.Payload, &echoed); err != nil {
+	var echoed codec.Long
+	if err := codec.Unmarshal(pong.Payload, &echoed); err != nil {
 		return 0, err
 	}
 	if pong.ID != statusPingID || echoed != nonce {
@@ -170,10 +172,10 @@ func measureLatency(conn *Conn) (time.Duration, error) {
 	return latency, nil
 }
 
-func splitAddress(address string) (String, UShort, error) {
+func splitAddress(address string) (codec.String, codec.UShort, error) {
 	host, port, err := net.SplitHostPort(address)
 	if err != nil {
-		return String(address), DefaultPort, nil
+		return codec.String(address), DefaultPort, nil
 	}
 
 	parsed, err := strconv.ParseUint(port, 10, 16)
@@ -181,5 +183,5 @@ func splitAddress(address string) (String, UShort, error) {
 		return "", 0, fmt.Errorf("gocraft: invalid port %q in %q", port, address)
 	}
 
-	return String(host), UShort(parsed), nil
+	return codec.String(host), codec.UShort(parsed), nil
 }

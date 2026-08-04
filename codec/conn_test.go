@@ -1,4 +1,4 @@
-package gocraft_test
+package codec_test
 
 import (
 	"bytes"
@@ -6,39 +6,39 @@ import (
 	"net"
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 )
 
 func TestConnPreservesFramesAcrossThresholds(t *testing.T) {
 	tests := []struct {
 		threshold int
-		packet    gocraft.Frame
+		packet    codec.Frame
 	}{
 		{
 			threshold: -1,
-			packet: gocraft.Frame{
+			packet: codec.Frame{
 				ID:      0x00,
-				Payload: gocraft.Marshal(gocraft.VarInt(765), gocraft.String("mc.local"), gocraft.UShort(25565), gocraft.VarInt(1)),
+				Payload: codec.Marshal(codec.VarInt(765), codec.String("mc.local"), codec.UShort(25565), codec.VarInt(1)),
 			},
 		},
 		{
 			threshold: -1,
-			packet: gocraft.Frame{
+			packet: codec.Frame{
 				ID: 0x01,
 			},
 		},
 		{
 			threshold: 64,
-			packet: gocraft.Frame{
+			packet: codec.Frame{
 				ID:      0x02,
-				Payload: gocraft.Marshal(gocraft.String("below threshold")),
+				Payload: codec.Marshal(codec.String("below threshold")),
 			},
 		},
 		{
 			threshold: 16,
-			packet: gocraft.Frame{
+			packet: codec.Frame{
 				ID:      0x03,
-				Payload: bytes.Repeat(gocraft.Marshal(gocraft.String("chunk data")), 256),
+				Payload: bytes.Repeat(codec.Marshal(codec.String("chunk data")), 256),
 			},
 		},
 	}
@@ -46,8 +46,8 @@ func TestConnPreservesFramesAcrossThresholds(t *testing.T) {
 	for _, tt := range tests {
 		client, server := net.Pipe()
 
-		in := gocraft.NewConn(client)
-		out := gocraft.NewConn(server)
+		in := codec.NewConn(client)
+		out := codec.NewConn(server)
 		in.SetThreshold(tt.threshold)
 		out.SetThreshold(tt.threshold)
 
@@ -79,20 +79,20 @@ func TestConnRejectsMalformedFrame(t *testing.T) {
 		frame []byte
 	}{
 		{
-			frame: gocraft.AppendVar(nil, int32(0)),
+			frame: codec.AppendVar(nil, int32(0)),
 		},
 		{
-			frame: gocraft.AppendVar(nil, int32(-1)),
+			frame: codec.AppendVar(nil, int32(-1)),
 		},
 		{
-			frame: gocraft.AppendVar(nil, int32(math.MaxInt32)),
+			frame: codec.AppendVar(nil, int32(math.MaxInt32)),
 		},
 	}
 
 	for _, tt := range tests {
 		client, server := net.Pipe()
 
-		out := gocraft.NewConn(server)
+		out := codec.NewConn(server)
 
 		go func() {
 			client.Write(tt.frame)

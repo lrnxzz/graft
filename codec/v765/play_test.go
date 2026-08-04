@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 	v765 "github.com/lrnxzz/go-craft/codec/v765"
 )
 
@@ -12,7 +13,7 @@ func TestJoinGamePreservesAllFields(t *testing.T) {
 	original := &v765.JoinGame{
 		EntityID:            42,
 		Hardcore:            false,
-		Worlds:              gocraft.Slice[gocraft.Identifier]{"minecraft:overworld", "minecraft:the_nether"},
+		Worlds:              codec.Slice[gocraft.Identifier]{"minecraft:overworld", "minecraft:the_nether"},
 		MaxPlayers:          20,
 		ViewDistance:        10,
 		SimulationDistance:  10,
@@ -23,7 +24,7 @@ func TestJoinGamePreservesAllFields(t *testing.T) {
 		GameMode:            0,
 		PreviousGameMode:    -1,
 		Flat:                true,
-		Death: gocraft.Some(v765.DeathLocation{
+		Death: codec.Some(v765.DeathLocation{
 			DimensionName: "minecraft:the_nether",
 			Location: gocraft.Position{
 				X: 10,
@@ -35,7 +36,7 @@ func TestJoinGamePreservesAllFields(t *testing.T) {
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StatePlay, gocraft.Clientbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StatePlay, codec.Clientbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +61,7 @@ func TestSyncPlayerPositionCarriesTeleportID(t *testing.T) {
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StatePlay, gocraft.Clientbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StatePlay, codec.Clientbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +93,7 @@ func TestPlayKeepAliveDistinctIDsPerDirection(t *testing.T) {
 	received := &v765.PlayKeepAlive{
 		KeepAliveID: 555,
 	}
-	echoed, ok, err := proto.Decode(gocraft.StatePlay, gocraft.Clientbound, gocraft.EncodeFrame(received))
+	echoed, ok, err := proto.Decode(codec.StatePlay, codec.Clientbound, codec.EncodeFrame(received))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +107,7 @@ func TestPlayKeepAliveDistinctIDsPerDirection(t *testing.T) {
 	reply := &v765.PlayKeepAliveResponse{
 		KeepAliveID: 555,
 	}
-	confirmed, ok, err := proto.Decode(gocraft.StatePlay, gocraft.Serverbound, gocraft.EncodeFrame(reply))
+	confirmed, ok, err := proto.Decode(codec.StatePlay, codec.Serverbound, codec.EncodeFrame(reply))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +125,7 @@ func TestConfirmTeleportCarriesTeleportID(t *testing.T) {
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StatePlay, gocraft.Serverbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StatePlay, codec.Serverbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +146,7 @@ func TestPlayerAbilitiesAppliesFlags(t *testing.T) {
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StatePlay, gocraft.Clientbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StatePlay, codec.Clientbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +181,7 @@ func TestSetExperienceAppliesProgress(t *testing.T) {
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StatePlay, gocraft.Clientbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StatePlay, codec.Clientbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}

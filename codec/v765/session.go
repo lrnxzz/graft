@@ -8,6 +8,7 @@ import (
 	"log/slog"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 	"github.com/lrnxzz/go-craft/codec/v765/blocks"
 	"github.com/lrnxzz/go-craft/codec/v765/items"
 	"github.com/lrnxzz/go-craft/lib"
@@ -25,12 +26,12 @@ var overworld = dimensionBounds{
 	height: 384,
 }
 
-type JoinHandler func(*gocraft.Client, *JoinGame) error
+type JoinHandler func(*codec.Client, *JoinGame) error
 
 type ChatListener func(line string)
 
 type Session struct {
-	client     *gocraft.Client
+	client     *codec.Client
 	world      *gocraft.World
 	player     *gocraft.Player
 	ready      JoinHandler
@@ -50,7 +51,7 @@ type blockPrediction struct {
 	server   gocraft.BlockState
 }
 
-func Join(client *gocraft.Client, host string, port uint16, username string, onReady JoinHandler) (*Session, error) {
+func Join(client *codec.Client, host string, port uint16, username string, onReady JoinHandler) (*Session, error) {
 	offline := mojang.Offline{Username: username}
 
 	profile, err := offline.Authenticate(context.Background())
@@ -58,7 +59,7 @@ func Join(client *gocraft.Client, host string, port uint16, username string, onR
 		return nil, err
 	}
 
-	var uuid gocraft.UUID
+	var uuid codec.UUID
 	if raw, err := hex.DecodeString(profile.Profile.ID); err == nil {
 		copy(uuid[:], raw)
 	}
@@ -75,17 +76,17 @@ func Join(client *gocraft.Client, host string, port uint16, username string, onR
 
 	if err := client.Send(&Handshake{
 		ProtocolVersion: ProtocolVersion,
-		ServerAddress:   gocraft.String(host),
-		ServerPort:      gocraft.UShort(port),
-		NextState:       gocraft.VarInt(gocraft.StateLogin),
+		ServerAddress:   codec.String(host),
+		ServerPort:      codec.UShort(port),
+		NextState:       codec.VarInt(codec.StateLogin),
 	}); err != nil {
 		return nil, err
 	}
 
-	client.SetState(gocraft.StateLogin)
+	client.SetState(codec.StateLogin)
 
 	return session, client.Send(&LoginStart{
-		Username: gocraft.String(username),
+		Username: codec.String(username),
 		UUID:     uuid,
 	})
 }
@@ -107,36 +108,36 @@ func (s *Session) Spawned() bool {
 }
 
 func (s *Session) listen() {
-	gocraft.On(s.client, s.onCompression)
-	gocraft.On(s.client, s.onEncryption)
-	gocraft.On(s.client, s.onLoginSuccess)
-	gocraft.On(s.client, s.onLoginDisconnect)
+	codec.On(s.client, s.onCompression)
+	codec.On(s.client, s.onEncryption)
+	codec.On(s.client, s.onLoginSuccess)
+	codec.On(s.client, s.onLoginDisconnect)
 
-	gocraft.On(s.client, s.onConfigKeepAlive)
-	gocraft.On(s.client, s.onConfigPing)
-	gocraft.On(s.client, s.onRegistryData)
-	gocraft.On(s.client, s.onFinishConfiguration)
-	gocraft.On(s.client, s.onConfigDisconnect)
+	codec.On(s.client, s.onConfigKeepAlive)
+	codec.On(s.client, s.onConfigPing)
+	codec.On(s.client, s.onRegistryData)
+	codec.On(s.client, s.onFinishConfiguration)
+	codec.On(s.client, s.onConfigDisconnect)
 
-	gocraft.On(s.client, s.onJoinGame)
-	gocraft.On(s.client, s.onChunkBatch)
-	gocraft.On(s.client, s.onKeepAlive)
-	gocraft.On(s.client, s.onSyncPosition)
-	gocraft.On(s.client, s.onChunkData)
-	gocraft.On(s.client, s.onUnloadChunk)
-	gocraft.On(s.client, s.onBlockUpdate)
-	gocraft.On(s.client, s.onSectionBlocks)
-	gocraft.On(s.client, s.onHealth)
-	gocraft.On(s.client, s.onAbilities)
-	gocraft.On(s.client, s.onExperience)
-	gocraft.On(s.client, s.onContainerContent)
-	gocraft.On(s.client, s.onContainerSlot)
-	gocraft.On(s.client, s.onHeldItem)
-	gocraft.On(s.client, s.onSystemChat)
-	gocraft.On(s.client, s.onPlayerChat)
-	gocraft.On(s.client, s.onDisguisedChat)
-	gocraft.On(s.client, s.onBlockAck)
-	gocraft.On(s.client, s.onPlayDisconnect)
+	codec.On(s.client, s.onJoinGame)
+	codec.On(s.client, s.onChunkBatch)
+	codec.On(s.client, s.onKeepAlive)
+	codec.On(s.client, s.onSyncPosition)
+	codec.On(s.client, s.onChunkData)
+	codec.On(s.client, s.onUnloadChunk)
+	codec.On(s.client, s.onBlockUpdate)
+	codec.On(s.client, s.onSectionBlocks)
+	codec.On(s.client, s.onHealth)
+	codec.On(s.client, s.onAbilities)
+	codec.On(s.client, s.onExperience)
+	codec.On(s.client, s.onContainerContent)
+	codec.On(s.client, s.onContainerSlot)
+	codec.On(s.client, s.onHeldItem)
+	codec.On(s.client, s.onSystemChat)
+	codec.On(s.client, s.onPlayerChat)
+	codec.On(s.client, s.onDisguisedChat)
+	codec.On(s.client, s.onBlockAck)
+	codec.On(s.client, s.onPlayDisconnect)
 }
 
 func (s *Session) OnChat(listener ChatListener) {
@@ -149,7 +150,7 @@ func (s *Session) notifyChat(line string) {
 	}
 }
 
-func (s *Session) onSystemChat(c *gocraft.Client, p *SystemChat) error {
+func (s *Session) onSystemChat(c *codec.Client, p *SystemChat) error {
 	if !p.Overlay.Bool() {
 		s.notifyChat(plainText(p.Content.Tag))
 	}
@@ -157,13 +158,13 @@ func (s *Session) onSystemChat(c *gocraft.Client, p *SystemChat) error {
 	return nil
 }
 
-func (s *Session) onPlayerChat(c *gocraft.Client, p *PlayerChat) error {
+func (s *Session) onPlayerChat(c *codec.Client, p *PlayerChat) error {
 	s.notifyChat(fmt.Sprintf(formatChat, plainText(p.NetworkName.Tag), p.Message))
 
 	return nil
 }
 
-func (s *Session) onDisguisedChat(c *gocraft.Client, p *DisguisedChat) error {
+func (s *Session) onDisguisedChat(c *codec.Client, p *DisguisedChat) error {
 	s.notifyChat(fmt.Sprintf(formatAnnouncement, plainText(p.SenderName.Tag), plainText(p.Message.Tag)))
 
 	return nil
@@ -173,7 +174,7 @@ func (s *Session) SendChat(message string) error {
 	stamp := stampChat()
 
 	return s.client.Send(&ChatMessage{
-		Message:   gocraft.String(message),
+		Message:   codec.String(message),
 		Timestamp: stamp.timestamp,
 		Salt:      stamp.salt,
 	})
@@ -183,13 +184,13 @@ func (s *Session) SendCommand(command string) error {
 	stamp := stampChat()
 
 	return s.client.Send(&ChatCommand{
-		Command:   gocraft.String(command),
+		Command:   codec.String(command),
 		Timestamp: stamp.timestamp,
 		Salt:      stamp.salt,
 	})
 }
 
-func (s *Session) onBlockAck(c *gocraft.Client, p *AcknowledgeBlockChange) error {
+func (s *Session) onBlockAck(c *codec.Client, p *AcknowledgeBlockChange) error {
 	for _, prediction := range s.pending.Ack(p.Sequence.Int32()) {
 		s.world.SetBlock(prediction.position.X, prediction.position.Y, prediction.position.Z, prediction.server)
 	}
@@ -215,12 +216,12 @@ func (s *Session) FinishDigging(hit gocraft.RayHit) error {
 	return nil
 }
 
-func (s *Session) action(status gocraft.VarInt, hit gocraft.RayHit) error {
+func (s *Session) action(status codec.VarInt, hit gocraft.RayHit) error {
 	packet := &PlayerAction{
 		Status:   status,
 		Location: hit.Block,
-		Face:     gocraft.Byte(hit.Face),
-		Sequence: gocraft.VarInt(s.pending.Push(s.predict(hit.Block))),
+		Face:     codec.Byte(hit.Face),
+		Sequence: codec.VarInt(s.pending.Push(s.predict(hit.Block))),
 	}
 
 	return s.client.Send(packet)
@@ -233,11 +234,11 @@ func (s *Session) PlaceBlock(hit gocraft.RayHit) error {
 	use := &UseItemOn{
 		Hand:     mainHand,
 		Location: hit.Block,
-		Face:     gocraft.VarInt(hit.Face),
-		CursorX:  gocraft.Float(cursor.X),
-		CursorY:  gocraft.Float(cursor.Y),
-		CursorZ:  gocraft.Float(cursor.Z),
-		Sequence: gocraft.VarInt(s.pending.Push(s.predict(placed))),
+		Face:     codec.VarInt(hit.Face),
+		CursorX:  codec.Float(cursor.X),
+		CursorY:  codec.Float(cursor.Y),
+		CursorZ:  codec.Float(cursor.Z),
+		Sequence: codec.VarInt(s.pending.Push(s.predict(placed))),
 	}
 	if err := s.client.Send(use); err != nil {
 		return err
@@ -288,7 +289,7 @@ func (s *Session) applyServerBlock(change BlockChange) {
 	s.world.SetBlock(change.X, change.Y, change.Z, change.State)
 }
 
-func (s *Session) onRegistryData(c *gocraft.Client, p *RegistryData) error {
+func (s *Session) onRegistryData(c *codec.Client, p *RegistryData) error {
 	registry, ok := nbt.Get[nbt.Compound](nbt.Compound(p.Codec), "minecraft:dimension_type")
 	if !ok {
 		return nil
@@ -334,24 +335,24 @@ func (s *Session) onRegistryData(c *gocraft.Client, p *RegistryData) error {
 	return nil
 }
 
-func (s *Session) onCompression(c *gocraft.Client, p *SetCompression) error {
+func (s *Session) onCompression(c *codec.Client, p *SetCompression) error {
 	c.SetCompression(p.Threshold.Int())
 
 	return nil
 }
 
-func (s *Session) onEncryption(c *gocraft.Client, p *EncryptionBegin) error {
+func (s *Session) onEncryption(c *codec.Client, p *EncryptionBegin) error {
 	return errors.New("v765: server requested encryption (online-mode); auth and encryption are not implemented")
 }
 
-func (s *Session) onLoginSuccess(c *gocraft.Client, p *LoginSuccess) error {
+func (s *Session) onLoginSuccess(c *codec.Client, p *LoginSuccess) error {
 	p.Apply(s.player)
 
 	if err := c.Send(&LoginAcknowledged{}); err != nil {
 		return err
 	}
 
-	c.SetState(gocraft.StateConfiguration)
+	c.SetState(codec.StateConfiguration)
 
 	return c.Send(&ClientInformation{
 		Locale:              "en_us",
@@ -361,33 +362,33 @@ func (s *Session) onLoginSuccess(c *gocraft.Client, p *LoginSuccess) error {
 	})
 }
 
-func (s *Session) onLoginDisconnect(c *gocraft.Client, p *LoginDisconnect) error {
+func (s *Session) onLoginDisconnect(c *codec.Client, p *LoginDisconnect) error {
 	return fmt.Errorf("v765: kicked during login: %s", p.Reason)
 }
 
-func (s *Session) onConfigKeepAlive(c *gocraft.Client, p *ConfigKeepAlive) error {
+func (s *Session) onConfigKeepAlive(c *codec.Client, p *ConfigKeepAlive) error {
 	return c.Send(&ConfigKeepAliveResponse{KeepAliveID: p.KeepAliveID})
 }
 
-func (s *Session) onConfigPing(c *gocraft.Client, p *ConfigPing) error {
+func (s *Session) onConfigPing(c *codec.Client, p *ConfigPing) error {
 	return c.Send(&ConfigPong{PingID: p.PingID})
 }
 
-func (s *Session) onFinishConfiguration(c *gocraft.Client, p *FinishConfiguration) error {
+func (s *Session) onFinishConfiguration(c *codec.Client, p *FinishConfiguration) error {
 	if err := c.Send(&AcknowledgeConfiguration{}); err != nil {
 		return err
 	}
 
-	c.SetState(gocraft.StatePlay)
+	c.SetState(codec.StatePlay)
 
 	return nil
 }
 
-func (s *Session) onConfigDisconnect(c *gocraft.Client, p *ConfigDisconnect) error {
+func (s *Session) onConfigDisconnect(c *codec.Client, p *ConfigDisconnect) error {
 	return errors.New("v765: kicked during configuration")
 }
 
-func (s *Session) onJoinGame(c *gocraft.Client, p *JoinGame) error {
+func (s *Session) onJoinGame(c *codec.Client, p *JoinGame) error {
 	p.Apply(s.player)
 
 	// falling back keeps the session alive, but the wrong minY and height would
@@ -408,11 +409,11 @@ func (s *Session) onJoinGame(c *gocraft.Client, p *JoinGame) error {
 	return nil
 }
 
-func (s *Session) onKeepAlive(c *gocraft.Client, p *PlayKeepAlive) error {
+func (s *Session) onKeepAlive(c *codec.Client, p *PlayKeepAlive) error {
 	return c.Send(&PlayKeepAliveResponse{KeepAliveID: p.KeepAliveID})
 }
 
-func (s *Session) onSyncPosition(c *gocraft.Client, p *SyncPlayerPosition) error {
+func (s *Session) onSyncPosition(c *codec.Client, p *SyncPlayerPosition) error {
 	p.Apply(s.player)
 	s.spawned = true
 
@@ -425,24 +426,24 @@ func (s *Session) onSyncPosition(c *gocraft.Client, p *SyncPlayerPosition) error
 
 func (s *Session) SendPosition() error {
 	return s.client.Send(&SetPlayerPositionRotation{
-		X:        gocraft.Double(s.player.Position.X),
-		Y:        gocraft.Double(s.player.Position.Y),
-		Z:        gocraft.Double(s.player.Position.Z),
-		Yaw:      gocraft.Float(s.player.Yaw),
-		Pitch:    gocraft.Float(s.player.Pitch),
-		OnGround: gocraft.Bool(s.player.OnGround),
+		X:        codec.Double(s.player.Position.X),
+		Y:        codec.Double(s.player.Position.Y),
+		Z:        codec.Double(s.player.Position.Z),
+		Yaw:      codec.Float(s.player.Yaw),
+		Pitch:    codec.Float(s.player.Pitch),
+		OnGround: codec.Bool(s.player.OnGround),
 	})
 }
 
 // the server paces chunk delivery from this number; a bot has no frame budget
 // to protect, so it asks for as much as the vanilla client ever would
-const chunkBatchRate gocraft.Float = 64
+const chunkBatchRate codec.Float = 64
 
-func (s *Session) onChunkBatch(c *gocraft.Client, p *ChunkBatchFinished) error {
+func (s *Session) onChunkBatch(c *codec.Client, p *ChunkBatchFinished) error {
 	return c.Send(&ChunkBatchReceived{ChunksPerTick: chunkBatchRate})
 }
 
-func (s *Session) onChunkData(c *gocraft.Client, p *ChunkData) error {
+func (s *Session) onChunkData(c *codec.Client, p *ChunkData) error {
 	column, err := p.Column(s.bounds.minY, s.bounds.height)
 	if err != nil {
 		return err
@@ -453,19 +454,19 @@ func (s *Session) onChunkData(c *gocraft.Client, p *ChunkData) error {
 	return nil
 }
 
-func (s *Session) onUnloadChunk(c *gocraft.Client, p *UnloadChunk) error {
+func (s *Session) onUnloadChunk(c *codec.Client, p *UnloadChunk) error {
 	s.world.UnloadColumn(gocraft.Chunk(p.X.Int32(), p.Z.Int32()))
 
 	return nil
 }
 
-func (s *Session) onBlockUpdate(c *gocraft.Client, p *BlockUpdate) error {
+func (s *Session) onBlockUpdate(c *codec.Client, p *BlockUpdate) error {
 	s.applyServerBlock(p.Change())
 
 	return nil
 }
 
-func (s *Session) onSectionBlocks(c *gocraft.Client, p *SectionBlocksUpdate) error {
+func (s *Session) onSectionBlocks(c *codec.Client, p *SectionBlocksUpdate) error {
 	for _, change := range p.Changes() {
 		s.applyServerBlock(change)
 	}
@@ -473,7 +474,7 @@ func (s *Session) onSectionBlocks(c *gocraft.Client, p *SectionBlocksUpdate) err
 	return nil
 }
 
-func (s *Session) onHealth(c *gocraft.Client, p *SetHealth) error {
+func (s *Session) onHealth(c *codec.Client, p *SetHealth) error {
 	p.Apply(s.player)
 
 	return nil
@@ -483,7 +484,7 @@ func (s *Session) Inventory() *gocraft.Inventory {
 	return &s.inventory
 }
 
-func (s *Session) onContainerContent(c *gocraft.Client, p *SetContainerContent) error {
+func (s *Session) onContainerContent(c *codec.Client, p *SetContainerContent) error {
 	if p.WindowID != 0 {
 		return nil
 	}
@@ -500,7 +501,7 @@ func (s *Session) onContainerContent(c *gocraft.Client, p *SetContainerContent) 
 	return nil
 }
 
-func (s *Session) onContainerSlot(c *gocraft.Client, p *SetContainerSlot) error {
+func (s *Session) onContainerSlot(c *codec.Client, p *SetContainerSlot) error {
 	s.stateID = p.StateID.Int32()
 
 	switch {
@@ -513,7 +514,7 @@ func (s *Session) onContainerSlot(c *gocraft.Client, p *SetContainerSlot) error 
 	return nil
 }
 
-func (s *Session) onHeldItem(c *gocraft.Client, p *SetHeldItem) error {
+func (s *Session) onHeldItem(c *codec.Client, p *SetHeldItem) error {
 	s.inventory.SelectHeld(p.Slot.Int())
 
 	return nil
@@ -524,7 +525,7 @@ func (s *Session) SelectHotbar(index int) error {
 		return fmt.Errorf("v765: hotbar index %d is out of range", index)
 	}
 
-	if err := s.client.Send(&HeldItemChange{Slot: gocraft.Short(index)}); err != nil {
+	if err := s.client.Send(&HeldItemChange{Slot: codec.Short(index)}); err != nil {
 		return err
 	}
 
@@ -538,14 +539,14 @@ func (s *Session) SwapWithHotbar(slot, hotbar int) error {
 		return fmt.Errorf("v765: hotbar index %d is out of range", hotbar)
 	}
 
-	return s.swap(slot, gocraft.Byte(hotbar), gocraft.HotbarSlot(hotbar))
+	return s.swap(slot, codec.Byte(hotbar), gocraft.HotbarSlot(hotbar))
 }
 
 func (s *Session) SwapWithOffhand(slot int) error {
 	return s.swap(slot, offhandButton, gocraft.SlotOffhand)
 }
 
-func (s *Session) swap(slot int, button gocraft.Byte, other int) error {
+func (s *Session) swap(slot int, button codec.Byte, other int) error {
 	if slot < 0 || slot >= gocraft.InventorySize {
 		return fmt.Errorf("v765: inventory slot %d is out of range", slot)
 	}
@@ -557,17 +558,17 @@ func (s *Session) swap(slot int, button gocraft.Byte, other int) error {
 	second := s.inventory.Slot(other)
 
 	click := &ClickContainer{
-		StateID: gocraft.VarInt(s.stateID),
-		Index:   gocraft.Short(slot),
+		StateID: codec.VarInt(s.stateID),
+		Index:   codec.Short(slot),
 		Button:  button,
 		Mode:    clickSwap,
-		Changed: gocraft.Slice[ChangedSlot]{
+		Changed: codec.Slice[ChangedSlot]{
 			{
-				Index: gocraft.Short(slot),
+				Index: codec.Short(slot),
 				Item:  slotOf(second),
 			},
 			{
-				Index: gocraft.Short(other),
+				Index: codec.Short(other),
 				Item:  slotOf(first),
 			},
 		},
@@ -603,14 +604,14 @@ func (s *Session) ClickSlot(slot int) error {
 	landed, carried := land(current, s.carried)
 
 	changed := ChangedSlot{
-		Index: gocraft.Short(slot),
+		Index: codec.Short(slot),
 		Item:  slotOf(landed),
 	}
 	click := &ClickContainer{
-		StateID: gocraft.VarInt(s.stateID),
-		Index:   gocraft.Short(slot),
+		StateID: codec.VarInt(s.stateID),
+		Index:   codec.Short(slot),
 		Mode:    clickPickup,
-		Changed: gocraft.Slice[ChangedSlot]{changed},
+		Changed: codec.Slice[ChangedSlot]{changed},
 		Carried: slotOf(carried),
 	}
 	if err := s.client.Send(click); err != nil {
@@ -644,18 +645,18 @@ func land(slot, carried gocraft.ItemStack) (gocraft.ItemStack, gocraft.ItemStack
 	return slot, carried
 }
 
-func (s *Session) onAbilities(c *gocraft.Client, p *PlayerAbilities) error {
+func (s *Session) onAbilities(c *codec.Client, p *PlayerAbilities) error {
 	p.Apply(s.player)
 
 	return nil
 }
 
-func (s *Session) onExperience(c *gocraft.Client, p *SetExperience) error {
+func (s *Session) onExperience(c *codec.Client, p *SetExperience) error {
 	p.Apply(s.player)
 
 	return nil
 }
 
-func (s *Session) onPlayDisconnect(c *gocraft.Client, p *PlayDisconnect) error {
+func (s *Session) onPlayDisconnect(c *codec.Client, p *PlayDisconnect) error {
 	return errors.New("v765: kicked during play")
 }

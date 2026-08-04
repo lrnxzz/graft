@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 )
 
 type blockFaceCase struct {
@@ -84,7 +85,7 @@ func TestPositionRecoversPackedCoordinates(t *testing.T) {
 	for _, want := range positions {
 		var got gocraft.Position
 
-		if err := gocraft.Unmarshal(want.Append(nil), &got); err != nil {
+		if err := codec.Unmarshal(want.Append(nil), &got); err != nil {
 			t.Errorf("decode %s: %v", want, err)
 			continue
 		}
@@ -131,7 +132,7 @@ func TestAngleRecoversEncodedValue(t *testing.T) {
 	for _, want := range []gocraft.Angle{0, 1, 64, 128, 200, 255} {
 		var got gocraft.Angle
 
-		if err := gocraft.Unmarshal(want.Append(nil), &got); err != nil {
+		if err := codec.Unmarshal(want.Append(nil), &got); err != nil {
 			t.Errorf("decode %d: %v", want, err)
 			continue
 		}

@@ -1,4 +1,4 @@
-package gocraft_test
+package codec_test
 
 import (
 	"bytes"
@@ -7,12 +7,12 @@ import (
 	"reflect"
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 )
 
 type profileEntry struct {
-	Name gocraft.String
-	ID   gocraft.UUID
+	Name codec.String
+	ID   codec.UUID
 }
 
 func (p profileEntry) Append(dst []byte) []byte {
@@ -21,7 +21,7 @@ func (p profileEntry) Append(dst []byte) []byte {
 	return p.ID.Append(dst)
 }
 
-func (p *profileEntry) Decode(r *gocraft.Reader) error {
+func (p *profileEntry) Decode(r *codec.Reader) error {
 	if err := p.Name.Decode(r); err != nil {
 		return err
 	}
@@ -30,39 +30,39 @@ func (p *profileEntry) Decode(r *gocraft.Reader) error {
 }
 
 func TestFieldTypesSurviveEncoding(t *testing.T) {
-	var id gocraft.UUID
+	var id codec.UUID
 	for i := range id {
 		id[i] = byte(i)
 	}
 
-	fields := []gocraft.Field{
-		gocraft.Bool(true),
-		gocraft.Bool(false),
-		gocraft.Byte(math.MinInt8),
-		gocraft.UByte(math.MaxUint8),
-		gocraft.Short(math.MinInt16),
-		gocraft.UShort(math.MaxUint16),
-		gocraft.Int(math.MinInt32),
-		gocraft.Long(math.MinInt64),
-		gocraft.Float(math.Pi),
-		gocraft.Double(-math.MaxFloat64),
-		gocraft.VarInt(-1),
-		gocraft.VarLong(math.MinInt64),
-		gocraft.String("gocraft ⛏"),
+	fields := []codec.Field{
+		codec.Bool(true),
+		codec.Bool(false),
+		codec.Byte(math.MinInt8),
+		codec.UByte(math.MaxUint8),
+		codec.Short(math.MinInt16),
+		codec.UShort(math.MaxUint16),
+		codec.Int(math.MinInt32),
+		codec.Long(math.MinInt64),
+		codec.Float(math.Pi),
+		codec.Double(-math.MaxFloat64),
+		codec.VarInt(-1),
+		codec.VarLong(math.MinInt64),
+		codec.String("gocraft ⛏"),
 		id,
-		gocraft.Slice[gocraft.VarInt]{0, -1, 25565, math.MaxInt32},
-		gocraft.Slice[profileEntry]{
+		codec.Slice[codec.VarInt]{0, -1, 25565, math.MaxInt32},
+		codec.Slice[profileEntry]{
 			{Name: "steve", ID: id},
 			{Name: "alex"},
 		},
-		gocraft.Some(gocraft.String("skin-data")),
-		gocraft.None[gocraft.String](),
+		codec.Some(codec.String("skin-data")),
+		codec.None[codec.String](),
 	}
 
 	for _, field := range fields {
 		decoded := reflect.New(reflect.TypeOf(field))
 
-		if err := gocraft.Unmarshal(field.Append(nil), decoded.Interface().(gocraft.FieldPtr)); err != nil {
+		if err := codec.Unmarshal(field.Append(nil), decoded.Interface().(codec.FieldPtr)); err != nil {
 			t.Errorf("decode %#v: %v", field, err)
 			continue
 		}
@@ -91,16 +91,16 @@ func TestFixedEncodingAgainstStdlib(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	payload := gocraft.Marshal(
-		gocraft.Bool(true),
-		gocraft.Byte(math.MinInt8),
-		gocraft.UByte(math.MaxUint8),
-		gocraft.Short(math.MinInt16),
-		gocraft.UShort(25565),
-		gocraft.Int(math.MinInt32),
-		gocraft.Long(math.MinInt64),
-		gocraft.Float(math.Pi),
-		gocraft.Double(math.Pi),
+	payload := codec.Marshal(
+		codec.Bool(true),
+		codec.Byte(math.MinInt8),
+		codec.UByte(math.MaxUint8),
+		codec.Short(math.MinInt16),
+		codec.UShort(25565),
+		codec.Int(math.MinInt32),
+		codec.Long(math.MinInt64),
+		codec.Float(math.Pi),
+		codec.Double(math.Pi),
 	)
 
 	if !bytes.Equal(payload, expected.Bytes()) {
@@ -109,21 +109,21 @@ func TestFixedEncodingAgainstStdlib(t *testing.T) {
 }
 
 func TestMarshalUnmarshalHandshake(t *testing.T) {
-	payload := gocraft.Marshal(
-		gocraft.VarInt(765),
-		gocraft.String("mc.local"),
-		gocraft.UShort(25565),
-		gocraft.VarInt(1),
+	payload := codec.Marshal(
+		codec.VarInt(765),
+		codec.String("mc.local"),
+		codec.UShort(25565),
+		codec.VarInt(1),
 	)
 
 	var (
-		protocolVersion gocraft.VarInt
-		serverAddress   gocraft.String
-		serverPort      gocraft.UShort
-		nextState       gocraft.VarInt
+		protocolVersion codec.VarInt
+		serverAddress   codec.String
+		serverPort      codec.UShort
+		nextState       codec.VarInt
 	)
 
-	if err := gocraft.Unmarshal(payload, &protocolVersion, &serverAddress, &serverPort, &nextState); err != nil {
+	if err := codec.Unmarshal(payload, &protocolVersion, &serverAddress, &serverPort, &nextState); err != nil {
 		t.Fatal(err)
 	}
 
@@ -134,13 +134,13 @@ func TestMarshalUnmarshalHandshake(t *testing.T) {
 }
 
 func TestStringRejectsMalformedPayload(t *testing.T) {
-	truncated := gocraft.String("gocraft").Append(nil)
+	truncated := codec.String("gocraft").Append(nil)
 
 	tests := []struct {
 		input []byte
 	}{
 		{
-			input: gocraft.AppendVar(nil, int32(-1)),
+			input: codec.AppendVar(nil, int32(-1)),
 		},
 		{
 			input: truncated[:len(truncated)-1],
@@ -148,36 +148,36 @@ func TestStringRejectsMalformedPayload(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		var s gocraft.String
+		var s codec.String
 
-		if err := gocraft.Unmarshal(tt.input, &s); err == nil {
+		if err := codec.Unmarshal(tt.input, &s); err == nil {
 			t.Errorf("Unmarshal(%x): expected an error, got nil", tt.input)
 		}
 	}
 }
 
 func TestSliceRejectsOverclaimedCount(t *testing.T) {
-	var s gocraft.Slice[gocraft.VarInt]
+	var s codec.Slice[codec.VarInt]
 
-	if err := gocraft.Unmarshal(gocraft.AppendVar(nil, int32(math.MaxInt32)), &s); err == nil {
+	if err := codec.Unmarshal(codec.AppendVar(nil, int32(math.MaxInt32)), &s); err == nil {
 		t.Error("expected an error, got nil")
 	}
 }
 
 func TestOptionGet(t *testing.T) {
-	value, ok := gocraft.Some(gocraft.VarInt(7)).Get()
+	value, ok := codec.Some(codec.VarInt(7)).Get()
 
 	if !ok || value != 7 {
 		t.Errorf("Some(7).Get() = (%d, %t), want (7, true)", value, ok)
 	}
 
-	if _, ok := gocraft.None[gocraft.VarInt]().Get(); ok {
+	if _, ok := codec.None[codec.VarInt]().Get(); ok {
 		t.Error("None().Get() reported presence")
 	}
 }
 
 func TestNoneEncodesAsSingleByte(t *testing.T) {
-	raw := gocraft.None[gocraft.VarInt]().Append(nil)
+	raw := codec.None[codec.VarInt]().Append(nil)
 
 	if len(raw) != 1 {
 		t.Errorf("None() encoded as %d bytes, want 1", len(raw))

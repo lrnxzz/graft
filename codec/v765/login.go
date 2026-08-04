@@ -1,10 +1,13 @@
 package v765
 
-import gocraft "github.com/lrnxzz/go-craft"
+import (
+	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
+)
 
 type LoginStart struct {
-	Username gocraft.String
-	UUID     gocraft.UUID
+	Username codec.String
+	UUID     codec.UUID
 }
 
 func (*LoginStart) ID() int32 {
@@ -15,26 +18,26 @@ func (*LoginStart) Name() string {
 	return "LoginStart"
 }
 
-func (*LoginStart) State() gocraft.State {
-	return gocraft.StateLogin
+func (*LoginStart) State() codec.State {
+	return codec.StateLogin
 }
 
-func (*LoginStart) Direction() gocraft.Direction {
-	return gocraft.Serverbound
+func (*LoginStart) Direction() codec.Direction {
+	return codec.Serverbound
 }
 
 func (p LoginStart) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.Username, p.UUID)
+	return codec.AppendAll(dst, p.Username, p.UUID)
 }
 
-func (p *LoginStart) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.Username, &p.UUID)
+func (p *LoginStart) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.Username, &p.UUID)
 }
 
 type EncryptionBegin struct {
-	ServerID    gocraft.String
-	PublicKey   gocraft.Bytes
-	VerifyToken gocraft.Bytes
+	ServerID    codec.String
+	PublicKey   codec.Bytes
+	VerifyToken codec.Bytes
 }
 
 func (*EncryptionBegin) ID() int32 {
@@ -45,20 +48,20 @@ func (*EncryptionBegin) Name() string {
 	return "EncryptionBegin"
 }
 
-func (*EncryptionBegin) State() gocraft.State {
-	return gocraft.StateLogin
+func (*EncryptionBegin) State() codec.State {
+	return codec.StateLogin
 }
 
-func (*EncryptionBegin) Direction() gocraft.Direction {
-	return gocraft.Clientbound
+func (*EncryptionBegin) Direction() codec.Direction {
+	return codec.Clientbound
 }
 
 func (p EncryptionBegin) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.ServerID, p.PublicKey, p.VerifyToken)
+	return codec.AppendAll(dst, p.ServerID, p.PublicKey, p.VerifyToken)
 }
 
-func (p *EncryptionBegin) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.ServerID, &p.PublicKey, &p.VerifyToken)
+func (p *EncryptionBegin) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.ServerID, &p.PublicKey, &p.VerifyToken)
 }
 
 type LoginAcknowledged struct{}
@@ -71,40 +74,40 @@ func (*LoginAcknowledged) Name() string {
 	return "LoginAcknowledged"
 }
 
-func (*LoginAcknowledged) State() gocraft.State {
-	return gocraft.StateLogin
+func (*LoginAcknowledged) State() codec.State {
+	return codec.StateLogin
 }
 
-func (*LoginAcknowledged) Direction() gocraft.Direction {
-	return gocraft.Serverbound
+func (*LoginAcknowledged) Direction() codec.Direction {
+	return codec.Serverbound
 }
 
 func (LoginAcknowledged) Append(dst []byte) []byte {
 	return dst
 }
 
-func (*LoginAcknowledged) Decode(*gocraft.Reader) error {
+func (*LoginAcknowledged) Decode(*codec.Reader) error {
 	return nil
 }
 
 type Property struct {
-	Name      gocraft.String
-	Value     gocraft.String
-	Signature gocraft.Option[gocraft.String]
+	Name      codec.String
+	Value     codec.String
+	Signature codec.Option[codec.String]
 }
 
 func (p Property) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.Name, p.Value, p.Signature)
+	return codec.AppendAll(dst, p.Name, p.Value, p.Signature)
 }
 
-func (p *Property) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.Name, &p.Value, &p.Signature)
+func (p *Property) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.Name, &p.Value, &p.Signature)
 }
 
 type LoginSuccess struct {
-	UUID       gocraft.UUID
-	Username   gocraft.String
-	Properties gocraft.Slice[Property]
+	UUID       codec.UUID
+	Username   codec.String
+	Properties codec.Slice[Property]
 }
 
 func (*LoginSuccess) ID() int32 {
@@ -115,20 +118,20 @@ func (*LoginSuccess) Name() string {
 	return "LoginSuccess"
 }
 
-func (*LoginSuccess) State() gocraft.State {
-	return gocraft.StateLogin
+func (*LoginSuccess) State() codec.State {
+	return codec.StateLogin
 }
 
-func (*LoginSuccess) Direction() gocraft.Direction {
-	return gocraft.Clientbound
+func (*LoginSuccess) Direction() codec.Direction {
+	return codec.Clientbound
 }
 
 func (p LoginSuccess) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.UUID, p.Username, p.Properties)
+	return codec.AppendAll(dst, p.UUID, p.Username, p.Properties)
 }
 
-func (p *LoginSuccess) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.UUID, &p.Username, &p.Properties)
+func (p *LoginSuccess) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.UUID, &p.Username, &p.Properties)
 }
 
 func (p *LoginSuccess) Apply(player *gocraft.Player) {
@@ -137,7 +140,7 @@ func (p *LoginSuccess) Apply(player *gocraft.Player) {
 }
 
 type SetCompression struct {
-	Threshold gocraft.VarInt
+	Threshold codec.VarInt
 }
 
 func (*SetCompression) ID() int32 {
@@ -148,24 +151,24 @@ func (*SetCompression) Name() string {
 	return "SetCompression"
 }
 
-func (*SetCompression) State() gocraft.State {
-	return gocraft.StateLogin
+func (*SetCompression) State() codec.State {
+	return codec.StateLogin
 }
 
-func (*SetCompression) Direction() gocraft.Direction {
-	return gocraft.Clientbound
+func (*SetCompression) Direction() codec.Direction {
+	return codec.Clientbound
 }
 
 func (p SetCompression) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.Threshold)
+	return codec.AppendAll(dst, p.Threshold)
 }
 
-func (p *SetCompression) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.Threshold)
+func (p *SetCompression) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.Threshold)
 }
 
 type LoginDisconnect struct {
-	Reason gocraft.String
+	Reason codec.String
 }
 
 func (*LoginDisconnect) ID() int32 {
@@ -176,18 +179,18 @@ func (*LoginDisconnect) Name() string {
 	return "LoginDisconnect"
 }
 
-func (*LoginDisconnect) State() gocraft.State {
-	return gocraft.StateLogin
+func (*LoginDisconnect) State() codec.State {
+	return codec.StateLogin
 }
 
-func (*LoginDisconnect) Direction() gocraft.Direction {
-	return gocraft.Clientbound
+func (*LoginDisconnect) Direction() codec.Direction {
+	return codec.Clientbound
 }
 
 func (p LoginDisconnect) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.Reason)
+	return codec.AppendAll(dst, p.Reason)
 }
 
-func (p *LoginDisconnect) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.Reason)
+func (p *LoginDisconnect) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.Reason)
 }

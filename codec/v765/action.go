@@ -1,20 +1,23 @@
 package v765
 
-import gocraft "github.com/lrnxzz/go-craft"
+import (
+	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
+)
 
 const (
-	digStart  gocraft.VarInt = 0
-	digCancel gocraft.VarInt = 1
-	digFinish gocraft.VarInt = 2
+	digStart  codec.VarInt = 0
+	digCancel codec.VarInt = 1
+	digFinish codec.VarInt = 2
 
-	mainHand gocraft.VarInt = 0
+	mainHand codec.VarInt = 0
 )
 
 type PlayerAction struct {
-	Status   gocraft.VarInt
+	Status   codec.VarInt
 	Location gocraft.Position
-	Face     gocraft.Byte
-	Sequence gocraft.VarInt
+	Face     codec.Byte
+	Sequence codec.VarInt
 }
 
 func (*PlayerAction) ID() int32 {
@@ -25,31 +28,31 @@ func (*PlayerAction) Name() string {
 	return "PlayerAction"
 }
 
-func (*PlayerAction) State() gocraft.State {
-	return gocraft.StatePlay
+func (*PlayerAction) State() codec.State {
+	return codec.StatePlay
 }
 
-func (*PlayerAction) Direction() gocraft.Direction {
-	return gocraft.Serverbound
+func (*PlayerAction) Direction() codec.Direction {
+	return codec.Serverbound
 }
 
 func (p PlayerAction) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.Status, p.Location, p.Face, p.Sequence)
+	return codec.AppendAll(dst, p.Status, p.Location, p.Face, p.Sequence)
 }
 
-func (p *PlayerAction) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.Status, &p.Location, &p.Face, &p.Sequence)
+func (p *PlayerAction) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.Status, &p.Location, &p.Face, &p.Sequence)
 }
 
 type UseItemOn struct {
-	Hand        gocraft.VarInt
+	Hand        codec.VarInt
 	Location    gocraft.Position
-	Face        gocraft.VarInt
-	CursorX     gocraft.Float
-	CursorY     gocraft.Float
-	CursorZ     gocraft.Float
-	InsideBlock gocraft.Bool
-	Sequence    gocraft.VarInt
+	Face        codec.VarInt
+	CursorX     codec.Float
+	CursorY     codec.Float
+	CursorZ     codec.Float
+	InsideBlock codec.Bool
+	Sequence    codec.VarInt
 }
 
 func (*UseItemOn) ID() int32 {
@@ -60,26 +63,26 @@ func (*UseItemOn) Name() string {
 	return "UseItemOn"
 }
 
-func (*UseItemOn) State() gocraft.State {
-	return gocraft.StatePlay
+func (*UseItemOn) State() codec.State {
+	return codec.StatePlay
 }
 
-func (*UseItemOn) Direction() gocraft.Direction {
-	return gocraft.Serverbound
+func (*UseItemOn) Direction() codec.Direction {
+	return codec.Serverbound
 }
 
 func (p UseItemOn) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.Hand, p.Location, p.Face,
+	return codec.AppendAll(dst, p.Hand, p.Location, p.Face,
 		p.CursorX, p.CursorY, p.CursorZ, p.InsideBlock, p.Sequence)
 }
 
-func (p *UseItemOn) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.Hand, &p.Location, &p.Face,
+func (p *UseItemOn) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.Hand, &p.Location, &p.Face,
 		&p.CursorX, &p.CursorY, &p.CursorZ, &p.InsideBlock, &p.Sequence)
 }
 
 type AcknowledgeBlockChange struct {
-	Sequence gocraft.VarInt
+	Sequence codec.VarInt
 }
 
 func (*AcknowledgeBlockChange) ID() int32 {
@@ -90,18 +93,18 @@ func (*AcknowledgeBlockChange) Name() string {
 	return "AcknowledgeBlockChange"
 }
 
-func (*AcknowledgeBlockChange) State() gocraft.State {
-	return gocraft.StatePlay
+func (*AcknowledgeBlockChange) State() codec.State {
+	return codec.StatePlay
 }
 
-func (*AcknowledgeBlockChange) Direction() gocraft.Direction {
-	return gocraft.Clientbound
+func (*AcknowledgeBlockChange) Direction() codec.Direction {
+	return codec.Clientbound
 }
 
 func (p AcknowledgeBlockChange) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.Sequence)
+	return codec.AppendAll(dst, p.Sequence)
 }
 
-func (p *AcknowledgeBlockChange) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.Sequence)
+func (p *AcknowledgeBlockChange) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.Sequence)
 }

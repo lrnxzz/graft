@@ -1,6 +1,10 @@
 package gocraft
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/lrnxzz/go-craft/codec"
+)
 
 const DefaultNamespace = "minecraft"
 
@@ -11,11 +15,11 @@ func NewIdentifier(namespace, path string) Identifier {
 }
 
 func (i Identifier) Append(dst []byte) []byte {
-	return String(i).Append(dst)
+	return codec.String(i).Append(dst)
 }
 
-func (i *Identifier) Decode(r *Reader) error {
-	var raw String
+func (i *Identifier) Decode(r *codec.Reader) error {
+	var raw codec.String
 	if err := raw.Decode(r); err != nil {
 		return err
 	}

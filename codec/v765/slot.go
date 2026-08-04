@@ -1,12 +1,15 @@
 package v765
 
-import gocraft "github.com/lrnxzz/go-craft"
+import (
+	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
+)
 
 type Slot struct {
-	Present gocraft.Bool
-	Item    gocraft.VarInt
-	Count   gocraft.Byte
-	Data    gocraft.NBT
+	Present codec.Bool
+	Item    codec.VarInt
+	Count   codec.Byte
+	Data    codec.NBT
 }
 
 func slotOf(stack gocraft.ItemStack) Slot {
@@ -16,8 +19,8 @@ func slotOf(stack gocraft.ItemStack) Slot {
 
 	return Slot{
 		Present: true,
-		Item:    gocraft.VarInt(stack.Item),
-		Count:   gocraft.Byte(stack.Count),
+		Item:    codec.VarInt(stack.Item),
+		Count:   codec.Byte(stack.Count),
 		Data:    stack.Data,
 	}
 }
@@ -27,10 +30,10 @@ func (s Slot) Append(dst []byte) []byte {
 		return s.Present.Append(dst)
 	}
 
-	return gocraft.AppendAll(dst, s.Present, s.Item, s.Count, s.Data)
+	return codec.AppendAll(dst, s.Present, s.Item, s.Count, s.Data)
 }
 
-func (s *Slot) Decode(r *gocraft.Reader) error {
+func (s *Slot) Decode(r *codec.Reader) error {
 	if err := s.Present.Decode(r); err != nil {
 		return err
 	}
@@ -40,7 +43,7 @@ func (s *Slot) Decode(r *gocraft.Reader) error {
 		return nil
 	}
 
-	return gocraft.DecodeAll(r, &s.Item, &s.Count, &s.Data)
+	return codec.DecodeAll(r, &s.Item, &s.Count, &s.Data)
 }
 
 func (s Slot) Stack() gocraft.ItemStack {
@@ -56,14 +59,14 @@ func (s Slot) Stack() gocraft.ItemStack {
 }
 
 type ChangedSlot struct {
-	Index gocraft.Short
+	Index codec.Short
 	Item  Slot
 }
 
 func (c ChangedSlot) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, c.Index, c.Item)
+	return codec.AppendAll(dst, c.Index, c.Item)
 }
 
-func (c *ChangedSlot) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &c.Index, &c.Item)
+func (c *ChangedSlot) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &c.Index, &c.Item)
 }

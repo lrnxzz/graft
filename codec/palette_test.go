@@ -1,18 +1,19 @@
-package gocraft_test
+package codec_test
 
 import (
 	"testing"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 )
 
 func TestPalettedContainerDecodesSingleValued(t *testing.T) {
 	payload := []byte{0}
-	payload = gocraft.AppendVar(payload, gocraft.VarInt(42))
-	payload = gocraft.AppendVar(payload, gocraft.VarInt(0))
+	payload = codec.AppendVar(payload, codec.VarInt(42))
+	payload = codec.AppendVar(payload, codec.VarInt(0))
 
 	container := gocraft.BlockStates()
-	if err := container.Decode(gocraft.NewReader(payload)); err != nil {
+	if err := container.Decode(codec.NewReader(payload)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -26,21 +27,21 @@ func TestPalettedContainerDecodesSingleValued(t *testing.T) {
 func TestPalettedContainerDecodesIndirect(t *testing.T) {
 	payload := []byte{4}
 
-	payload = gocraft.AppendVar(payload, gocraft.VarInt(3))
-	for _, value := range []gocraft.VarInt{10, 20, 30} {
-		payload = gocraft.AppendVar(payload, value)
+	payload = codec.AppendVar(payload, codec.VarInt(3))
+	for _, value := range []codec.VarInt{10, 20, 30} {
+		payload = codec.AppendVar(payload, value)
 	}
 
 	longs := make([]uint64, 256)
 	longs[0] = 0<<0 | 1<<4 | 2<<8
 
-	payload = gocraft.AppendVar(payload, gocraft.VarInt(len(longs)))
+	payload = codec.AppendVar(payload, codec.VarInt(len(longs)))
 	for _, long := range longs {
-		payload = gocraft.Long(long).Append(payload)
+		payload = codec.Long(long).Append(payload)
 	}
 
 	container := gocraft.BlockStates()
-	if err := container.Decode(gocraft.NewReader(payload)); err != nil {
+	if err := container.Decode(codec.NewReader(payload)); err != nil {
 		t.Fatal(err)
 	}
 

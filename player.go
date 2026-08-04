@@ -1,6 +1,8 @@
 package gocraft
 
 import (
+	"github.com/lrnxzz/go-craft/codec"
+
 	"fmt"
 	"math"
 )
@@ -48,7 +50,7 @@ type Abilities struct {
 
 type Player struct {
 	EntityID        int32
-	UUID            UUID
+	UUID            codec.UUID
 	Username        string
 	Position        Vec3d
 	Yaw             float32

@@ -1,4 +1,4 @@
-package gocraft_test
+package codec_test
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 	"testing"
 	"unsafe"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 )
 
 type varintDomain interface {
@@ -40,7 +40,7 @@ func stdlibLeb128[T varintDomain](v T) []byte {
 
 func TestAppendVarAgainstStdlib(t *testing.T) {
 	for _, value := range boundaries[int32]() {
-		got := gocraft.AppendVar(nil, value)
+		got := codec.AppendVar(nil, value)
 		want := stdlibLeb128(value)
 
 		if !bytes.Equal(got, want) {
@@ -49,7 +49,7 @@ func TestAppendVarAgainstStdlib(t *testing.T) {
 	}
 
 	for _, value := range boundaries[int64]() {
-		got := gocraft.AppendVar(nil, value)
+		got := codec.AppendVar(nil, value)
 		want := stdlibLeb128(value)
 
 		if !bytes.Equal(got, want) {
@@ -60,10 +60,10 @@ func TestAppendVarAgainstStdlib(t *testing.T) {
 
 func TestReadVarRecoversEncodedValue(t *testing.T) {
 	for _, value := range boundaries[int32]() {
-		got, err := gocraft.ReadVar[int32](bytes.NewReader(gocraft.AppendVar(nil, value)))
+		got, err := codec.ReadVar[int32](bytes.NewReader(codec.AppendVar(nil, value)))
 
 		if err != nil {
-			t.Errorf("ReadVar(AppendVar(int32 %d)): %v", value, err)
+			t.Errorf("ReadVar(codec.AppendVar(int32 %d)): %v", value, err)
 			continue
 		}
 		if got != value {
@@ -72,10 +72,10 @@ func TestReadVarRecoversEncodedValue(t *testing.T) {
 	}
 
 	for _, value := range boundaries[int64]() {
-		got, err := gocraft.ReadVar[int64](bytes.NewReader(gocraft.AppendVar(nil, value)))
+		got, err := codec.ReadVar[int64](bytes.NewReader(codec.AppendVar(nil, value)))
 
 		if err != nil {
-			t.Errorf("ReadVar(AppendVar(int64 %d)): %v", value, err)
+			t.Errorf("ReadVar(codec.AppendVar(int64 %d)): %v", value, err)
 			continue
 		}
 		if got != value {
@@ -86,8 +86,8 @@ func TestReadVarRecoversEncodedValue(t *testing.T) {
 
 func TestVarLenAgainstEncoding(t *testing.T) {
 	for _, value := range boundaries[int32]() {
-		got := gocraft.VarLen(value)
-		want := len(gocraft.AppendVar(nil, value))
+		got := codec.VarLen(value)
+		want := len(codec.AppendVar(nil, value))
 
 		if got != want {
 			t.Errorf("VarLen(int32 %d) = %d, want %d", value, got, want)
@@ -95,8 +95,8 @@ func TestVarLenAgainstEncoding(t *testing.T) {
 	}
 
 	for _, value := range boundaries[int64]() {
-		got := gocraft.VarLen(value)
-		want := len(gocraft.AppendVar(nil, value))
+		got := codec.VarLen(value)
+		want := len(codec.AppendVar(nil, value))
 
 		if got != want {
 			t.Errorf("VarLen(int64 %d) = %d, want %d", value, got, want)
@@ -105,7 +105,7 @@ func TestVarLenAgainstEncoding(t *testing.T) {
 }
 
 func TestReadVarOnMalformedInput(t *testing.T) {
-	unterminated := bytes.Repeat(gocraft.AppendVar(nil, int32(math.MinInt32))[:1], 16)
+	unterminated := bytes.Repeat(codec.AppendVar(nil, int32(math.MinInt32))[:1], 16)
 
 	tests := []struct {
 		input   []byte
@@ -116,7 +116,7 @@ func TestReadVarOnMalformedInput(t *testing.T) {
 			wantErr: io.EOF,
 		},
 		{
-			input:   gocraft.AppendVar(nil, int32(math.MaxInt32))[:2],
+			input:   codec.AppendVar(nil, int32(math.MaxInt32))[:2],
 			wantErr: io.ErrUnexpectedEOF,
 		},
 		{
@@ -128,7 +128,7 @@ func TestReadVarOnMalformedInput(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		_, err := gocraft.ReadVar[int32](bytes.NewReader(tt.input))
+		_, err := codec.ReadVar[int32](bytes.NewReader(tt.input))
 
 		if err == nil {
 			t.Errorf("ReadVar(%x): expected an error, got nil", tt.input)
@@ -139,12 +139,12 @@ func TestReadVarOnMalformedInput(t *testing.T) {
 		}
 	}
 
-	if _, err := gocraft.ReadVar[int64](bytes.NewReader(unterminated)); err == nil {
+	if _, err := codec.ReadVar[int64](bytes.NewReader(unterminated)); err == nil {
 		t.Error("ReadVar[int64](unterminated): expected an error, got nil")
 	}
 
 	overlong := append(bytes.Repeat([]byte{0xFF}, 9), 0x02)
-	if _, err := gocraft.ReadVar[int64](bytes.NewReader(overlong)); err == nil {
+	if _, err := codec.ReadVar[int64](bytes.NewReader(overlong)); err == nil {
 		t.Error("ReadVar[int64](overlong): expected an error, got nil")
 	}
 }

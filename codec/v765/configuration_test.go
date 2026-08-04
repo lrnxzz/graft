@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 	v765 "github.com/lrnxzz/go-craft/codec/v765"
 	"github.com/lrnxzz/go-craft/nbt"
 )
@@ -22,7 +23,7 @@ func TestClientInformationPreservesSettings(t *testing.T) {
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StateConfiguration, gocraft.Serverbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StateConfiguration, codec.Serverbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +42,7 @@ func TestConfigKeepAliveDecodesInBothDirections(t *testing.T) {
 	challenge := &v765.ConfigKeepAlive{
 		KeepAliveID: 1234567890,
 	}
-	decoded, ok, err := proto.Decode(gocraft.StateConfiguration, gocraft.Clientbound, gocraft.EncodeFrame(challenge))
+	decoded, ok, err := proto.Decode(codec.StateConfiguration, codec.Clientbound, codec.EncodeFrame(challenge))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +56,7 @@ func TestConfigKeepAliveDecodesInBothDirections(t *testing.T) {
 	response := &v765.ConfigKeepAliveResponse{
 		KeepAliveID: 1234567890,
 	}
-	decoded, ok, err = proto.Decode(gocraft.StateConfiguration, gocraft.Serverbound, gocraft.EncodeFrame(response))
+	decoded, ok, err = proto.Decode(codec.StateConfiguration, codec.Serverbound, codec.EncodeFrame(response))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,13 +70,13 @@ func TestConfigKeepAliveDecodesInBothDirections(t *testing.T) {
 
 func TestConfigDisconnectCarriesNBTReason(t *testing.T) {
 	original := &v765.ConfigDisconnect{
-		Reason: gocraft.NBT{
+		Reason: codec.NBT{
 			"text": nbt.String("kicked"),
 		},
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StateConfiguration, gocraft.Clientbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StateConfiguration, codec.Clientbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +91,7 @@ func TestConfigDisconnectCarriesNBTReason(t *testing.T) {
 
 func TestRegistryDataCarriesNBTCodec(t *testing.T) {
 	original := &v765.RegistryData{
-		Codec: gocraft.NBT{
+		Codec: codec.NBT{
 			"minecraft:dimension_type": nbt.Compound{
 				"type": nbt.String("minecraft:dimension_type"),
 			},
@@ -98,7 +99,7 @@ func TestRegistryDataCarriesNBTCodec(t *testing.T) {
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StateConfiguration, gocraft.Clientbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StateConfiguration, codec.Clientbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,11 +114,11 @@ func TestRegistryDataCarriesNBTCodec(t *testing.T) {
 
 func TestFeatureFlagsCarriesFeatureList(t *testing.T) {
 	original := &v765.FeatureFlags{
-		Features: gocraft.Slice[gocraft.Identifier]{"minecraft:vanilla", "minecraft:bundle"},
+		Features: codec.Slice[gocraft.Identifier]{"minecraft:vanilla", "minecraft:bundle"},
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StateConfiguration, gocraft.Clientbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StateConfiguration, codec.Clientbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}

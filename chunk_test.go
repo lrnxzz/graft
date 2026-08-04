@@ -4,27 +4,28 @@ import (
 	"testing"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 )
 
-func singleSection(block, biome gocraft.VarInt) []byte {
+func singleSection(block, biome codec.VarInt) []byte {
 	var payload []byte
 
-	payload = gocraft.Short(1).Append(payload)
+	payload = codec.Short(1).Append(payload)
 
 	payload = append(payload, 0)
-	payload = gocraft.AppendVar(payload, block)
-	payload = gocraft.AppendVar(payload, gocraft.VarInt(0))
+	payload = codec.AppendVar(payload, block)
+	payload = codec.AppendVar(payload, codec.VarInt(0))
 
 	payload = append(payload, 0)
-	payload = gocraft.AppendVar(payload, biome)
-	payload = gocraft.AppendVar(payload, gocraft.VarInt(0))
+	payload = codec.AppendVar(payload, biome)
+	payload = codec.AppendVar(payload, codec.VarInt(0))
 
 	return payload
 }
 
 func TestChunkSectionDecodesBlocksAndBiomes(t *testing.T) {
 	var section gocraft.ChunkSection
-	if err := section.Decode(gocraft.NewReader(singleSection(5, 7))); err != nil {
+	if err := section.Decode(codec.NewReader(singleSection(5, 7))); err != nil {
 		t.Fatal(err)
 	}
 
@@ -40,7 +41,7 @@ func TestColumnResolvesSectionByWorldY(t *testing.T) {
 	payload := append(singleSection(10, 0), singleSection(20, 0)...)
 
 	column := gocraft.ChunkColumn(3, -4, -64, 32)
-	if err := column.Decode(gocraft.NewReader(payload)); err != nil {
+	if err := column.Decode(codec.NewReader(payload)); err != nil {
 		t.Fatal(err)
 	}
 

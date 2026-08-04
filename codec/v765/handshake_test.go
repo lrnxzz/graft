@@ -3,7 +3,7 @@ package v765_test
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 	v765 "github.com/lrnxzz/go-craft/codec/v765"
 )
 
@@ -12,11 +12,11 @@ func TestHandshakeCarriesConnectionParameters(t *testing.T) {
 		ProtocolVersion: v765.ProtocolVersion,
 		ServerAddress:   "mc.local",
 		ServerPort:      25565,
-		NextState:       gocraft.VarInt(gocraft.StateLogin),
+		NextState:       codec.VarInt(codec.StateLogin),
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StateHandshaking, gocraft.Serverbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StateHandshaking, codec.Serverbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}

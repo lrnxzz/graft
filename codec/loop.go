@@ -1,4 +1,4 @@
-package gocraft
+package codec
 
 import (
 	"context"

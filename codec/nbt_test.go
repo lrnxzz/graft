@@ -1,26 +1,26 @@
-package gocraft_test
+package codec_test
 
 import (
 	"reflect"
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 	"github.com/lrnxzz/go-craft/nbt"
 )
 
 func TestNBTFieldAdvancesReader(t *testing.T) {
-	original := gocraft.NBT{
+	original := codec.NBT{
 		"text": nbt.String("hello"),
 		"n":    nbt.Int(7),
 	}
 
-	payload := gocraft.AppendAll(nil, original, gocraft.VarInt(42))
+	payload := codec.AppendAll(nil, original, codec.VarInt(42))
 
 	var (
-		got     gocraft.NBT
-		trailer gocraft.VarInt
+		got     codec.NBT
+		trailer codec.VarInt
 	)
-	if err := gocraft.Unmarshal(payload, &got, &trailer); err != nil {
+	if err := codec.Unmarshal(payload, &got, &trailer); err != nil {
 		t.Fatal(err)
 	}
 
@@ -33,13 +33,13 @@ func TestNBTFieldAdvancesReader(t *testing.T) {
 }
 
 func TestNBTDecodesTagEndAsAbsent(t *testing.T) {
-	payload := gocraft.AppendAll(nil, gocraft.NBT(nil), gocraft.VarInt(9))
+	payload := codec.AppendAll(nil, codec.NBT(nil), codec.VarInt(9))
 
 	var (
-		decoded gocraft.NBT
-		trailer gocraft.VarInt
+		decoded codec.NBT
+		trailer codec.VarInt
 	)
-	if err := gocraft.Unmarshal(payload, &decoded, &trailer); err != nil {
+	if err := codec.Unmarshal(payload, &decoded, &trailer); err != nil {
 		t.Fatal(err)
 	}
 

@@ -4,18 +4,18 @@ import (
 	"reflect"
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 	v765 "github.com/lrnxzz/go-craft/codec/v765"
 )
 
 func TestLoginStartCarriesUsernameAndUUID(t *testing.T) {
 	original := &v765.LoginStart{
 		Username: "gocraft",
-		UUID:     gocraft.UUID{0x11, 0x22, 0x33},
+		UUID:     codec.UUID{0x11, 0x22, 0x33},
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StateLogin, gocraft.Serverbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StateLogin, codec.Serverbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,16 +30,16 @@ func TestLoginStartCarriesUsernameAndUUID(t *testing.T) {
 
 func TestLoginSuccessCarriesProfileProperties(t *testing.T) {
 	original := &v765.LoginSuccess{
-		UUID:     gocraft.UUID{0xAB, 0xCD},
+		UUID:     codec.UUID{0xAB, 0xCD},
 		Username: "gocraft",
-		Properties: gocraft.Slice[v765.Property]{
-			{Name: "textures", Value: "base64", Signature: gocraft.Some(gocraft.String("sig"))},
+		Properties: codec.Slice[v765.Property]{
+			{Name: "textures", Value: "base64", Signature: codec.Some(codec.String("sig"))},
 			{Name: "plain", Value: "value"},
 		},
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StateLogin, gocraft.Clientbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StateLogin, codec.Clientbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,14 +53,14 @@ func TestLoginSuccessCarriesProfileProperties(t *testing.T) {
 }
 
 func TestLoginAcknowledgedIsEmpty(t *testing.T) {
-	frame := gocraft.EncodeFrame(&v765.LoginAcknowledged{})
+	frame := codec.EncodeFrame(&v765.LoginAcknowledged{})
 
 	if len(frame.Payload) != 0 {
 		t.Errorf("login acknowledged payload = %d bytes, want 0", len(frame.Payload))
 	}
 
 	proto := v765.Protocol()
-	_, ok, err := proto.Decode(gocraft.StateLogin, gocraft.Serverbound, frame)
+	_, ok, err := proto.Decode(codec.StateLogin, codec.Serverbound, frame)
 	if err != nil {
 		t.Fatal(err)
 	}

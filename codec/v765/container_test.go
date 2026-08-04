@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 	v765 "github.com/lrnxzz/go-craft/codec/v765"
 	"github.com/lrnxzz/go-craft/nbt"
 )
@@ -18,14 +19,14 @@ func TestSlotRoundTripsThroughContainerSlot(t *testing.T) {
 			Present: true,
 			Item:    276,
 			Count:   1,
-			Data: gocraft.NBT{
+			Data: codec.NBT{
 				"Damage": nbt.Int(3),
 			},
 		},
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StatePlay, gocraft.Clientbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StatePlay, codec.Clientbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +53,7 @@ func TestEmptySlotCarriesNoPayload(t *testing.T) {
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StatePlay, gocraft.Clientbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StatePlay, codec.Clientbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +68,7 @@ func TestEmptySlotCarriesNoPayload(t *testing.T) {
 }
 
 func TestSetContainerContentLoadsEverySlot(t *testing.T) {
-	slots := make(gocraft.Slice[v765.Slot], gocraft.InventorySize)
+	slots := make(codec.Slice[v765.Slot], gocraft.InventorySize)
 	slots[gocraft.SlotHotbarStart] = v765.Slot{
 		Present: true,
 		Item:    1,
@@ -86,7 +87,7 @@ func TestSetContainerContentLoadsEverySlot(t *testing.T) {
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StatePlay, gocraft.Clientbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StatePlay, codec.Clientbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +114,7 @@ func TestClickContainerRoundTripsChangedSlots(t *testing.T) {
 		Index:    10,
 		Button:   4,
 		Mode:     2,
-		Changed: gocraft.Slice[v765.ChangedSlot]{
+		Changed: codec.Slice[v765.ChangedSlot]{
 			{
 				Index: 10,
 				Item: v765.Slot{
@@ -130,7 +131,7 @@ func TestClickContainerRoundTripsChangedSlots(t *testing.T) {
 	}
 
 	proto := v765.Protocol()
-	decoded, ok, err := proto.Decode(gocraft.StatePlay, gocraft.Serverbound, gocraft.EncodeFrame(original))
+	decoded, ok, err := proto.Decode(codec.StatePlay, codec.Serverbound, codec.EncodeFrame(original))
 	if err != nil {
 		t.Fatal(err)
 	}

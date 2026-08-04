@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 )
 
 func TestIdentifierParts(t *testing.T) {
@@ -81,7 +82,7 @@ func TestIdentifierRecoversEncodedValue(t *testing.T) {
 	want := gocraft.NewIdentifier("mymod", "block/custom")
 
 	var got gocraft.Identifier
-	if err := gocraft.Unmarshal(want.Append(nil), &got); err != nil {
+	if err := codec.Unmarshal(want.Append(nil), &got); err != nil {
 		t.Fatal(err)
 	}
 

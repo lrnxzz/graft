@@ -1,16 +1,18 @@
 package gocraft
 
+import "github.com/lrnxzz/go-craft/codec"
+
 type BiomeID int32
 
-var biomePalette = paletteType{
-	entries:     64,
-	indirectMax: 3,
-	directBits:  6,
+var biomePalette = codec.PaletteType{
+	Entries:     64,
+	IndirectMax: 3,
+	DirectBits:  6,
 }
 
-func Biomes() PalettedContainer[BiomeID] {
-	return PalettedContainer[BiomeID]{
-		paletteType: biomePalette,
+func Biomes() codec.PalettedContainer[BiomeID] {
+	return codec.PalettedContainer[BiomeID]{
+		PaletteType: biomePalette,
 	}
 }
 

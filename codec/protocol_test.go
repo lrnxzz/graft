@@ -1,14 +1,14 @@
-package gocraft_test
+package codec_test
 
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 )
 
 type keepAlivePacket struct {
-	Nonce gocraft.Long
-	Label gocraft.String
+	Nonce codec.Long
+	Label codec.String
 }
 
 func (*keepAlivePacket) ID() int32 {
@@ -19,19 +19,19 @@ func (*keepAlivePacket) Name() string {
 	return "KeepAlive"
 }
 
-func (*keepAlivePacket) State() gocraft.State {
-	return gocraft.StatePlay
+func (*keepAlivePacket) State() codec.State {
+	return codec.StatePlay
 }
 
-func (*keepAlivePacket) Direction() gocraft.Direction {
-	return gocraft.Clientbound
+func (*keepAlivePacket) Direction() codec.Direction {
+	return codec.Clientbound
 }
 
 func (p keepAlivePacket) Append(dst []byte) []byte {
-	return gocraft.Marshal(p.Nonce, p.Label)
+	return codec.Marshal(p.Nonce, p.Label)
 }
 
-func (p *keepAlivePacket) Decode(r *gocraft.Reader) error {
+func (p *keepAlivePacket) Decode(r *codec.Reader) error {
 	if err := p.Nonce.Decode(r); err != nil {
 		return err
 	}
@@ -40,16 +40,16 @@ func (p *keepAlivePacket) Decode(r *gocraft.Reader) error {
 }
 
 func TestProtocolDecodesRegisteredPacket(t *testing.T) {
-	proto := gocraft.NewProtocol()
-	gocraft.Bind[keepAlivePacket](proto)
+	proto := codec.NewProtocol()
+	codec.Bind[keepAlivePacket](proto)
 
 	original := &keepAlivePacket{
 		Nonce: 99,
 		Label: "alive",
 	}
-	frame := gocraft.EncodeFrame(original)
+	frame := codec.EncodeFrame(original)
 
-	packet, ok, err := proto.Decode(gocraft.StatePlay, gocraft.Clientbound, frame)
+	packet, ok, err := proto.Decode(codec.StatePlay, codec.Clientbound, frame)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,9 +67,9 @@ func TestProtocolDecodesRegisteredPacket(t *testing.T) {
 }
 
 func TestProtocolUnknownPacket(t *testing.T) {
-	proto := gocraft.NewProtocol()
+	proto := codec.NewProtocol()
 
-	_, ok, err := proto.Decode(gocraft.StatePlay, gocraft.Clientbound, gocraft.Frame{
+	_, ok, err := proto.Decode(codec.StatePlay, codec.Clientbound, codec.Frame{
 		ID: 0x99,
 	})
 	if err != nil {
@@ -81,20 +81,20 @@ func TestProtocolUnknownPacket(t *testing.T) {
 }
 
 func TestProtocolIsolatesStateAndDirection(t *testing.T) {
-	proto := gocraft.NewProtocol()
-	gocraft.Bind[keepAlivePacket](proto)
+	proto := codec.NewProtocol()
+	codec.Bind[keepAlivePacket](proto)
 
-	if _, ok := proto.NewPacket(gocraft.StateLogin, gocraft.Clientbound, 0x2A); ok {
+	if _, ok := proto.NewPacket(codec.StateLogin, codec.Clientbound, 0x2A); ok {
 		t.Error("packet leaked across states")
 	}
-	if _, ok := proto.NewPacket(gocraft.StatePlay, gocraft.Serverbound, 0x2A); ok {
+	if _, ok := proto.NewPacket(codec.StatePlay, codec.Serverbound, 0x2A); ok {
 		t.Error("packet leaked across directions")
 	}
 }
 
 func TestBindPanicsOnDuplicateRegistration(t *testing.T) {
-	proto := gocraft.NewProtocol()
-	gocraft.Bind[keepAlivePacket](proto)
+	proto := codec.NewProtocol()
+	codec.Bind[keepAlivePacket](proto)
 
 	defer func() {
 		if recover() == nil {
@@ -102,14 +102,14 @@ func TestBindPanicsOnDuplicateRegistration(t *testing.T) {
 		}
 	}()
 
-	gocraft.Bind[keepAlivePacket](proto)
+	codec.Bind[keepAlivePacket](proto)
 }
 
 func TestStateAndDirectionString(t *testing.T) {
-	if got := gocraft.StatePlay.String(); got != "play" {
+	if got := codec.StatePlay.String(); got != "play" {
 		t.Errorf("StatePlay.String() = %q, want play", got)
 	}
-	if got := gocraft.Clientbound.String(); got != "clientbound" {
+	if got := codec.Clientbound.String(); got != "clientbound" {
 		t.Errorf("Clientbound.String() = %q, want clientbound", got)
 	}
 }

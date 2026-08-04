@@ -1,4 +1,4 @@
-package gocraft_test
+package codec_test
 
 import (
 	"context"
@@ -7,28 +7,28 @@ import (
 	"testing"
 	"time"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	"github.com/lrnxzz/go-craft/codec"
 )
 
 func TestClientDispatchesReceivedPacket(t *testing.T) {
 	clientSide, serverSide := net.Pipe()
 
-	proto := gocraft.NewProtocol()
-	gocraft.Bind[keepAlivePacket](proto)
+	proto := codec.NewProtocol()
+	codec.Bind[keepAlivePacket](proto)
 
-	client := gocraft.NewClient(gocraft.NewConn(clientSide), proto)
-	client.SetState(gocraft.StatePlay)
+	client := codec.NewClient(codec.NewConn(clientSide), proto)
+	client.SetState(codec.StatePlay)
 
 	got := make(chan keepAlivePacket, 1)
-	gocraft.On[*keepAlivePacket](client, func(c *gocraft.Client, p *keepAlivePacket) error {
+	codec.On[*keepAlivePacket](client, func(c *codec.Client, p *keepAlivePacket) error {
 		got <- *p
 
 		return c.Close()
 	})
 
 	go func() {
-		server := gocraft.NewConn(serverSide)
-		server.WriteFrame(gocraft.EncodeFrame(&keepAlivePacket{
+		server := codec.NewConn(serverSide)
+		server.WriteFrame(codec.EncodeFrame(&keepAlivePacket{
 			Nonce: 7,
 			Label: "hi",
 		}))
@@ -51,18 +51,18 @@ func TestClientDispatchesReceivedPacket(t *testing.T) {
 func TestClientSkipsUnhandledPackets(t *testing.T) {
 	clientSide, serverSide := net.Pipe()
 
-	proto := gocraft.NewProtocol()
-	gocraft.Bind[keepAlivePacket](proto)
+	proto := codec.NewProtocol()
+	codec.Bind[keepAlivePacket](proto)
 
-	client := gocraft.NewClient(gocraft.NewConn(clientSide), proto)
-	client.SetState(gocraft.StatePlay)
+	client := codec.NewClient(codec.NewConn(clientSide), proto)
+	client.SetState(codec.StatePlay)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 
 	go func() {
-		server := gocraft.NewConn(serverSide)
-		server.WriteFrame(gocraft.EncodeFrame(&keepAlivePacket{
+		server := codec.NewConn(serverSide)
+		server.WriteFrame(codec.EncodeFrame(&keepAlivePacket{
 			Nonce: 1,
 		}))
 	}()
@@ -75,7 +75,7 @@ func TestClientSkipsUnhandledPackets(t *testing.T) {
 func TestClientStopsOnContextCancel(t *testing.T) {
 	clientSide, _ := net.Pipe()
 
-	client := gocraft.NewClient(gocraft.NewConn(clientSide), gocraft.NewProtocol())
+	client := codec.NewClient(codec.NewConn(clientSide), codec.NewProtocol())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -88,15 +88,15 @@ func TestClientStopsOnContextCancel(t *testing.T) {
 func TestClientReaderNotBlockedByPendingWrites(t *testing.T) {
 	clientSide, serverSide := net.Pipe()
 
-	proto := gocraft.NewProtocol()
-	gocraft.Bind[keepAlivePacket](proto)
+	proto := codec.NewProtocol()
+	codec.Bind[keepAlivePacket](proto)
 
-	client := gocraft.NewClient(gocraft.NewConn(clientSide), proto)
-	client.SetState(gocraft.StatePlay)
+	client := codec.NewClient(codec.NewConn(clientSide), proto)
+	client.SetState(codec.StatePlay)
 
 	const count = 2
-	seen := make(chan gocraft.Long, count)
-	gocraft.On[*keepAlivePacket](client, func(c *gocraft.Client, p *keepAlivePacket) error {
+	seen := make(chan codec.Long, count)
+	codec.On[*keepAlivePacket](client, func(c *codec.Client, p *keepAlivePacket) error {
 		seen <- p.Nonce
 
 		return c.Send(&keepAlivePacket{Nonce: p.Nonce})
@@ -106,9 +106,9 @@ func TestClientReaderNotBlockedByPendingWrites(t *testing.T) {
 	defer cancel()
 	go client.Run(ctx)
 
-	server := gocraft.NewConn(serverSide)
+	server := codec.NewConn(serverSide)
 	for i := range count {
-		if err := server.WriteFrame(gocraft.EncodeFrame(&keepAlivePacket{Nonce: gocraft.Long(i + 1)})); err != nil {
+		if err := server.WriteFrame(codec.EncodeFrame(&keepAlivePacket{Nonce: codec.Long(i + 1)})); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -125,7 +125,7 @@ func TestClientReaderNotBlockedByPendingWrites(t *testing.T) {
 func TestClientSendEncodesFrame(t *testing.T) {
 	clientSide, serverSide := net.Pipe()
 
-	client := gocraft.NewClient(gocraft.NewConn(clientSide), gocraft.NewProtocol())
+	client := codec.NewClient(codec.NewConn(clientSide), codec.NewProtocol())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -135,7 +135,7 @@ func TestClientSendEncodesFrame(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	server := gocraft.NewConn(serverSide)
+	server := codec.NewConn(serverSide)
 	frame, err := server.ReadFrame()
 	if err != nil {
 		t.Fatal(err)

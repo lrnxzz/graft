@@ -1,11 +1,13 @@
 package v765
 
-import gocraft "github.com/lrnxzz/go-craft"
+import (
+	"github.com/lrnxzz/go-craft/codec"
+)
 
 type SetContainerContent struct {
-	WindowID gocraft.UByte
-	StateID  gocraft.VarInt
-	Slots    gocraft.Slice[Slot]
+	WindowID codec.UByte
+	StateID  codec.VarInt
+	Slots    codec.Slice[Slot]
 	Carried  Slot
 }
 
@@ -17,26 +19,26 @@ func (*SetContainerContent) Name() string {
 	return "SetContainerContent"
 }
 
-func (*SetContainerContent) State() gocraft.State {
-	return gocraft.StatePlay
+func (*SetContainerContent) State() codec.State {
+	return codec.StatePlay
 }
 
-func (*SetContainerContent) Direction() gocraft.Direction {
-	return gocraft.Clientbound
+func (*SetContainerContent) Direction() codec.Direction {
+	return codec.Clientbound
 }
 
 func (p SetContainerContent) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.WindowID, p.StateID, p.Slots, p.Carried)
+	return codec.AppendAll(dst, p.WindowID, p.StateID, p.Slots, p.Carried)
 }
 
-func (p *SetContainerContent) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.WindowID, &p.StateID, &p.Slots, &p.Carried)
+func (p *SetContainerContent) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.WindowID, &p.StateID, &p.Slots, &p.Carried)
 }
 
 type SetContainerSlot struct {
-	WindowID gocraft.Byte
-	StateID  gocraft.VarInt
-	Index    gocraft.Short
+	WindowID codec.Byte
+	StateID  codec.VarInt
+	Index    codec.Short
 	Data     Slot
 }
 
@@ -48,24 +50,24 @@ func (*SetContainerSlot) Name() string {
 	return "SetContainerSlot"
 }
 
-func (*SetContainerSlot) State() gocraft.State {
-	return gocraft.StatePlay
+func (*SetContainerSlot) State() codec.State {
+	return codec.StatePlay
 }
 
-func (*SetContainerSlot) Direction() gocraft.Direction {
-	return gocraft.Clientbound
+func (*SetContainerSlot) Direction() codec.Direction {
+	return codec.Clientbound
 }
 
 func (p SetContainerSlot) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.WindowID, p.StateID, p.Index, p.Data)
+	return codec.AppendAll(dst, p.WindowID, p.StateID, p.Index, p.Data)
 }
 
-func (p *SetContainerSlot) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.WindowID, &p.StateID, &p.Index, &p.Data)
+func (p *SetContainerSlot) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.WindowID, &p.StateID, &p.Index, &p.Data)
 }
 
 type SetHeldItem struct {
-	Slot gocraft.Byte
+	Slot codec.Byte
 }
 
 func (*SetHeldItem) ID() int32 {
@@ -76,24 +78,24 @@ func (*SetHeldItem) Name() string {
 	return "SetHeldItem"
 }
 
-func (*SetHeldItem) State() gocraft.State {
-	return gocraft.StatePlay
+func (*SetHeldItem) State() codec.State {
+	return codec.StatePlay
 }
 
-func (*SetHeldItem) Direction() gocraft.Direction {
-	return gocraft.Clientbound
+func (*SetHeldItem) Direction() codec.Direction {
+	return codec.Clientbound
 }
 
 func (p SetHeldItem) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.Slot)
+	return codec.AppendAll(dst, p.Slot)
 }
 
-func (p *SetHeldItem) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.Slot)
+func (p *SetHeldItem) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.Slot)
 }
 
 type HeldItemChange struct {
-	Slot gocraft.Short
+	Slot codec.Short
 }
 
 func (*HeldItemChange) ID() int32 {
@@ -104,35 +106,35 @@ func (*HeldItemChange) Name() string {
 	return "HeldItemChange"
 }
 
-func (*HeldItemChange) State() gocraft.State {
-	return gocraft.StatePlay
+func (*HeldItemChange) State() codec.State {
+	return codec.StatePlay
 }
 
-func (*HeldItemChange) Direction() gocraft.Direction {
-	return gocraft.Serverbound
+func (*HeldItemChange) Direction() codec.Direction {
+	return codec.Serverbound
 }
 
 func (p HeldItemChange) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.Slot)
+	return codec.AppendAll(dst, p.Slot)
 }
 
-func (p *HeldItemChange) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.Slot)
+func (p *HeldItemChange) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.Slot)
 }
 
 const (
-	clickPickup   gocraft.VarInt = 0
-	clickSwap     gocraft.VarInt = 2
-	offhandButton gocraft.Byte   = 40
+	clickPickup   codec.VarInt = 0
+	clickSwap     codec.VarInt = 2
+	offhandButton codec.Byte   = 40
 )
 
 type ClickContainer struct {
-	WindowID gocraft.UByte
-	StateID  gocraft.VarInt
-	Index    gocraft.Short
-	Button   gocraft.Byte
-	Mode     gocraft.VarInt
-	Changed  gocraft.Slice[ChangedSlot]
+	WindowID codec.UByte
+	StateID  codec.VarInt
+	Index    codec.Short
+	Button   codec.Byte
+	Mode     codec.VarInt
+	Changed  codec.Slice[ChangedSlot]
 	Carried  Slot
 }
 
@@ -144,24 +146,24 @@ func (*ClickContainer) Name() string {
 	return "ClickContainer"
 }
 
-func (*ClickContainer) State() gocraft.State {
-	return gocraft.StatePlay
+func (*ClickContainer) State() codec.State {
+	return codec.StatePlay
 }
 
-func (*ClickContainer) Direction() gocraft.Direction {
-	return gocraft.Serverbound
+func (*ClickContainer) Direction() codec.Direction {
+	return codec.Serverbound
 }
 
 func (p ClickContainer) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.WindowID, p.StateID, p.Index, p.Button, p.Mode, p.Changed, p.Carried)
+	return codec.AppendAll(dst, p.WindowID, p.StateID, p.Index, p.Button, p.Mode, p.Changed, p.Carried)
 }
 
-func (p *ClickContainer) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.WindowID, &p.StateID, &p.Index, &p.Button, &p.Mode, &p.Changed, &p.Carried)
+func (p *ClickContainer) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.WindowID, &p.StateID, &p.Index, &p.Button, &p.Mode, &p.Changed, &p.Carried)
 }
 
 type CloseContainer struct {
-	WindowID gocraft.UByte
+	WindowID codec.UByte
 }
 
 func (*CloseContainer) ID() int32 {
@@ -172,18 +174,18 @@ func (*CloseContainer) Name() string {
 	return "CloseContainer"
 }
 
-func (*CloseContainer) State() gocraft.State {
-	return gocraft.StatePlay
+func (*CloseContainer) State() codec.State {
+	return codec.StatePlay
 }
 
-func (*CloseContainer) Direction() gocraft.Direction {
-	return gocraft.Serverbound
+func (*CloseContainer) Direction() codec.Direction {
+	return codec.Serverbound
 }
 
 func (p CloseContainer) Append(dst []byte) []byte {
-	return gocraft.AppendAll(dst, p.WindowID)
+	return codec.AppendAll(dst, p.WindowID)
 }
 
-func (p *CloseContainer) Decode(r *gocraft.Reader) error {
-	return gocraft.DecodeAll(r, &p.WindowID)
+func (p *CloseContainer) Decode(r *codec.Reader) error {
+	return codec.DecodeAll(r, &p.WindowID)
 }

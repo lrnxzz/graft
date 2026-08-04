@@ -6,6 +6,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/agent"
+	"github.com/lrnxzz/go-craft/codec"
 	"github.com/lrnxzz/go-craft/viewer/gpu"
 )
 
@@ -66,7 +67,7 @@ func (e *eye) follow(snapshot agent.Snapshot, now float64) {
 		e.since = now
 	}
 
-	alpha := float32(min((now-e.since)/gocraft.TickRate.Seconds(), 1))
+	alpha := float32(min((now-e.since)/codec.TickRate.Seconds(), 1))
 	at := e.from.Add(e.to.Sub(e.from).Mul(alpha))
 
 	e.camera.Position = at

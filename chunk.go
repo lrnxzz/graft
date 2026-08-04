@@ -1,6 +1,10 @@
 package gocraft
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/lrnxzz/go-craft/codec"
+)
 
 const chunkWidth = 16
 
@@ -31,16 +35,16 @@ func (c ChunkPos) String() string {
 }
 
 type ChunkSection struct {
-	blockCount Short
-	blocks     PalettedContainer[BlockState]
-	biomes     PalettedContainer[BiomeID]
+	blockCount codec.Short
+	blocks     codec.PalettedContainer[BlockState]
+	biomes     codec.PalettedContainer[BiomeID]
 }
 
-func (s *ChunkSection) Decode(r *Reader) error {
+func (s *ChunkSection) Decode(r *codec.Reader) error {
 	s.blocks = BlockStates()
 	s.biomes = Biomes()
 
-	return DecodeAll(r, &s.blockCount, &s.blocks, &s.biomes)
+	return codec.DecodeAll(r, &s.blockCount, &s.blocks, &s.biomes)
 }
 
 func (s ChunkSection) Empty() bool {
@@ -99,7 +103,7 @@ func (c *Column) Pos() ChunkPos {
 	return Chunk(c.X, c.Z)
 }
 
-func (c *Column) Decode(r *Reader) error {
+func (c *Column) Decode(r *codec.Reader) error {
 	for i := range c.sections {
 		if err := c.sections[i].Decode(r); err != nil {
 			return err
