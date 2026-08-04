@@ -245,8 +245,8 @@ func bindBlockAt(r *Runtime, eyes Sighted) any {
 
 func bindOn(r *Runtime, watcher Watcher) any {
 	return func(event string, handle goja.Callable) bool {
-		raise := func(payload map[string]any) {
-			_, _ = handle(goja.Undefined(), r.vm.ToValue(payload))
+		raise := func(notice Notice) {
+			_, _ = handle(goja.Undefined(), r.vm.ToValue(notice))
 		}
 
 		return watcher.Watch(event, raise)
@@ -255,8 +255,8 @@ func bindOn(r *Runtime, watcher Watcher) any {
 
 func bindBefore(r *Runtime, guard Guard) any {
 	return func(intent string, handle goja.Callable) bool {
-		ask := func(payload map[string]any) string {
-			return r.veto(handle, payload)
+		ask := func(about Intent) string {
+			return r.veto(handle, about)
 		}
 
 		return guard.Guard(intent, ask)
@@ -268,7 +268,7 @@ func (r *Runtime) vec3(value goja.Value) Vec3 {
 }
 
 // an empty answer lets the intent through; anything else is the refusal
-func (r *Runtime) veto(handle goja.Callable, payload map[string]any) string {
+func (r *Runtime) veto(handle goja.Callable, about Intent) string {
 	refused := ""
 
 	cancel := func(reason string) {
@@ -279,8 +279,17 @@ func (r *Runtime) veto(handle goja.Callable, payload map[string]any) string {
 		refused = reason
 	}
 
+	// the intent arrives as a goja-wrapped struct, which takes no new properties,
+	// so its fields are copied onto a plain object that cancel can join
+	wrapped := r.vm.ToValue(about).ToObject(r.vm)
+
 	event := r.vm.NewObject()
-	bridge := into(r.vm, event).all(payload)
+	bridge := into(r.vm, event)
+
+	for _, name := range wrapped.Keys() {
+		bridge.set(name, wrapped.Get(name))
+	}
+
 	bridge.set("cancel", cancel)
 
 	if bridge.done() != nil {

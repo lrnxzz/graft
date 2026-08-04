@@ -36,19 +36,18 @@ declare module "gocraft" {
 
   export interface Events {
     spawned: { at: Vec3 }
-    arrived: { at: Vec3; goal: Goal }
-    chat: { from: string; text: string }
-    blockChanged: { at: Vec3; from: Block; to: Block }
+    arrived: { at: Vec3; reason: string }
+    chat: { text: string }
+    blockChanged: { at: Vec3; block: Block }
     health: { hp: number; food: number }
-    died: { by?: string }
     disconnected: { reason: string }
   }
 
   export interface Intents {
-    dig: { block: Vec3; type: Block; tool: Item }
+    dig: { block: Vec3; tool: Item }
     place: { block: Vec3; item: Item }
     chat: { text: string }
-    move: { to: Vec3 }
+    move: {}
   }
 
   export type Intent<T> = T & {

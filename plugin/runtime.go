@@ -22,7 +22,9 @@ type Runtime struct {
 
 func Load(source Source, bot Bot) (*Runtime, error) {
 	vm := goja.New()
-	vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
+	// the json tag is what a plugin reads, so it is what the bridge exposes: a
+	// struct field renamed in Go must not silently rename the property too
+	vm.SetFieldNameMapper(goja.TagFieldNameMapper("json", true))
 
 	runtime := &Runtime{
 		vm:     vm,

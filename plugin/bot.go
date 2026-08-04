@@ -46,11 +46,11 @@ type Speaker interface {
 }
 
 type Watcher interface {
-	Watch(event string, handle func(data map[string]any)) bool
+	Watch(event string, handle func(Notice)) bool
 }
 
 type Guard interface {
-	Guard(intent string, handle func(data map[string]any) string) bool
+	Guard(intent string, handle func(Intent) string) bool
 }
 
 type Target struct {

@@ -11,11 +11,11 @@ type wired struct {
 	idle
 	watched []string
 	guarded []string
-	fire    func(map[string]any)
-	veto    func(map[string]any) string
+	fire    func(plugin.Notice)
+	veto    func(plugin.Intent) string
 }
 
-func (w *wired) Watch(event string, handle func(map[string]any)) bool {
+func (w *wired) Watch(event string, handle func(plugin.Notice)) bool {
 	if event != "chat" {
 		return false
 	}
@@ -26,7 +26,7 @@ func (w *wired) Watch(event string, handle func(map[string]any)) bool {
 	return true
 }
 
-func (w *wired) Guard(intent string, handle func(map[string]any) string) bool {
+func (w *wired) Guard(intent string, handle func(plugin.Intent) string) bool {
 	if intent != "dig" {
 		return false
 	}
@@ -76,7 +76,11 @@ func TestANoticeReachesThePluginHandler(t *testing.T) {
 		t.Fatal("the plugin never subscribed to chat")
 	}
 
-	bot.fire(map[string]any{"text": "olá"})
+	said := plugin.Said{
+		Text: "olá",
+	}
+
+	bot.fire(said)
 }
 
 func TestAPluginCanRefuseAnIntent(t *testing.T) {
@@ -86,7 +90,13 @@ func TestAPluginCanRefuseAnIntent(t *testing.T) {
 		t.Fatal("the plugin never guarded dig")
 	}
 
-	refused := bot.veto(map[string]any{"block": plugin.Vec3{Y: 64}})
+	deep := plugin.Digging{
+		Block: plugin.Vec3{
+			Y: 64,
+		},
+	}
+
+	refused := bot.veto(deep)
 	if refused != "nothing is mined here" {
 		t.Errorf("refusal = %q, want the reason the plugin gave", refused)
 	}
