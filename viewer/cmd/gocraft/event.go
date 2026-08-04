@@ -5,88 +5,116 @@ import (
 	"github.com/lrnxzz/go-craft/plugin"
 )
 
-// The bot's events and intents are catalogues rather than switches, so adding one
-// is a line here and nothing else. Each entry knows only how to subscribe and how
-// to flatten its own payload; the plumbing around that is written once.
-//
-// The map is built per bot because subscribing needs the agent, and the payload
-// of some entries needs the bot to answer a question about the world.
+// built per bot because subscribing needs the agent, and some payloads need the
+// bot to answer a question about the world
 func (b bot) watching() map[string]func(func(map[string]any)) {
 	return map[string]func(func(map[string]any)){
-		"spawned": raise(b, func(e agent.Spawned) map[string]any {
-			return map[string]any{"at": spot(e.At)}
-		}),
-		"arrived": raise(b, func(e agent.Arrived) map[string]any {
-			return map[string]any{
-				"at":     spot(e.At.Corner()),
-				"reason": reason(e.Reason),
-			}
-		}),
-		"chat": raise(b, func(e agent.ChatReceived) map[string]any {
-			return map[string]any{"text": e.Line}
-		}),
-		"blockChanged": raise(b, func(e agent.BlockChanged) map[string]any {
-			return map[string]any{
-				"at":    spot(e.At.Corner()),
-				"block": b.BlockAt(spot(e.At.Corner())),
-			}
-		}),
-		"health": raise(b, func(e agent.HealthChanged) map[string]any {
-			return map[string]any{
-				"hp":   e.Health,
-				"food": e.Food,
-			}
-		}),
-		"disconnected": raise(b, func(e agent.Disconnected) map[string]any {
-			return map[string]any{"reason": e.Reason}
-		}),
+		"spawned":      raise(b, spawnedAt),
+		"arrived":      raise(b, arrivedAt),
+		"chat":         raise(b, chatSaid),
+		"blockChanged": raise(b, b.blockChanged),
+		"health":       raise(b, healthNow),
+		"disconnected": raise(b, disconnectedWhy),
 	}
 }
 
 func (b bot) guarding() map[string]func(func(map[string]any) string) {
 	return map[string]func(func(map[string]any) string){
-		"dig": veto(b, func(e *agent.Digging) map[string]any {
-			return map[string]any{
-				"block": spot(e.Block.Corner()),
-				"tool":  named(e.Tool),
-			}
-		}),
-		"place": veto(b, func(e *agent.Placing) map[string]any {
-			return map[string]any{
-				"block": spot(e.Block.Corner()),
-				"item":  named(e.Item),
-			}
-		}),
-		"chat": veto(b, func(e *agent.Chatting) map[string]any {
-			return map[string]any{"text": e.Message}
-		}),
-		"move": veto(b, func(*agent.Navigating) map[string]any {
-			return map[string]any{}
-		}),
+		"dig":   veto(b, digging),
+		"place": veto(b, placing),
+		"chat":  veto(b, chatting),
+		"move":  veto(b, navigating),
 	}
 }
 
-// raise subscribes to one notice and flattens it into what a plugin reads
+func spawnedAt(e agent.Spawned) map[string]any {
+	return map[string]any{
+		"at": spot(e.At),
+	}
+}
+
+func arrivedAt(e agent.Arrived) map[string]any {
+	return map[string]any{
+		"at":     spot(e.At.Corner()),
+		"reason": reason(e.Reason),
+	}
+}
+
+func chatSaid(e agent.ChatReceived) map[string]any {
+	return map[string]any{
+		"text": e.Line,
+	}
+}
+
+func (b bot) blockChanged(e agent.BlockChanged) map[string]any {
+	at := spot(e.At.Corner())
+
+	return map[string]any{
+		"at":    at,
+		"block": b.BlockAt(at),
+	}
+}
+
+func healthNow(e agent.HealthChanged) map[string]any {
+	return map[string]any{
+		"hp":   e.Health,
+		"food": e.Food,
+	}
+}
+
+func disconnectedWhy(e agent.Disconnected) map[string]any {
+	return map[string]any{
+		"reason": e.Reason,
+	}
+}
+
+func digging(e *agent.Digging) map[string]any {
+	return map[string]any{
+		"block": spot(e.Block.Corner()),
+		"tool":  named(e.Tool),
+	}
+}
+
+func placing(e *agent.Placing) map[string]any {
+	return map[string]any{
+		"block": spot(e.Block.Corner()),
+		"item":  named(e.Item),
+	}
+}
+
+func chatting(e *agent.Chatting) map[string]any {
+	return map[string]any{
+		"text": e.Message,
+	}
+}
+
+func navigating(*agent.Navigating) map[string]any {
+	return map[string]any{}
+}
+
 func raise[N agent.Notice](b bot, flatten func(N) map[string]any) func(func(map[string]any)) {
 	return func(handle func(map[string]any)) {
-		agent.On(b.agent, func(e N) {
+		notice := func(e N) {
 			handle(flatten(e))
-		})
+		}
+
+		agent.On(b.agent, notice)
 	}
 }
 
-// veto subscribes to one intent, and a handler that answers with a reason
-// refuses it. An empty answer lets it through.
+// an empty answer lets the intent through; anything else refuses it
 func veto[I agent.Intent](b bot, flatten func(I) map[string]any) func(func(map[string]any) string) {
 	return func(handle func(map[string]any) string) {
-		agent.Before(b.agent, func(e I) {
+		intent := func(e I) {
 			refused := handle(flatten(e))
 			if refused == "" {
 				return
 			}
 
 			e.Refuse(refused)
-		})
+		}
+
+		agent.Before(b.agent, intent)
 	}
 }
 

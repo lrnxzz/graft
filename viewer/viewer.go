@@ -125,9 +125,12 @@ func attach(window *gpu.Window, bot *agent.Agent) (*Viewer, error) {
 	}
 
 	chat := NewChat(window.Time)
-	agent.On(bot, func(e agent.ChatReceived) {
+
+	echo := func(e agent.ChatReceived) {
 		chat.Push(e.Line)
-	})
+	}
+
+	agent.On(bot, echo)
 
 	spawn := bot.Snapshot()
 	eye := eyeOf(spawn.Position)
@@ -189,12 +192,15 @@ func (v *Viewer) installDefaults() error {
 
 	v.Bind(gpu.KeyE, v.openInventory)
 	v.Bind(gpu.KeyP, v.togglePathfinder)
-	v.Bind(gpu.KeyT, func() {
+	say := func() {
 		v.openChat("")
-	})
-	v.Bind(gpu.KeySlash, func() {
+	}
+	command := func() {
 		v.openChat("/")
-	})
+	}
+
+	v.Bind(gpu.KeyT, say)
+	v.Bind(gpu.KeySlash, command)
 
 	return nil
 }

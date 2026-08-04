@@ -34,19 +34,9 @@ var (
 	failed error
 )
 
-// Open starts the engine against a resources directory, the one holding
-// icudt67l.dat and cacert.pem.
-//
-// The engine is one per process. WebKit keeps global state that survives a
-// destroyed renderer, and building a second one after any view has existed
-// segfaults, so every call hands back the same renderer and there is no way to
-// shut it down short of exiting. It also belongs to the thread that opened it,
-// the same rule the window already follows.
-//
-// The path is split internally on purpose: Ultralight wants a file system root
-// and a prefix within it, and handing it the resources directory as the root
-// makes it look for resources/resources. That mistake aborts the process with
-// no error and nothing on stdout, so the API takes the one path a caller knows.
+// Open takes the directory holding icudt67l.dat and cacert.pem, and splits it
+// into the root and prefix the engine wants: passing it whole aborts the process
+// with nothing on stdout. One renderer per process, on the thread that opened it.
 func Open(resources string) (*Renderer, error) {
 	cleaned := filepath.Clean(resources)
 
@@ -99,8 +89,7 @@ func open(resources string) (*Renderer, error) {
 	return &opened, nil
 }
 
-// Log sends the engine's own diagnostics to a file. Worth turning on while
-// integrating: most failures are reported there and nowhere else.
+// most of the engine's failures are reported here and nowhere else
 func Log(path string) {
 	written := text(path)
 	defer C.ulDestroyString(written)
@@ -108,8 +97,6 @@ func Log(path string) {
 	C.ulEnableDefaultLogger(written)
 }
 
-// Update lets timers, scripts and animations advance; Render paints whatever
-// changed. Both belong on the thread that made the renderer.
 func (r *Renderer) Update() {
 	C.ulUpdate(r.handle)
 }
@@ -183,13 +170,10 @@ func (v *View) Size() (width, height int) {
 	return v.width, v.height
 }
 
-// Loading reports whether the page is still coming up, which is how a caller
-// knows to keep pumping Update before trusting the first frame
 func (v *View) Loading() bool {
 	return bool(C.ulViewIsLoading(v.handle))
 }
 
-// Rect is the region of the view that changed since it was last cleared
 type Rect struct {
 	Left   int
 	Top    int
@@ -209,8 +193,6 @@ func (r Rect) Height() int {
 	return r.Bottom - r.Top
 }
 
-// Dirty answers what changed, so a frame uploads the region that moved rather
-// than the whole page
 func (v *View) Dirty() Rect {
 	surface := C.ulViewGetSurface(v.handle)
 	if surface == nil {
@@ -236,9 +218,8 @@ func (v *View) Clean() {
 	C.ulSurfaceClearDirtyBounds(surface)
 }
 
-// Pixels hands the painted page to read, as BGRA rows of stride bytes. The
-// buffer is only valid for the duration of the call: it is the engine's own
-// memory, locked while inside and released on return.
+// Pixels reads BGRA rows of stride bytes. The buffer is the engine's own, locked
+// for the call and released on return, so it must not outlive it.
 func (v *View) Pixels(read func(pixels []byte, stride int)) {
 	surface := C.ulViewGetSurface(v.handle)
 	if surface == nil {
@@ -259,8 +240,6 @@ func (v *View) Pixels(read func(pixels []byte, stride int)) {
 	read(unsafe.Slice((*byte)(raw), size), stride)
 }
 
-// WritePNG saves the current frame, which is the cheapest way to check a layout
-// without a window
 func (v *View) WritePNG(path string) bool {
 	surface := C.ulViewGetSurface(v.handle)
 	if surface == nil {

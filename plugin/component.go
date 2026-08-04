@@ -436,7 +436,9 @@ func flattenChildren(given reading) []Node {
 
 	node, built := nodeOf(given)
 	if built {
-		return []Node{node}
+		only := []Node{node}
+
+		return only
 	}
 
 	items := given.items()

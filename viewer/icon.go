@@ -76,7 +76,6 @@ func (s *Iconset) Icon(item gocraft.ItemID) (gpu.UV, bool) {
 	return s.atlas.Tile(tile), true
 }
 
-// A page names a sprite by class, the same way the hud names it by item
 var mentioned = regexp.MustCompile(`icon-([a-z0-9_]+)`)
 
 const iconRules = `.icon{display:inline-block;flex:none;width:var(--icon,32px);height:var(--icon,32px);` +
@@ -84,16 +83,9 @@ const iconRules = `.icon{display:inline-block;flex:none;width:var(--icon,32px);h
 	`image-rendering:pixelated;image-rendering:-webkit-optimize-contrast}
 `
 
-// IconStylesheet writes css for exactly the sprites a page mentions, so that
-// <i class="icon icon-diamond_ore"></i> shows the same art the hud draws.
-//
-// Only what is named gets inlined, because the whole atlas cannot be: it is
-// 370 KB as one data uri and the engine silently refuses anything past about
-// 128 KB, which measured as a sprite that simply never appears. Cut one tile at
-// a time, a panel listing twenty ores costs a few kilobytes.
-//
-// It needs no gpu, so it is a plain function rather than a method on Iconset: a
-// page can be built and checked without a window.
+// IconStylesheet inlines only the sprites the markup names: the whole atlas is
+// 370 KB as one data uri, and the engine silently refuses anything past about
+// 128 KB, which shows up as a sprite that never appears.
 func IconStylesheet(markup string) (string, error) {
 	names := mentioned.FindAllStringSubmatch(markup, -1)
 	if len(names) == 0 {
@@ -136,9 +128,7 @@ func IconStylesheet(markup string) (string, error) {
 	return sheet.String(), nil
 }
 
-// cutting keeps what has already been cut out of the atlas. Pages reload on
-// every change, so the same tile is asked for over and over; the lock is there
-// because nothing in the type says which thread a page is built on.
+// pages reload on every change, so the same tile is asked for over and over
 type cutting struct {
 	sync.Mutex
 	atlas  image.Image
@@ -149,15 +139,10 @@ type cutting struct {
 
 var sprites = cutting{kept: map[int][]byte{}}
 
-// The engine ignores image-rendering entirely — pixelated, crisp-edges and
-// -webkit-optimize-contrast all measured identical to no rule at all, and a 16px
-// sprite blown up to 30px came out smeared. So the sprite is enlarged here, by
-// repeating pixels, and the engine only ever scales it down. Flat colour costs
-// almost nothing to encode at this size.
+// the engine ignores image-rendering in every spelling, so the sprite is enlarged
+// here by repeating pixels and the engine only ever scales it down
 const iconScale = 8
 
-// cutIcon crops one tile and keeps it, since a page reloads on every change and
-// re-encoding the same sprite each time would be paid for in frames
 func cutIcon(sheet atlas.Sheet, tile int) ([]byte, error) {
 	sprites.Lock()
 	defer sprites.Unlock()
@@ -167,9 +152,11 @@ func cutIcon(sheet atlas.Sheet, tile int) ([]byte, error) {
 		return kept, nil
 	}
 
-	sprites.read.Do(func() {
+	decode := func() {
 		sprites.atlas, sprites.failed = png.Decode(bytes.NewReader(iconsImage))
-	})
+	}
+
+	sprites.read.Do(decode)
 	if sprites.failed != nil {
 		return nil, sprites.failed
 	}

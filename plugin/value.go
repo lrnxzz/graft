@@ -223,10 +223,11 @@ func (i *installing) getter(name string, read func() any) *installing {
 		return i
 	}
 
-	i.err = i.object.DefineAccessorProperty(name,
-		i.vm.ToValue(func(goja.FunctionCall) goja.Value {
-			return i.vm.ToValue(read())
-		}),
+	get := func(goja.FunctionCall) goja.Value {
+		return i.vm.ToValue(read())
+	}
+
+	i.err = i.object.DefineAccessorProperty(name, i.vm.ToValue(get),
 		nil, goja.FLAG_FALSE, goja.FLAG_TRUE)
 
 	return i

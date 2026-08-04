@@ -14,8 +14,6 @@ const (
 	Right
 )
 
-// Modifier is the set of qualifier keys held while another key is struck. The C
-// header takes them as a bare unsigned int; these are the bits the engine reads.
 type Modifier uint
 
 const (
@@ -44,7 +42,6 @@ func (v *View) mouse(moved C.ULMouseEventType, x, y int, button Button) {
 	C.ulViewFireMouseEvent(v.handle, event)
 }
 
-// Scrolled moves the page by pixels, the same unit the wheel already reports
 func (v *View) Scrolled(dx, dy int) {
 	event := C.ulCreateScrollEvent(C.kScrollEventType_ScrollByPixel, C.int(dx), C.int(dy))
 	defer C.ulDestroyScrollEvent(event)
@@ -52,8 +49,7 @@ func (v *View) Scrolled(dx, dy int) {
 	C.ulViewFireScrollEvent(v.handle, event)
 }
 
-// Typed delivers text the window already composed, which is the only way accents
-// and layouts reach an input; a key code alone would spell them wrong
+// text the window already composed, which a key code alone would spell wrong
 func (v *View) Typed(typed string, held Modifier) {
 	written := text(typed)
 	defer C.ulDestroyString(written)
@@ -83,9 +79,8 @@ func (v *View) key(struck C.ULKeyEventType, code int, held Modifier, written C.U
 	C.ulViewFireKeyEvent(v.handle, event)
 }
 
-// The engine reads Windows virtual key codes even where it is not running on
-// Windows. Letters, digits and space already agree with GLFW's own numbering,
-// which is ASCII for all three; the rest have to be named.
+// the engine reads Windows virtual key codes on every platform; letters, digits
+// and space already agree with GLFW, the rest have to be named
 var virtualKeys = map[int]int{
 	257: 0x0D, // enter
 	256: 0x1B, // escape
@@ -96,9 +91,6 @@ var virtualKeys = map[int]int{
 	47:  0xBF, // slash
 }
 
-// Virtual translates a window's key code into the one the engine reads. It takes
-// a plain int rather than a key type so the engine keeps knowing nothing about
-// the window that feeds it.
 func Virtual(key int) int {
 	named, renamed := virtualKeys[key]
 	if renamed {
@@ -108,8 +100,6 @@ func Virtual(key int) int {
 	return key
 }
 
-// Focus decides whether the page believes it has the caret, which is what makes
-// an input show one and accept the keys that follow
 func (v *View) Focus(focused bool) {
 	if focused {
 		C.ulViewFocus(v.handle)

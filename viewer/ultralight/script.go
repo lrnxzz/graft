@@ -13,12 +13,8 @@ import (
 	"unsafe"
 )
 
-// Sends decides what happens when the page calls gocraft.send(name, ...). It has
-// to be set before the page loads: the window object is built once per load, and
-// a view nobody listens to simply never grows the function.
-//
-// The handler runs on the engine's thread, inside the page's own call, so it
-// must not block on the frame it was called from.
+// Sends has to be set before the page loads: the window object is built once per
+// load, and a view nobody listens to never grows the function at all.
 func (v *View) Sends(handle func(name string, args []string)) {
 	v.sends = handle
 
@@ -48,8 +44,6 @@ func goSend(owner C.uintptr_t, words **C.char, count C.int) {
 
 var errScript = errors.New("ultralight: the page refused the script")
 
-// Eval runs script in the page and answers what it evaluated to, which is how
-// state reaches a document that is already on screen without rebuilding it
 func (v *View) Eval(script string) (string, error) {
 	written := text(script)
 	defer C.ulDestroyString(written)
@@ -73,24 +67,21 @@ func decode(value C.ULString) string {
 	return C.GoStringN(C.ulStringGetData(value), C.int(C.ulStringGetLength(value)))
 }
 
-// Guard installs the handler that keeps the engine's own thread naming from
-// killing the process, and reports whether it took. On anything but Windows
-// there is nothing to guard against and it reports false.
+// Guard installs the handler that keeps the engine's thread naming from killing
+// the process, and reports whether it took. False everywhere but Windows.
 func Guard() bool {
 	C.ul_survive_thread_naming()
 
 	return C.ul_guard_installed() != 0
 }
 
-// Probe raises the very exception the guard exists for. Returning at all means
-// the guard held.
+// Probe raises the exception the guard exists for; returning means it held
 func Probe() {
 	C.ul_name_a_thread()
 }
 
-// Caught is how many exceptions reached the guard and how many of those were the
-// one it exists for. A zero on the left means the guard is registered but never
-// consulted, which is a different problem from a guard that declines.
+// zero seen means the guard is registered but never consulted, which is a
+// different problem from a guard that declines
 func Caught() (seen, caught int) {
 	return int(C.ul_exceptions_seen()), int(C.ul_exceptions_caught())
 }

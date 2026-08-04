@@ -9,9 +9,7 @@ import (
 	"github.com/lrnxzz/go-craft/viewer/ultralight"
 )
 
-// repaint advances the html engine, once, at the top of every frame. There is
-// one engine for the whole process, so leaving this to the pages would run it
-// again for each one on screen.
+// advances the html engine once a frame: there is one for the whole process
 type repaint struct {
 	engine *ultralight.Renderer
 }
@@ -25,9 +23,6 @@ func (r repaint) Draw(*viewer.Canvas) {
 	r.engine.Render()
 }
 
-// paged is the other sort of plugin menu: HTML and CSS drawn by the engine
-// rather than a tree of nodes drawn by the canvas. Clicks and the wheel go to
-// the document, and what the document sends comes back to the plugin.
 type paged struct {
 	menu   *plugin.Menu
 	page   *viewer.Page
@@ -35,8 +30,8 @@ type paged struct {
 	cursor gpu.Point
 }
 
-// the page is built here rather than on the first frame, so that a menu opened
-// and dismissed before it ever drew still has something to close
+// built here and not on the first frame, so a menu opened and dismissed before
+// it ever drew still has something to close
 func newPaged(engine *ultralight.Renderer, screen gpu.Rect, menu *plugin.Menu, markup string) *paged {
 	page := viewer.NewPage(engine, screen)
 
@@ -79,8 +74,6 @@ func (p *paged) refresh() {
 	p.page.Load(markup)
 }
 
-// document is what the engine loads: the plugin says what the menu is, the
-// viewer says how a page is drawn and which sprites it needs
 func document(menu *plugin.Menu) (string, error) {
 	written, is, err := menu.Page()
 	if err != nil || !is {

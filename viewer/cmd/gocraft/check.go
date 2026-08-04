@@ -72,9 +72,12 @@ func check() error {
 	engine.Render()
 
 	var alpha byte
-	view.Pixels(func(pixels []byte, stride int) {
+
+	sample := func(pixels []byte, stride int) {
 		alpha = pixels[90*stride+160*4+3]
-	})
+	}
+
+	view.Pixels(sample)
 	if alpha == 0 {
 		return errors.New("the page painted nothing")
 	}
