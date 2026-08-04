@@ -3,8 +3,12 @@ package host
 import (
 	"context"
 	"errors"
+	"fmt"
+	"time"
 
+	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/agent"
+	v765 "github.com/lrnxzz/go-craft/codec/v765"
 )
 
 // Plugin is the code a user writes. It runs once the bot is connected and the
@@ -21,6 +25,10 @@ type Plugin func(context.Context, *agent.Agent) error
 func Run(ctx context.Context, address, username string, plugin Plugin) error {
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
+
+	if err := speaks(ctx, address); err != nil {
+		return err
+	}
 
 	bot, err := agent.Join(ctx, address, username)
 	if err != nil {
@@ -58,3 +66,28 @@ func play(ctx context.Context, stop context.CancelFunc, bot *agent.Agent, plugin
 
 	return plugin(ctx, bot)
 }
+
+// speaks asks the server which protocol it talks before anything tries to log
+// in. A mismatched login gets no reply at all — the connection simply sits there
+// — so without this the client waits for a handshake that will never come, with
+// nothing on screen to say why.
+//
+// The check is a courtesy, not a gate: a server that refuses to be pinged is
+// still worth trying, and only a version it states outright is worth refusing.
+func speaks(ctx context.Context, address string) error {
+	asking, stop := context.WithTimeout(ctx, statusTimeout)
+	defer stop()
+
+	status, err := gocraft.Ping(asking, address)
+	if err != nil {
+		return nil
+	}
+	if status.Version.Protocol == v765.ProtocolVersion {
+		return nil
+	}
+
+	return fmt.Errorf("host: %s speaks protocol %d (%s) and this client speaks %d (1.20.4)",
+		address, status.Version.Protocol, status.Version.Name, v765.ProtocolVersion)
+}
+
+const statusTimeout = 10 * time.Second
