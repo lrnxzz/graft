@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	gocraft "github.com/lrnxzz/go-craft"
@@ -26,9 +27,7 @@ func Run(ctx context.Context, address, username string, plugin Plugin) error {
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
 
-	if err := speaks(ctx, address); err != nil {
-		return err
-	}
+	warnAboutProtocol(ctx, address)
 
 	bot, err := agent.Join(ctx, address, username)
 	if err != nil {
@@ -60,34 +59,53 @@ func ended(err error) bool {
 func play(ctx context.Context, stop context.CancelFunc, bot *agent.Agent, plugin Plugin) error {
 	defer stop()
 
-	if err := bot.Ready(ctx); err != nil {
+	if err := spawn(ctx, bot); err != nil {
 		return err
 	}
 
 	return plugin(ctx, bot)
 }
 
-// speaks asks the server which protocol it talks before anything tries to log
-// in. A mismatched login gets no reply at all — the connection simply sits there
-// — so without this the client waits for a handshake that will never come, with
-// nothing on screen to say why.
-//
-// The check is a courtesy, not a gate: a server that refuses to be pinged is
-// still worth trying, and only a version it states outright is worth refusing.
-func speaks(ctx context.Context, address string) error {
+// spawn waits for the world with a deadline, because a login that is accepted
+// and then goes quiet is otherwise indistinguishable from a slow one. A proxy
+// holding the bot in a waiting room looks exactly like this: logged in, ticking,
+// and no terrain will ever arrive.
+func spawn(ctx context.Context, bot *agent.Agent) error {
+	waiting, stop := context.WithTimeout(ctx, spawnTimeout)
+	defer stop()
+
+	err := bot.Ready(waiting)
+	if err == nil {
+		return nil
+	}
+	if ctx.Err() != nil || !errors.Is(err, context.DeadlineExceeded) {
+		return err
+	}
+
+	return fmt.Errorf("host: logged in but no world arrived in %s — the server may speak another "+
+		"protocol, or be holding the bot somewhere before letting it in", spawnTimeout)
+}
+
+const spawnTimeout = 45 * time.Second
+
+// warnAboutProtocol says what the server answers the status query with, when it
+// is not what this client speaks. It only warns: a server running ViaVersion
+// reports its own version here and still accepts an older client at login, so a
+// refusal would turn a working connection into a refused one. If the login does
+// then go quiet, this line is already in the log to explain it.
+func warnAboutProtocol(ctx context.Context, address string) {
 	asking, stop := context.WithTimeout(ctx, statusTimeout)
 	defer stop()
 
 	status, err := gocraft.Ping(asking, address)
-	if err != nil {
-		return nil
-	}
-	if status.Version.Protocol == v765.ProtocolVersion {
-		return nil
+	if err != nil || status.Version.Protocol == v765.ProtocolVersion {
+		return
 	}
 
-	return fmt.Errorf("host: %s speaks protocol %d (%s) and this client speaks %d (1.20.4)",
-		address, status.Version.Protocol, status.Version.Name, v765.ProtocolVersion)
+	slog.Warn("the server answers with another protocol; trying anyway, since it may translate",
+		"server", status.Version.Name,
+		"speaks", status.Version.Protocol,
+		"client", v765.ProtocolVersion)
 }
 
 const statusTimeout = 10 * time.Second
