@@ -3,7 +3,6 @@ package viewer
 import (
 	"context"
 
-	"github.com/go-gl/mathgl/mgl32"
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/agent"
 	"github.com/lrnxzz/go-craft/viewer/gpu"
@@ -29,41 +28,18 @@ const (
 // keys through binds. Everything it draws itself goes through those same seams.
 type Viewer struct {
 	window   *gpu.Window
+	bot      *agent.Agent
 	renderer *Renderer
 	hand     *Hand
 	chat     *Chat
 	hud      *Hud
 	edges    *edges
-	camera   Camera
-	bot      *agent.Agent
-	yaw      float32
-	pitch    float32
 
-	overlayProgram *gpu.Program
-	paintProgram   *gpu.Program
-	canvas         Canvas
-	painter        Painter
-
-	world   []WorldLayer
-	layers  []Layer
-	screens []Screen
-	binds   map[gpu.Key]func()
-
-	// the atlases are shared by the renderer, the canvas and the hand, so the
-	// viewer outlives all three and is what frees them
-	tileset *Tileset
-	iconset *Iconset
-	font    *Font
-
-	from     mgl32.Vec3
-	to       mgl32.Vec3
-	since    float64
-	lastTick uint64
-
-	sprinting bool
-	lastW     float64
-	swungAt   float64
-	manual    bool
+	eye      eye
+	assets   *assets
+	surfaces surfaces
+	stage    stage
+	driving  driving
 }
 
 func New(bot *agent.Agent, visible bool) (*Viewer, error) {
@@ -83,43 +59,28 @@ func New(bot *agent.Agent, visible bool) (*Viewer, error) {
 }
 
 func attach(window *gpu.Window, bot *agent.Agent) (*Viewer, error) {
-	tileset, err := LoadTileset()
+	loaded, err := loadAssets()
 	if err != nil {
 		return nil, err
 	}
 
-	iconset, err := LoadIconset()
+	drawn, err := newSurfaces(loaded)
 	if err != nil {
 		return nil, err
 	}
 
-	font, err := LoadFont()
-	if err != nil {
-		return nil, err
-	}
-
-	renderer, err := NewRenderer(tileset)
+	renderer, err := NewRenderer(loaded.tileset)
 	if err != nil {
 		return nil, err
 	}
 	renderer.Build(bot.World())
 
-	hand, err := NewHand(tileset, iconset)
+	hand, err := NewHand(loaded.tileset, loaded.iconset)
 	if err != nil {
 		return nil, err
 	}
 
 	hud, err := NewHud(bot)
-	if err != nil {
-		return nil, err
-	}
-
-	overlay, err := gpu.NewProgram(hudVertexShader, hudFragmentShader)
-	if err != nil {
-		return nil, err
-	}
-
-	paint, err := gpu.NewProgram(paintVertexShader, paintFragmentShader)
 	if err != nil {
 		return nil, err
 	}
@@ -132,38 +93,19 @@ func attach(window *gpu.Window, bot *agent.Agent) (*Viewer, error) {
 
 	agent.On(bot, echo)
 
-	spawn := bot.Snapshot()
-	eye := eyeOf(spawn.Position)
-
 	view := &Viewer{
-		window:         window,
-		renderer:       renderer,
-		hand:           hand,
-		chat:           chat,
-		hud:            hud,
-		overlayProgram: overlay,
-		paintProgram:   paint,
-		tileset:        tileset,
-		iconset:        iconset,
-		font:           font,
-		edges:          newEdges(window),
-		binds:          map[gpu.Key]func(){},
-		bot:            bot,
-		from:           eye,
-		to:             eye,
-		lastTick:       spawn.Tick,
-		yaw:            spawn.Yaw,
-		pitch:          spawn.Pitch,
-		camera: Camera{
-			Up:     mgl32.Vec3{0, 1, 0},
-			FOV:    fieldOfView,
-			Aspect: float32(defaultWidth) / float32(defaultHeight),
-			Near:   nearPlane,
-			Far:    farPlane,
-		},
+		window:   window,
+		bot:      bot,
+		renderer: renderer,
+		hand:     hand,
+		chat:     chat,
+		hud:      hud,
+		edges:    newEdges(window),
+		eye:      newEye(bot.Snapshot(), float32(defaultWidth)/float32(defaultHeight)),
+		assets:   loaded,
+		surfaces: drawn,
+		stage:    newStage(),
 	}
-	view.canvas.font = font
-	view.canvas.icons = iconset
 
 	if err := view.installDefaults(); err != nil {
 		return nil, err
@@ -207,18 +149,18 @@ func (v *Viewer) installDefaults() error {
 
 // AddWorldLayer registers geometry drawn inside the world, with depth still on
 func (v *Viewer) AddWorldLayer(layer WorldLayer) {
-	v.world = append(v.world, layer)
+	v.stage.addWorldLayer(layer)
 }
 
 // AddLayer registers an overlay drawn on top of the world, in screen space
 func (v *Viewer) AddLayer(layer Layer) {
-	v.layers = append(v.layers, layer)
+	v.stage.addLayer(layer)
 }
 
 // Open puts a menu on the stack: the bot stops moving, the cursor comes back and
 // input goes to this screen until it is dismissed
 func (v *Viewer) Open(screen Screen) {
-	v.screens = append(v.screens, screen)
+	v.stage.open(screen)
 	v.window.ReleaseCursor()
 }
 
@@ -231,14 +173,7 @@ func (v *Viewer) Viewport() gpu.Rect {
 // Dismiss closes the topmost menu, handing control back to the game when the
 // stack empties
 func (v *Viewer) Dismiss() {
-	if len(v.screens) == 0 {
-		return
-	}
-
-	closeIfPossible(v.screens[len(v.screens)-1])
-	v.screens = v.screens[:len(v.screens)-1]
-
-	if len(v.screens) == 0 {
+	if v.stage.dismiss() {
 		v.window.GrabCursor()
 	}
 }
@@ -246,12 +181,12 @@ func (v *Viewer) Dismiss() {
 // Showing reports whether any menu is up, which is also when the game ignores
 // movement and the crosshair is hidden
 func (v *Viewer) Showing() bool {
-	return len(v.screens) > 0
+	return v.stage.showing()
 }
 
 // Bind claims a key while no menu is up. It is how a plugin opens its own screen.
 func (v *Viewer) Bind(key gpu.Key, action func()) {
-	v.binds[key] = action
+	v.stage.bind(key, action)
 }
 
 // Pick answers what the crosshair is pointing at, so a plugin can react to what
@@ -270,76 +205,32 @@ func (v *Viewer) Chat() *Chat {
 }
 
 func (v *Viewer) Manual() bool {
-	return v.manual
+	return v.driving.manual
 }
 
 func (v *Viewer) Close() {
-	for _, layer := range v.world {
-		closeIfPossible(layer)
-	}
-	for _, layer := range v.layers {
-		closeIfPossible(layer)
-	}
-	for range v.screens {
-		v.Dismiss()
-	}
-
+	v.stage.close()
+	v.surfaces.close()
 	v.hand.Close()
 	v.renderer.Close()
-	v.font.Close()
-	v.overlayProgram.Delete()
-	v.paintProgram.Delete()
-	v.iconset.Delete()
-	v.tileset.Delete()
+	v.assets.close()
 	v.window.Close()
 }
 
 func (v *Viewer) frame() {
 	now := v.window.Time()
 
-	v.reframe()
-	v.follow()
+	v.eye.reframe(v.window.Viewport())
+	v.eye.follow(v.bot.Snapshot(), now)
 	v.hand.Update(v.bot.Inventory().Held())
+	v.hud.Aiming(!v.Showing())
 
 	v.window.Clear(skyRed, skyGreen, skyBlue)
-	v.renderer.Draw(v.camera)
+	v.renderer.Draw(v.eye.camera)
 
-	v.painter.reset(v.camera, now)
-	for _, layer := range v.world {
-		layer.DrawWorld(&v.painter)
-	}
-	v.painter.paint(v.paintProgram)
-
-	v.hand.Draw(v.window, v.camera, now, v.swing(now))
-
-	v.overlay(now)
-}
-
-// the projection has to follow the framebuffer, otherwise a resized window
-// stretches the world; a minimised one reports no height at all
-func (v *Viewer) reframe() {
-	screen := v.window.Viewport()
-	if screen.Height() == 0 {
-		return
-	}
-
-	v.camera.Aspect = screen.Width() / screen.Height()
-}
-
-func (v *Viewer) overlay(now float64) {
-	v.hud.aiming = !v.Showing()
-
-	v.window.Overlay(true)
-	defer v.window.Overlay(false)
-
-	v.canvas.reset(v.window.Viewport(), v.window.Cursor(), now)
-	for _, layer := range v.layers {
-		layer.Draw(&v.canvas)
-	}
-	for _, screen := range v.screens {
-		screen.Draw(&v.canvas)
-	}
-	v.canvas.paint(v.overlayProgram)
+	v.surfaces.world(v.eye.camera, now, v.stage.drawWorld)
+	v.hand.Draw(v.window, v.eye.camera, now, v.driving.swing(now))
+	v.surfaces.over(v.window, now, v.stage.draw)
 }
 
 func (v *Viewer) Run(ctx context.Context) {

@@ -2,18 +2,9 @@ package viewer
 
 import (
 	"context"
-	"math"
 
-	"github.com/go-gl/mathgl/mgl32"
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/viewer/gpu"
-)
-
-const (
-	sensitivity     = 0.15
-	doubleTapWindow = 0.3
-	swingSeconds    = 0.3
-	pitchLimit      = 89
 )
 
 type press struct {
@@ -94,11 +85,7 @@ func (v *Viewer) control(ctx context.Context) {
 
 // fire runs whatever bind claimed a key this frame, the viewer's own included
 func (v *Viewer) fire() {
-	for key, action := range v.binds {
-		if v.edges.key(key).started {
-			action()
-		}
-	}
+	v.stage.fire(v.edges)
 }
 
 // drive hands the frame to the menu on top; escape and the key that opened it
@@ -110,7 +97,7 @@ func (v *Viewer) drive() {
 		return
 	}
 
-	top := v.screens[len(v.screens)-1]
+	top := v.stage.top()
 
 	// the wheel accumulates whether or not anyone reads it, so it is drained even
 	// when the menu ignores it, or the hotbar jumps the moment the menu closes
@@ -137,41 +124,32 @@ func (v *Viewer) drive() {
 
 func (v *Viewer) walk(now float64) {
 	forward := v.edges.key(gpu.KeyW)
-	if forward.started {
-		if now-v.lastW < doubleTapWindow {
-			v.sprinting = true
-		}
+	sprinting := v.driving.sprint(forward, now)
 
-		v.lastW = now
-	}
-	if !forward.down {
-		v.sprinting = false
-	}
-
-	v.bot.SetControls(gocraft.Controls{
+	held := gocraft.Controls{
 		Forward: forward.down,
 		Back:    v.window.Pressed(gpu.KeyS),
 		Left:    v.window.Pressed(gpu.KeyA),
 		Right:   v.window.Pressed(gpu.KeyD),
 		Jump:    v.window.Pressed(gpu.KeySpace),
-		Sprint:  v.sprinting || v.window.Pressed(gpu.KeyCtrl),
-	})
+		Sprint:  sprinting || v.window.Pressed(gpu.KeyCtrl),
+	}
+
+	v.bot.SetControls(held)
 }
 
 func (v *Viewer) aim() {
-	moved := v.window.CursorDelta()
+	v.eye.aim(v.window.CursorDelta())
 
-	v.yaw += moved.X * sensitivity
-	v.pitch = clamp(v.pitch+moved.Y*sensitivity, -pitchLimit, pitchLimit)
-	v.bot.Look(v.yaw, v.pitch)
+	v.bot.Look(v.eye.facing())
 }
 
 func (v *Viewer) strike(ctx context.Context, now float64) {
 	digging := v.edges.button(gpu.ButtonLeft)
 	switch {
 	case digging.down:
-		if digging.started || now-v.swungAt >= swingSeconds {
-			v.swungAt = now
+		if digging.started || !v.driving.swinging(now) {
+			v.driving.swung(now)
 		}
 		if !v.bot.Digging() {
 			// the frame must not wait on the block, and the crack overlay
@@ -185,23 +163,13 @@ func (v *Viewer) strike(ctx context.Context, now float64) {
 	}
 
 	if v.edges.button(gpu.ButtonRight).started {
-		v.swungAt = now
+		v.driving.swung(now)
 		_ = v.bot.Place(gocraft.BlockReach)
 	}
 }
 
-func (v *Viewer) swing(now float64) float64 {
-	since := now - v.swungAt
-	if since >= swingSeconds {
-		return 0
-	}
-
-	return since / swingSeconds
-}
-
 func (v *Viewer) togglePathfinder() {
-	v.manual = !v.manual
-	if v.manual {
+	if v.driving.takeWheel() {
 		v.bot.Stop()
 		v.chat.Push("pathfinder paused — press P to resume")
 
@@ -266,39 +234,4 @@ func (v *Viewer) hotkeys() {
 
 func wrap(index, size int) int {
 	return ((index % size) + size) % size
-}
-
-func (v *Viewer) follow() {
-	snapshot := v.bot.Snapshot()
-	if snapshot.Tick != v.lastTick {
-		v.lastTick = snapshot.Tick
-		v.from = v.to
-		v.to = eyeOf(snapshot.Position)
-		v.since = v.window.Time()
-	}
-
-	alpha := float32(min((v.window.Time()-v.since)/gocraft.TickRate.Seconds(), 1))
-	eye := v.from.Add(v.to.Sub(v.from).Mul(alpha))
-
-	v.camera.Position = eye
-	v.camera.Target = eye.Add(direction(v.yaw, v.pitch))
-}
-
-func eyeOf(position gocraft.Vec3d) mgl32.Vec3 {
-	return mgl32.Vec3{float32(position.X), float32(position.Y) + gocraft.EyeHeight, float32(position.Z)}
-}
-
-func direction(yaw, pitch float32) mgl32.Vec3 {
-	y := float64(mgl32.DegToRad(yaw))
-	p := float64(mgl32.DegToRad(pitch))
-
-	return mgl32.Vec3{
-		float32(-math.Sin(y) * math.Cos(p)),
-		float32(-math.Sin(p)),
-		float32(math.Cos(y) * math.Cos(p)),
-	}
-}
-
-func clamp(value, low, high float32) float32 {
-	return min(max(value, low), high)
 }

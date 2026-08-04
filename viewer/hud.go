@@ -123,3 +123,8 @@ func (h *Hud) Close() {
 func iconAt(origin gpu.Point) gpu.Rect {
 	return gpu.RectAt(origin, iconSize*guiScale, iconSize*guiScale)
 }
+
+// the crosshair is hidden while a menu is up
+func (h *Hud) Aiming(at bool) {
+	h.aiming = at
+}
