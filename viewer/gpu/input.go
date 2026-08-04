@@ -25,13 +25,56 @@ func Digit(index int) Key {
 	return Key(glfw.Key1 + glfw.Key(index))
 }
 
+const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func Letter(name rune) Key {
+	return Key(glfw.KeyA + glfw.Key(name-'A'))
+}
+
+var named = map[Key]string{
+	KeySlash:     "/",
+	KeyEnter:     "Enter",
+	KeyEscape:    "Escape",
+	KeyBackspace: "Backspace",
+	KeySpace:     "Space",
+	KeyShift:     "Shift",
+	KeyCtrl:      "Ctrl",
+}
+
 // Keys is every key the viewer knows how to name, which is what a screen sees
-// forwarded to it and what a bind may claim
-var Keys = [...]Key{
-	KeyW, KeyA, KeyS, KeyD,
-	KeyE, KeyT, KeyP, KeySlash,
-	KeyEnter, KeyEscape, KeyBackspace,
-	KeySpace, KeyShift, KeyCtrl,
+// forwarded to it and what a plugin may claim
+var Keys = keyboard()
+
+var keyNames = naming()
+
+func keyboard() []Key {
+	keys := make([]Key, 0, len(letters)+len(named))
+
+	for _, letter := range letters {
+		keys = append(keys, Letter(letter))
+	}
+	for key := range named {
+		keys = append(keys, key)
+	}
+
+	return keys
+}
+
+func naming() map[Key]string {
+	names := make(map[Key]string, len(letters)+len(named))
+
+	for _, letter := range letters {
+		names[Letter(letter)] = string(letter)
+	}
+	for key, name := range named {
+		names[key] = name
+	}
+
+	return names
+}
+
+func Name(key Key) string {
+	return keyNames[key]
 }
 
 type Button int

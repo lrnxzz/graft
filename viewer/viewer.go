@@ -216,6 +216,12 @@ func (v *Viewer) Open(screen Screen) {
 	v.window.ReleaseCursor()
 }
 
+// Viewport is the drawable area, which a screen needs before its first frame if
+// it has to size something to the window up front
+func (v *Viewer) Viewport() gpu.Rect {
+	return v.window.Viewport()
+}
+
 // Dismiss closes the topmost menu, handing control back to the game when the
 // stack empties
 func (v *Viewer) Dismiss() {

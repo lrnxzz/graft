@@ -112,6 +112,15 @@ func (v *Viewer) drive() {
 
 	top := v.screens[len(v.screens)-1]
 
+	// the wheel accumulates whether or not anyone reads it, so it is drained even
+	// when the menu ignores it, or the hotbar jumps the moment the menu closes
+	scrolled := v.window.Scroll()
+
+	wheeled, turns := top.(Scroller)
+	if turns && scrolled != 0 {
+		wheeled.Scroll(scrolled)
+	}
+
 	if v.edges.button(gpu.ButtonLeft).started {
 		top.Click(v.window.Cursor(), v.window.Viewport())
 	}

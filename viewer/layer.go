@@ -24,6 +24,12 @@ type Screen interface {
 	Key(key gpu.Key)
 }
 
+// Scroller is the optional half of a Screen: a menu that wants the wheel says so
+// rather than every screen being forced to answer for it
+type Scroller interface {
+	Scroll(delta float64)
+}
+
 // Closer lets a Layer or Screen release GPU resources when the viewer shuts down
 // or the screen is dismissed. Implementing it is optional.
 type Closer interface {
