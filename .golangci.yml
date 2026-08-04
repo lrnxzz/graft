@@ -69,6 +69,13 @@ linters:
         linters:
           - errcheck
           - unparam
+      # gocritic reads the generated cgo bindings rather than the source: it
+      # counts the "C" pseudo-package as a duplicate import, and sees the
+      # rewritten C calls as comparisons against themselves
+      - path: ultralight/
+        text: dupImport|dupSubExpr
+        linters:
+          - gocritic
 
 formatters:
   enable:

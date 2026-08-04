@@ -1,9 +1,14 @@
 # compiled binaries
 /cli/cli
+/viewer/gocraft
+/viewer/cmd/gocraft/gocraft
 
 # test and coverage artifacts
 *.test
 *.out
+
+# the html engine writes its own diagnostics beside whatever ran
+ultralight.log
 
 # atlas generator inputs (large, fetched on demand by: go run ./gen atlas <version>)
 codec/*/assets/client.jar
