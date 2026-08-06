@@ -96,11 +96,10 @@ func show(ctx context.Context, robot *agent.Agent, folder, shot string) error {
 		engine:  engine,
 	}
 
-	typed := commands{
+	commandsFor(ctx, view, commands{
 		plugins: plugins,
 		chat:    view.Chat(),
-	}
-	view.Intercept(typed.claim)
+	})
 
 	attach(view, opening)
 	report("setup", plugins.Setup(opening))

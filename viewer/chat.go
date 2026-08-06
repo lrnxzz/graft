@@ -74,6 +74,36 @@ func (c *Chat) Type(typed []rune) {
 	c.input = append(c.input, typed...)
 }
 
+// Lines is what has been said, oldest first
+func (c *Chat) Lines() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	said := make([]string, 0, len(c.lines))
+	for _, line := range c.lines {
+		said = append(said, line.text)
+	}
+
+	return said
+}
+
+// Line is what is being typed and where the caret sits, which is what a
+// completer needs to know what the player is in the middle of
+func (c *Chat) Line() (string, int) {
+	return string(c.input), len(c.input)
+}
+
+// Splice replaces a run of the line with a word, which is how an accepted
+// suggestion lands without the player deleting what they already typed
+func (c *Chat) Splice(from, to int, word string) {
+	if from < 0 || to > len(c.input) || from > to {
+		return
+	}
+
+	replaced := append([]rune(word), c.input[to:]...)
+	c.input = append(c.input[:from], replaced...)
+}
+
 func (c *Chat) Erase() {
 	if len(c.input) > 0 {
 		c.input = c.input[:len(c.input)-1]

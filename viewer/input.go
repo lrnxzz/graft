@@ -209,6 +209,46 @@ func (v *Viewer) strike(ctx context.Context, now float64) {
 	}
 }
 
+// suggest keeps the list under the chat current and answers whether a key was
+// spent moving through it, so a stroke that picked a word never also submits
+func (v *Viewer) suggest() bool {
+	if v.offering == nil {
+		return false
+	}
+
+	line, cursor := v.chat.Line()
+
+	words, from, to := v.offering(line, cursor)
+	v.suggesting.Offers(words, from, to)
+
+	if !v.suggesting.Showing() {
+		return false
+	}
+
+	if v.edges.key(gpu.KeyUp).started {
+		v.suggesting.Move(-1)
+
+		return true
+	}
+	if v.edges.key(gpu.KeyDown).started {
+		v.suggesting.Move(1)
+
+		return true
+	}
+
+	if !v.edges.key(gpu.KeyTab).started {
+		return false
+	}
+
+	word, from, to, chosen := v.suggesting.Chosen()
+	if chosen {
+		v.chat.Splice(from, to, word)
+		v.suggesting.Clear()
+	}
+
+	return true
+}
+
 func (v *Viewer) toggleFreecam() {
 	if v.Detached() {
 		v.Attach()
@@ -258,10 +298,20 @@ func (v *Viewer) compose() {
 	}
 	if v.edges.key(gpu.KeyEscape).started {
 		v.chat.Cancel()
+		v.suggesting.Clear()
+
+		return
 	}
+
+	if v.suggest() {
+		return
+	}
+
 	if !v.edges.key(gpu.KeyEnter).started {
 		return
 	}
+
+	v.suggesting.Clear()
 
 	message, sendable := v.chat.Submit()
 	if !sendable || v.stage.claimed(message) {

@@ -17,6 +17,9 @@ const (
 	KeyEnter     Key = Key(glfw.KeyEnter)
 	KeyEscape    Key = Key(glfw.KeyEscape)
 	KeyBackspace Key = Key(glfw.KeyBackspace)
+	KeyTab       Key = Key(glfw.KeyTab)
+	KeyUp        Key = Key(glfw.KeyUp)
+	KeyDown      Key = Key(glfw.KeyDown)
 	KeySpace     Key = Key(glfw.KeySpace)
 	KeyShift     Key = Key(glfw.KeyLeftShift)
 	KeyCtrl      Key = Key(glfw.KeyLeftControl)
@@ -37,6 +40,9 @@ var named = map[Key]string{
 	KeyEnter:     "Enter",
 	KeyEscape:    "Escape",
 	KeyBackspace: "Backspace",
+	KeyTab:       "Tab",
+	KeyUp:        "Up",
+	KeyDown:      "Down",
 	KeySpace:     "Space",
 	KeyShift:     "Shift",
 	KeyCtrl:      "Ctrl",

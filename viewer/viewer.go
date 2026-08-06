@@ -45,6 +45,9 @@ type Viewer struct {
 	dwell   dwell
 	marking Marking
 	settled []func(gocraft.Position)
+
+	suggesting Suggesting
+	offering   func(line string, cursor int) ([]string, int, int)
 }
 
 func New(bot *agent.Agent, visible bool) (*Viewer, error) {
@@ -137,6 +140,7 @@ func (v *Viewer) installDefaults() error {
 	v.AddWorldLayer(&v.marking)
 	v.AddLayer(v.hud)
 	v.AddLayer(v.chat)
+	v.AddLayer(&v.suggesting)
 
 	v.Bind(gpu.KeyE, v.openInventory)
 	v.Bind(gpu.KeyP, v.togglePathfinder)
@@ -201,6 +205,13 @@ func (v *Viewer) Bind(key gpu.Key, action func()) {
 // shadows a server one without hiding the ones nobody claims.
 func (v *Viewer) Intercept(handle func(line string) bool) {
 	v.stage.intercept(handle)
+}
+
+// Offers registers what completes a half-typed line. The viewer shows the words
+// under the chat and splices the chosen one back in; what they mean is the
+// caller's business.
+func (v *Viewer) Offers(offer func(line string, cursor int) (words []string, from, to int)) {
+	v.offering = offer
 }
 
 // Pick answers what the crosshair is pointing at. Out of the body that is the
