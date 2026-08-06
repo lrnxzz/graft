@@ -140,6 +140,7 @@ func (v *Viewer) installDefaults() error {
 
 	v.Bind(gpu.KeyE, v.openInventory)
 	v.Bind(gpu.KeyP, v.togglePathfinder)
+	v.Bind(gpu.KeyF, v.toggleFreecam)
 	say := func() {
 		v.openChat("")
 	}

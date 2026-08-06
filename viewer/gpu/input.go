@@ -10,6 +10,7 @@ const (
 	KeyS         Key = Key(glfw.KeyS)
 	KeyD         Key = Key(glfw.KeyD)
 	KeyE         Key = Key(glfw.KeyE)
+	KeyF         Key = Key(glfw.KeyF)
 	KeyT         Key = Key(glfw.KeyT)
 	KeyP         Key = Key(glfw.KeyP)
 	KeySlash     Key = Key(glfw.KeySlash)

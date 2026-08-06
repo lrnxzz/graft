@@ -209,6 +209,18 @@ func (v *Viewer) strike(ctx context.Context, now float64) {
 	}
 }
 
+func (v *Viewer) toggleFreecam() {
+	if v.Detached() {
+		v.Attach()
+		v.chat.Push("back in the body")
+
+		return
+	}
+
+	v.Detach()
+	v.chat.Push("out of the body — fly with WASD, hold still 3s on a block to mark it, F to return")
+}
+
 func (v *Viewer) togglePathfinder() {
 	if v.driving.takeWheel() {
 		v.bot.Stop()
