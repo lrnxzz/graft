@@ -41,6 +41,10 @@ type Viewer struct {
 	surfaces surfaces
 	stage    stage
 	driving  driving
+
+	dwell   dwell
+	marking Marking
+	settled []func(gocraft.Position)
 }
 
 func New(bot *agent.Agent, visible bool) (*Viewer, error) {
@@ -130,6 +134,7 @@ func (v *Viewer) installDefaults() error {
 
 	v.AddWorldLayer(crack)
 	v.AddWorldLayer(route)
+	v.AddWorldLayer(&v.marking)
 	v.AddLayer(v.hud)
 	v.AddLayer(v.chat)
 
@@ -212,11 +217,46 @@ func (v *Viewer) Pick(reach float64) (gocraft.RayHit, bool) {
 // taking movement while it is away, and the server is never told.
 func (v *Viewer) Detach() {
 	v.eye.leave()
+	v.dwell.forget()
 	v.bot.SetControls(gocraft.Controls{})
 }
 
 func (v *Viewer) Attach() {
 	v.eye.enter()
+	v.dwell.forget()
+	v.marking.Aiming(gocraft.Position{}, 0, false)
+}
+
+// Settles registers what happens when the player rests the aim on a block long
+// enough for it to be marked. It is how a point is set with both hands still on
+// flying, and it only ever fires while the camera is out of the body.
+func (v *Viewer) Settles(handle func(at gocraft.Position)) {
+	v.settled = append(v.settled, handle)
+}
+
+// rest feeds the wait with what the camera is looking at, and reports the block
+// the moment it completes
+func (v *Viewer) rest(now float64) {
+	if !v.eye.away() {
+		return
+	}
+
+	hit, sighted := v.Pick(dwellReach)
+	yaw, pitch := v.eye.facing()
+
+	at, held, showing := v.dwell.look(v.eye.eye(), yaw, pitch, hit, sighted, now)
+	v.marking.Aiming(at, held, showing)
+
+	block, done := v.dwell.settled(now)
+	if !done {
+		return
+	}
+
+	v.marking.Settled()
+
+	for _, handle := range v.settled {
+		handle(block)
+	}
 }
 
 func (v *Viewer) Detached() bool {
@@ -250,6 +290,7 @@ func (v *Viewer) frame() {
 
 	v.eye.reframe(v.window.Viewport())
 	v.eye.follow(v.bot.Snapshot(), now)
+	v.rest(now)
 	v.hand.Update(v.bot.Inventory().Held())
 	v.hud.Aiming(!v.Showing())
 
