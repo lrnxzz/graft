@@ -17,3 +17,7 @@ var Of = lib.Ranged(registry, func(b gocraft.Block) (gocraft.BlockState, gocraft
 var Named = lib.Keyed(registry, func(b gocraft.Block) gocraft.Identifier {
 	return b.Name
 })
+
+var Names = lib.Listed(registry, func(e gocraft.Block) gocraft.Identifier {
+	return e.Name
+})

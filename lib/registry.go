@@ -73,3 +73,16 @@ func Ranged[T any, K cmp.Ordered](r *Registry[T], bounds func(T) (K, K)) func(K)
 		return zero, false
 	}
 }
+
+// Listed is every key in the registry, sorted. Keyed answers one lookup; this is
+// what something offering a choice needs, such as completing a half-typed name.
+func Listed[T any, K cmp.Ordered](r *Registry[T], key func(T) K) []K {
+	keys := make([]K, 0, len(r.entries))
+	for _, entry := range r.entries {
+		keys = append(keys, key(entry))
+	}
+
+	slices.Sort(keys)
+
+	return slices.Compact(keys)
+}

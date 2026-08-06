@@ -17,3 +17,7 @@ var Of = lib.Keyed(registry, func(i gocraft.Item) gocraft.ItemID {
 var Named = lib.Keyed(registry, func(i gocraft.Item) gocraft.Identifier {
 	return i.Name
 })
+
+var Names = lib.Listed(registry, func(e gocraft.Item) gocraft.Identifier {
+	return e.Name
+})
