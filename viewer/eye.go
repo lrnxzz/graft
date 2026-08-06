@@ -27,6 +27,12 @@ type eye struct {
 	to       mgl32.Vec3
 	since    float64
 	lastTick uint64
+
+	// loose is the camera out of the body: it stops following the bot and takes
+	// movement of its own. Nothing of it reaches the server, which never learns
+	// the player looked away.
+	loose bool
+	at    mgl32.Vec3
 }
 
 func newEye(spawn agent.Snapshot, aspect float32) eye {
@@ -57,9 +63,58 @@ func (e *eye) facing() (yaw, pitch float32) {
 	return e.yaw, e.pitch
 }
 
+// leave lifts the camera off the body, starting where the body was looking
+func (e *eye) leave() {
+	e.at = e.camera.Position
+	e.loose = true
+}
+
+func (e *eye) enter() {
+	e.loose = false
+}
+
+func (e *eye) away() bool {
+	return e.loose
+}
+
+func (e *eye) eye() gocraft.Vec3d {
+	at := e.camera.Position
+
+	return gocraft.Vec3(float64(at.X()), float64(at.Y()), float64(at.Z()))
+}
+
+func (e *eye) forward() gocraft.Vec3d {
+	facing := direction(e.yaw, e.pitch)
+
+	return gocraft.Vec3(float64(facing.X()), float64(facing.Y()), float64(facing.Z()))
+}
+
+// fly moves a loose camera. Forward is where it looks, so flying and aiming are
+// the same gesture, and rise leaves the horizon alone.
+func (e *eye) fly(forward, strafe, rise, speed float32) {
+	if !e.loose {
+		return
+	}
+
+	facing := direction(e.yaw, e.pitch)
+	side := mgl32.Vec3{-facing.Z(), 0, facing.X()}.Normalize()
+
+	e.at = e.at.
+		Add(facing.Mul(forward * speed)).
+		Add(side.Mul(strafe * speed)).
+		Add(mgl32.Vec3{0, rise * speed, 0})
+}
+
 // follow catches the camera up to the last tick and glides the rest of the way,
 // so the world does not step at the tick rate
 func (e *eye) follow(snapshot agent.Snapshot, now float64) {
+	if e.loose {
+		e.camera.Position = e.at
+		e.camera.Target = e.at.Add(direction(e.yaw, e.pitch))
+
+		return
+	}
+
 	if snapshot.Tick != e.lastTick {
 		e.lastTick = snapshot.Tick
 		e.from = e.to

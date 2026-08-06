@@ -5,6 +5,7 @@ import (
 
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/agent"
+	"github.com/lrnxzz/go-craft/codec/v765/blocks"
 	"github.com/lrnxzz/go-craft/viewer/gpu"
 )
 
@@ -196,10 +197,30 @@ func (v *Viewer) Intercept(handle func(line string) bool) {
 	v.stage.intercept(handle)
 }
 
-// Pick answers what the crosshair is pointing at, so a plugin can react to what
-// the player is looking at without doing its own raycast
+// Pick answers what the crosshair is pointing at. Out of the body that is the
+// camera's own ray, not the bot's, so a plugin marking a spot marks the one the
+// player can see rather than the one the body happens to face.
 func (v *Viewer) Pick(reach float64) (gocraft.RayHit, bool) {
-	return v.bot.Target(reach)
+	if !v.eye.away() {
+		return v.bot.Target(reach)
+	}
+
+	return v.bot.World().Raycast(v.eye.eye(), v.eye.forward(), reach, blocks.Solid)
+}
+
+// Detach lifts the camera off the body and Attach puts it back. The bot stops
+// taking movement while it is away, and the server is never told.
+func (v *Viewer) Detach() {
+	v.eye.leave()
+	v.bot.SetControls(gocraft.Controls{})
+}
+
+func (v *Viewer) Attach() {
+	v.eye.enter()
+}
+
+func (v *Viewer) Detached() bool {
+	return v.eye.away()
 }
 
 func (v *Viewer) Bot() *agent.Agent {

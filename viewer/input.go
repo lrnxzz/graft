@@ -77,10 +77,46 @@ func (v *Viewer) control(ctx context.Context) {
 	}
 
 	now := v.window.Time()
+
+	// out of the body the keys move the camera, and the bot keeps standing still
+	if v.eye.away() {
+		v.bot.SetControls(gocraft.Controls{})
+		v.fly()
+		v.aim()
+
+		return
+	}
+
 	v.walk(now)
 	v.aim()
 	v.strike(ctx, now)
 	v.hotkeys()
+}
+
+const (
+	flySpeed  = 0.45
+	flyFaster = 3
+)
+
+func (v *Viewer) fly() {
+	held := func(key gpu.Key) float32 {
+		if v.window.Pressed(key) {
+			return 1
+		}
+
+		return 0
+	}
+
+	speed := float32(flySpeed)
+	if v.window.Pressed(gpu.KeyCtrl) {
+		speed *= flyFaster
+	}
+
+	v.eye.fly(
+		held(gpu.KeyW)-held(gpu.KeyS),
+		held(gpu.KeyD)-held(gpu.KeyA),
+		held(gpu.KeySpace)-held(gpu.KeyShift),
+		speed)
 }
 
 // fire runs whatever bind claimed a key this frame, the viewer's own included
@@ -140,6 +176,11 @@ func (v *Viewer) walk(now float64) {
 
 func (v *Viewer) aim() {
 	v.eye.aim(v.window.CursorDelta())
+
+	// a loose camera turns nobody's head: the body keeps the aim it had
+	if v.eye.away() {
+		return
+	}
 
 	v.bot.Look(v.eye.facing())
 }
