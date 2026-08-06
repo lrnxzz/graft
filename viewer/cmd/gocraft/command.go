@@ -17,7 +17,25 @@ type commands struct {
 	chat    *viewer.Chat
 }
 
-const prefix = "/"
+// The prefix is a dot rather than a slash because not every keyboard has one
+// within reach. A slash still works, since the server only ever sees a line no
+// one here claimed.
+const (
+	prefix = "."
+	spare  = "/"
+)
+
+// Held takes whichever prefix opened the line, and reports the rest. Nothing
+// else in the viewer should be testing the first letter itself.
+func Held(line string) (string, bool) {
+	for _, opener := range []string{prefix, spare} {
+		if rest, cut := strings.CutPrefix(line, opener); cut {
+			return rest, true
+		}
+	}
+
+	return "", false
+}
 
 func (c commands) claim(line string) bool {
 	word, arguments, is := split(line)
@@ -45,12 +63,12 @@ func (c commands) claim(line string) bool {
 // split takes the leading slash and the words apart. Quoted runs stay together,
 // so an argument may hold a space without a plugin having to rejoin it.
 func split(line string) (string, []string, bool) {
-	trimmed := strings.TrimSpace(line)
-	if !strings.HasPrefix(trimmed, prefix) {
+	held, is := Held(strings.TrimSpace(line))
+	if !is {
 		return "", nil, false
 	}
 
-	words := quoted(strings.TrimPrefix(trimmed, prefix))
+	words := quoted(held)
 	if len(words) == 0 {
 		return "", nil, false
 	}

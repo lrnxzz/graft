@@ -65,3 +65,23 @@ func TestALoneSlashIsNotACommand(t *testing.T) {
 		t.Error("a lone slash was taken for a command")
 	}
 }
+
+// The prefix moved off the slash because a keyboard may not have one, and both
+// openers have to keep working: a line no one claims still reaches the server.
+func TestEitherOpenerIsHeld(t *testing.T) {
+	for _, line := range []string{".route list", "/route list"} {
+		held, is := Held(line)
+		if !is {
+			t.Errorf("%q was not held", line)
+		}
+		if held != "route list" {
+			t.Errorf("%q left %q, want the line without its opener", line, held)
+		}
+	}
+}
+
+func TestAPlainLineIsNotHeld(t *testing.T) {
+	if _, is := Held("hello everyone"); is {
+		t.Error("a plain chat line was held as a command")
+	}
+}

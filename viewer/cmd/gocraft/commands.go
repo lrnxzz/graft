@@ -70,16 +70,15 @@ func commandsFor(ctx context.Context, view *viewer.Viewer, plugins commands) *be
 	return desk
 }
 
-const slash = "/"
-
 // claim runs a line the player typed, and reports whether this tree wanted it.
 // Anything unclaimed goes on to the server untouched.
 func (b *bench) claim(line string) bool {
-	if len(line) < 2 || line[:1] != slash {
+	held, is := Held(line)
+	if !is || held == "" {
 		return false
 	}
 
-	ran, err := b.tree.Run(line[1:], command.Calling(b.view.Bot(), b.view.Chat().Push))
+	ran, err := b.tree.Run(held, command.Calling(b.view.Bot(), b.view.Chat().Push))
 	if !ran {
 		return b.plugins.claim(line)
 	}
@@ -102,16 +101,17 @@ func (b *bench) refuse(line string, err error) {
 
 	var failed *command.Failure
 	if errors.As(err, &failed) {
-		b.says.Note(slash + failed.Usage)
+		b.says.Note(prefix + failed.Usage)
 	}
 }
 
 func (b *bench) offer(line string, cursor int) ([]string, int, int) {
-	if len(line) < 1 || line[:1] != slash {
+	held, is := Held(line)
+	if !is {
 		return nil, 0, 0
 	}
 
-	offer := b.tree.Complete(line[1:], cursor-1, command.Calling(b.view.Bot(), nil))
+	offer := b.tree.Complete(held, cursor-1, command.Calling(b.view.Bot(), nil))
 
 	return offer.Words, offer.From + 1, offer.To + 1
 }
@@ -120,7 +120,7 @@ func (b *bench) help(command.Call) error {
 	b.says.Head("commands")
 
 	for _, line := range b.tree.Help() {
-		b.says.Note(slash + line)
+		b.says.Note(prefix + line)
 	}
 
 	if len(b.plugins.plugins.Usage()) > 0 {
@@ -172,7 +172,7 @@ func (b *bench) draw(command.Call) error {
 
 func (b *bench) list(command.Call) error {
 	if len(b.route.points) == 0 {
-		b.says.Note("no points yet — /route draw")
+		b.says.Note("no points yet — " + prefix + "route draw")
 
 		return nil
 	}
