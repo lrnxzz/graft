@@ -10,6 +10,7 @@ type stage struct {
 	layers  []Layer
 	screens []Screen
 	binds   map[gpu.Key]func()
+	spoken  []func(string) bool
 }
 
 func newStage() stage {
@@ -28,6 +29,22 @@ func (s *stage) addLayer(layer Layer) {
 
 func (s *stage) bind(key gpu.Key, action func()) {
 	s.binds[key] = action
+}
+
+// intercept offers a submitted line to each handler in turn. The first to answer
+// true has dealt with it, and the server never sees it.
+func (s *stage) intercept(handle func(string) bool) {
+	s.spoken = append(s.spoken, handle)
+}
+
+func (s *stage) claimed(line string) bool {
+	for _, handle := range s.spoken {
+		if handle(line) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (s *stage) open(screen Screen) {

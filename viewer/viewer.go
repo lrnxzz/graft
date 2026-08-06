@@ -189,6 +189,13 @@ func (v *Viewer) Bind(key gpu.Key, action func()) {
 	v.stage.bind(key, action)
 }
 
+// Intercept offers every line the player submits to a handler before the server
+// sees it. Answering true keeps the line here, which is how a local command
+// shadows a server one without hiding the ones nobody claims.
+func (v *Viewer) Intercept(handle func(line string) bool) {
+	v.stage.intercept(handle)
+}
+
 // Pick answers what the crosshair is pointing at, so a plugin can react to what
 // the player is looking at without doing its own raycast
 func (v *Viewer) Pick(reach float64) (gocraft.RayHit, bool) {

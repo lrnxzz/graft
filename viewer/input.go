@@ -211,9 +211,11 @@ func (v *Viewer) compose() {
 	}
 
 	message, sendable := v.chat.Submit()
-	if sendable {
-		_ = v.bot.Chat(message)
+	if !sendable || v.stage.claimed(message) {
+		return
 	}
+
+	_ = v.bot.Chat(message)
 }
 
 func (v *Viewer) hotkeys() {
