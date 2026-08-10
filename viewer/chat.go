@@ -26,11 +26,38 @@ var (
 	inputBacking = gpu.RGBA(0, 0, 0, 0.5)
 	textFill     = gpu.White
 	textShadow   = gpu.Shade(0.25, 0.25, 0.25)
+
+	// what the client says is backed and edged so it never reads as something
+	// another player typed on the server
+	clientBacking = gpu.RGBA(0.05, 0.09, 0.14, 0.62)
+	clientEdge    = gpu.RGBA(0.49, 0.83, 0.99, 0.85)
+
+	chatPromptFill = gpu.RGBA(0.49, 0.83, 0.99, 1)
+	chatGhostFill  = gpu.RGBA(0.55, 0.58, 0.64, 1)
+	chatGoodFill   = gpu.RGBA(0.62, 0.90, 0.62, 1)
+	chatBadFill    = gpu.RGBA(0.98, 0.51, 0.49, 1)
 )
 
+// A Mark is a run of the line being typed and whether whoever reads it made
+// sense of it. Marks are how the chat colours a command without knowing what a
+// command is.
+type Mark struct {
+	From int
+	To   int
+	Good bool
+}
+
+// Reading is the line as its reader sees it, and what finishing the last word
+// would add
+type Reading struct {
+	Marks []Mark
+	Ghost string
+}
+
 type chatLine struct {
-	text string
-	at   float64
+	text   string
+	at     float64
+	client bool
 }
 
 // Chat is a Layer: it paints on whatever canvas the viewer hands it and owns no
@@ -41,16 +68,35 @@ type Chat struct {
 	lines  []chatLine
 	input  []rune
 	typing bool
+	reads  func(line string) Reading
+}
+
+// Reads registers who judges the line being typed. Without one the chat draws
+// plain text, which is what a line that is not a command should look like.
+func (c *Chat) Reads(read func(line string) Reading) {
+	c.reads = read
 }
 
 func NewChat(clock func() float64) *Chat {
 	return &Chat{clock: clock}
 }
 
+// Push is a line from the server, drawn plain
 func (c *Chat) Push(text string) {
+	c.write(text, false)
+}
+
+// Says is the client speaking, drawn with a mark of its own so nobody mistakes
+// it for another player
+func (c *Chat) Says(text string) {
+	c.write(text, true)
+}
+
+func (c *Chat) write(text string, client bool) {
 	line := chatLine{
-		text: text,
-		at:   c.clock(),
+		text:   text,
+		at:     c.clock(),
+		client: client,
 	}
 
 	c.mu.Lock()
@@ -140,7 +186,7 @@ func (c *Chat) Draw(canvas *Canvas) {
 			screen.Width()-2*chatMargin, chatInputSpan*chatScale)
 
 		canvas.Fill(input, inputBacking)
-		canvas.Shadowed(c.prompt(now), input.Min.Offset(chatMargin+chatScale, 2*chatScale), chatScale, textFill)
+		c.typed(canvas, input.Min.Offset(chatMargin+chatScale, 2*chatScale), now)
 
 		bottom = input.Min.Y - chatMargin
 	}
@@ -157,17 +203,78 @@ func (c *Chat) Draw(canvas *Canvas) {
 			gpu.At(chatMargin, bottom-float32((shown+1)*chatLineSpan)*chatScale),
 			chatWidth*chatScale, chatLineSpan*chatScale)
 
-		canvas.Fill(line, chatBacking)
-		canvas.Shadowed(lines[index].text, line.Min.Offset(chatMargin+chatScale, chatScale), chatScale, textFill)
+		said := lines[index]
+
+		canvas.Fill(line, backing(said))
+		if said.client {
+			canvas.Fill(gpu.RectAt(line.Min, chatScale, line.Height()), clientEdge)
+		}
+
+		canvas.Shadowed(said.text, line.Min.Offset(chatMargin+2*chatScale, chatScale), chatScale, textFill)
 		shown++
 	}
 }
 
-func (c *Chat) prompt(now float64) string {
-	prompt := chatPrompt + string(c.input)
-	if int(now*caretHertz)%2 == 0 {
-		prompt += chatCaret
+func backing(line chatLine) gpu.Color {
+	if line.client {
+		return clientBacking
 	}
 
-	return prompt
+	return chatBacking
+}
+
+// typed draws the line being written: coloured by what its reader made of it,
+// with the rest of the word it is heading for behind the caret
+func (c *Chat) typed(canvas *Canvas, at gpu.Point, now float64) {
+	line := string(c.input)
+	reading := c.reading(line)
+
+	pen := canvas.Shadowed(chatPrompt, at, chatScale, chatPromptFill)
+	pen = c.runs(canvas, line, reading.Marks, pen)
+
+	// the caret keeps its place whether or not it is drawn this frame, or the
+	// ghost behind it would jump every half second
+	caret := canvas.TextWidth(chatCaret, chatScale)
+	if int(now*caretHertz)%2 == 0 {
+		canvas.Shadowed(chatCaret, pen, chatScale, textFill)
+	}
+
+	if reading.Ghost != "" {
+		canvas.Shadowed(reading.Ghost, pen.Offset(caret, 0), chatScale, chatGhostFill)
+	}
+}
+
+func (c *Chat) reading(line string) Reading {
+	if c.reads == nil {
+		return Reading{}
+	}
+
+	return c.reads(line)
+}
+
+// runs paints the line a mark at a time, leaving whatever no mark covers in the
+// plain colour so a line that is not a command looks untouched
+func (c *Chat) runs(canvas *Canvas, line string, marks []Mark, pen gpu.Point) gpu.Point {
+	at := 0
+
+	for _, mark := range marks {
+		if mark.From < at || mark.To > len(line) || mark.From > mark.To {
+			continue
+		}
+
+		pen = canvas.Shadowed(line[at:mark.From], pen, chatScale, textFill)
+		pen = canvas.Shadowed(line[mark.From:mark.To], pen, chatScale, tint(mark))
+
+		at = mark.To
+	}
+
+	return canvas.Shadowed(line[at:], pen, chatScale, textFill)
+}
+
+func tint(mark Mark) gpu.Color {
+	if mark.Good {
+		return chatGoodFill
+	}
+
+	return chatBadFill
 }

@@ -14,6 +14,7 @@ const (
 	KeyT         Key = Key(glfw.KeyT)
 	KeyP         Key = Key(glfw.KeyP)
 	KeySlash     Key = Key(glfw.KeySlash)
+	KeyPeriod    Key = Key(glfw.KeyPeriod)
 	KeyEnter     Key = Key(glfw.KeyEnter)
 	KeyEscape    Key = Key(glfw.KeyEscape)
 	KeyBackspace Key = Key(glfw.KeyBackspace)
@@ -23,6 +24,7 @@ const (
 	KeySpace     Key = Key(glfw.KeySpace)
 	KeyShift     Key = Key(glfw.KeyLeftShift)
 	KeyCtrl      Key = Key(glfw.KeyLeftControl)
+	KeyAlt       Key = Key(glfw.KeyLeftAlt)
 )
 
 func Digit(index int) Key {
@@ -37,6 +39,7 @@ func Letter(name rune) Key {
 
 var named = map[Key]string{
 	KeySlash:     "/",
+	KeyPeriod:    ".",
 	KeyEnter:     "Enter",
 	KeyEscape:    "Escape",
 	KeyBackspace: "Backspace",
@@ -46,6 +49,7 @@ var named = map[Key]string{
 	KeySpace:     "Space",
 	KeyShift:     "Shift",
 	KeyCtrl:      "Ctrl",
+	KeyAlt:       "Alt",
 }
 
 // Keys is every key the viewer knows how to name, which is what a screen sees

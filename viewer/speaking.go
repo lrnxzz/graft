@@ -32,31 +32,31 @@ func Says(chat *Chat) Speaking {
 }
 
 func (s Speaking) Line(text string) {
-	s.chat.Push(text)
+	s.chat.Says(text)
 }
 
 // Head is a title with a rule under it, for the top of a list
 func (s Speaking) Head(title string) {
-	s.chat.Push(Grey + Bold + strings.ToUpper(title))
+	s.chat.Says(Grey + Bold + strings.ToUpper(title))
 }
 
 // Note is something that went as expected
 func (s Speaking) Note(text string) {
-	s.chat.Push(Grey + text)
+	s.chat.Says(Grey + text)
 }
 
 func (s Speaking) Good(text string) {
-	s.chat.Push(Green + text)
+	s.chat.Says(Green + text)
 }
 
 func (s Speaking) Warn(text string) {
-	s.chat.Push(Yellow + text)
+	s.chat.Says(Yellow + text)
 }
 
 // Bad is a refusal, and it is the only shape that shows a caret, because that is
 // the only time the player needs to see where in their line it went wrong
 func (s Speaking) Bad(text string) {
-	s.chat.Push(Red + text)
+	s.chat.Says(Red + text)
 }
 
 // Under draws the offending run of a line with a marker beneath it
@@ -71,19 +71,19 @@ func (s Speaking) Under(line string, from, to int) {
 		to = len(line)
 	}
 
-	s.chat.Push(Faint + line)
-	s.chat.Push(Red + strings.Repeat(" ", from) + strings.Repeat("^", to-from))
+	s.chat.Says(Faint + line)
+	s.chat.Says(Red + strings.Repeat(" ", from) + strings.Repeat("^", to-from))
 }
 
 // Row is a numbered entry with a trailing note, which is what a list of things
 // with a state looks like
 func (s Speaking) Row(index int, text, note string) {
-	s.chat.Push(fmt.Sprintf("%s%2d. %s%s  %s", Faint, index, White, text, note))
+	s.chat.Says(fmt.Sprintf("%s%2d. %s%s  %s", Faint, index, White, text, note))
 }
 
 // Pair is a name and its value, lined up by the name being dim
 func (s Speaking) Pair(name, value string) {
-	s.chat.Push(Grey + name + "  " + White + value)
+	s.chat.Says(Grey + name + "  " + White + value)
 }
 
 const barCells = 20
@@ -102,7 +102,7 @@ func (s Speaking) Bar(name string, done, total int) {
 
 	drawn := Green + strings.Repeat("|", filled) + Faint + strings.Repeat("|", barCells-filled)
 
-	s.chat.Push(fmt.Sprintf("%s%s %s %s%d/%d", Grey, name, drawn, White, done, total))
+	s.chat.Says(fmt.Sprintf("%s%s %s %s%d/%d", Grey, name, drawn, White, done, total))
 }
 
 // Keys is the hint line at the foot of a mode, naming what each key does
@@ -120,5 +120,5 @@ func (s Speaking) Keys(pairs ...string) {
 		said.WriteString(Yellow + pairs[at] + Grey + " " + pairs[at+1])
 	}
 
-	s.chat.Push(said.String())
+	s.chat.Says(said.String())
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/lrnxzz/go-craft/pathfinder"
 	"github.com/lrnxzz/go-craft/viewer"
 	"github.com/lrnxzz/go-craft/viewer/command"
+	"github.com/lrnxzz/go-craft/viewer/gpu"
 )
 
 var (
@@ -66,8 +67,28 @@ func commandsFor(ctx context.Context, view *viewer.Viewer, plugins commands) *be
 	view.Settles(drawn.mark)
 	view.Intercept(desk.claim)
 	view.Offers(desk.offer)
+	view.Chat().Reads(desk.read)
+
+	// drawing a route is a job for the hand already on the mouse, so the keys do
+	// the whole of it and the commands are there for what keys cannot say
+	view.Bind(gpu.KeyBackspace, desk.whileDrawing(desk.undo))
+	view.Bind(gpu.KeyEnter, desk.whileDrawing(desk.walk))
 
 	return desk
+}
+
+// whileDrawing runs a route command from a key, and only out of the body, so a
+// keystroke meant for the game never plants or walks anything
+func (b *bench) whileDrawing(run func(command.Call) error) func() {
+	return func() {
+		if !b.view.Detached() {
+			return
+		}
+
+		if err := run(command.Calling(b.view.Bot(), b.view.Chat().Says)); err != nil {
+			b.says.Bad(err.Error())
+		}
+	}
 }
 
 // claim runs a line the player typed, and reports whether this tree wanted it.
@@ -78,7 +99,7 @@ func (b *bench) claim(line string) bool {
 		return false
 	}
 
-	ran, err := b.tree.Run(held, command.Calling(b.view.Bot(), b.view.Chat().Push))
+	ran, err := b.tree.Run(held, command.Calling(b.view.Bot(), b.view.Chat().Says))
 	if !ran {
 		return b.plugins.claim(line)
 	}
@@ -102,6 +123,31 @@ func (b *bench) refuse(line string, err error) {
 	var failed *command.Failure
 	if errors.As(err, &failed) {
 		b.says.Note(prefix + failed.Usage)
+	}
+}
+
+// read colours the line as it is typed. The opener is not part of what the tree
+// knows, so every span it reports is nudged past it.
+func (b *bench) read(line string) viewer.Reading {
+	held, is := Held(line)
+	if !is {
+		return viewer.Reading{}
+	}
+
+	reading := b.tree.Check(held, command.Calling(b.view.Bot(), nil))
+
+	marks := make([]viewer.Mark, 0, len(reading.Marks))
+	for _, mark := range reading.Marks {
+		marks = append(marks, viewer.Mark{
+			From: mark.From + 1,
+			To:   mark.To + 1,
+			Good: mark.Good,
+		})
+	}
+
+	return viewer.Reading{
+		Marks: marks,
+		Ghost: reading.Ghost,
 	}
 }
 
@@ -164,10 +210,22 @@ func (b *bench) stop(command.Call) error {
 
 func (b *bench) draw(command.Call) error {
 	b.view.Detach()
-	b.says.Head("drawing a route")
-	b.says.Keys("WASD", "fly", "hold still 3s", "mark a block", "F", "back in the body")
+	b.hints()
 
 	return nil
+}
+
+func (b *bench) hints() {
+	b.says.Head("drawing a route")
+	b.says.Keys(
+		"WASD", "fly",
+		"wheel", "pace",
+		"Ctrl/Alt", "faster, finer")
+	b.says.Keys(
+		"click", "mark a block",
+		"Backspace", "undo",
+		"Enter", "walk it",
+		"F", "back in the body")
 }
 
 func (b *bench) list(command.Call) error {

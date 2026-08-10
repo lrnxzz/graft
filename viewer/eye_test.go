@@ -41,10 +41,20 @@ func TestFlyingFollowsTheAim(t *testing.T) {
 	e.leave()
 
 	e.aim(gpu.At(90, 0))
-	e.fly(1, 0, 0, 1)
+	flown(&e, 1, 0, 0, 0.5)
 
 	if e.at.Len() == 0 {
 		t.Fatal("flying forward moved nothing")
+	}
+}
+
+// flown holds the keys for a stretch of seconds, since one call only starts the
+// clock and the camera eases into its pace over the frames that follow
+func flown(e *eye, forward, strafe, rise float32, seconds float64) {
+	const frame = 1.0 / 60
+
+	for at := 0.0; at <= seconds; at += frame {
+		e.fly(forward, strafe, rise, 1, at)
 	}
 }
 
@@ -56,7 +66,7 @@ func TestRisingKeepsTheHorizon(t *testing.T) {
 	e.aim(gpu.At(0, 40))
 
 	before := e.at
-	e.fly(0, 0, 1, 1)
+	flown(&e, 0, 0, 1, 0.5)
 
 	if e.at.X() != before.X() || e.at.Z() != before.Z() {
 		t.Errorf("rising moved sideways: %v then %v", before, e.at)
@@ -69,7 +79,7 @@ func TestRisingKeepsTheHorizon(t *testing.T) {
 // a camera still in the body must not drift when the keys are read
 func TestFlyingDoesNothingInTheBody(t *testing.T) {
 	var e eye
-	e.fly(1, 1, 1, 10)
+	flown(&e, 1, 1, 1, 0.5)
 
 	if e.at != (mgl32.Vec3{}) {
 		t.Fatalf("the body flew to %v", e.at)
@@ -90,4 +100,84 @@ func TestTheAimStopsAtTheZenith(t *testing.T) {
 	if e.pitch < -pitchLimit {
 		t.Errorf("pitch = %v, want no less than %v", e.pitch, -pitchLimit)
 	}
+}
+
+// The camera flies in blocks a second, not blocks a frame. It used to move a
+// fixed step per frame, so the same stick carried you twice as far on a fast
+// machine — which is what made steering it a guess.
+func TestTheSameStretchFliesTheSameDistance(t *testing.T) {
+	fly := func(frame float64) float32 {
+		var e eye
+		e.leave()
+		e.aim(gpu.At(90, 0))
+
+		for at := 0.0; at <= 1.0; at += frame {
+			e.fly(1, 0, 0, 1, at)
+		}
+
+		return e.at.Len()
+	}
+
+	slow, fast := fly(1.0/30), fly(1.0/144)
+
+	if drift := abs32(slow-fast) / max(slow, fast); drift > 0.05 {
+		t.Errorf("30fps flew %.2f and 144fps flew %.2f, %.0f%% apart", slow, fast, drift*100)
+	}
+}
+
+// a stall must not fling the camera across the world when the frames come back
+func TestAStallDoesNotFlingTheCamera(t *testing.T) {
+	var e eye
+	e.leave()
+	e.aim(gpu.At(90, 0))
+
+	e.fly(1, 0, 0, 1, 0)
+	e.fly(1, 0, 0, 1, 30)
+
+	if flung := e.at.Len(); flung > flyCruise {
+		t.Errorf("a thirty second stall moved the camera %.0f blocks", flung)
+	}
+}
+
+// pressing two keys asks for one speed, or a diagonal would be the fast way to
+// cross anything
+func TestADiagonalIsNotAShortcut(t *testing.T) {
+	straight, corner := eye{}, eye{}
+	straight.leave()
+	corner.leave()
+
+	flown(&straight, 1, 0, 0, 1)
+	flown(&corner, 1, 1, 0, 1)
+
+	if corner.at.Len() > straight.at.Len()*1.05 {
+		t.Errorf("a diagonal flew %.2f against %.2f straight", corner.at.Len(), straight.at.Len())
+	}
+}
+
+// the wheel moves the cruise itself, and it has to stop at both ends
+func TestTheCruiseStopsAtBothEnds(t *testing.T) {
+	var e eye
+	e.leave()
+
+	for range 200 {
+		e.pace(1)
+	}
+	if e.cruising() > flyFastest {
+		t.Errorf("the cruise ran past the top at %.1f", e.cruising())
+	}
+
+	for range 400 {
+		e.pace(-1)
+	}
+	if e.cruising() < flySlowest {
+		t.Errorf("the cruise ran past the bottom at %.1f", e.cruising())
+	}
+}
+
+func abs32(value float32) float32 {
+	if value < 0 {
+		return -value
+	}
+
+	return value
 }

@@ -81,8 +81,9 @@ func (v *Viewer) control(ctx context.Context) {
 	// out of the body the keys move the camera, and the bot keeps standing still
 	if v.eye.away() {
 		v.bot.SetControls(gocraft.Controls{})
-		v.fly()
+		v.fly(now)
 		v.aim()
+		v.plant()
 
 		return
 	}
@@ -93,12 +94,14 @@ func (v *Viewer) control(ctx context.Context) {
 	v.hotkeys()
 }
 
+// Ctrl covers ground and Alt lines up on a block. The wheel moves the cruise
+// itself, so the pace you settle on survives letting go of the keys.
 const (
-	flySpeed  = 0.45
-	flyFaster = 3
+	flyBoost = 3.5
+	flyCreep = 0.22
 )
 
-func (v *Viewer) fly() {
+func (v *Viewer) fly(now float64) {
 	held := func(key gpu.Key) float32 {
 		if v.window.Pressed(key) {
 			return 1
@@ -107,16 +110,39 @@ func (v *Viewer) fly() {
 		return 0
 	}
 
-	speed := float32(flySpeed)
-	if v.window.Pressed(gpu.KeyCtrl) {
-		speed *= flyFaster
+	if scrolled := v.window.Scroll(); scrolled != 0 {
+		v.eye.pace(scrolled)
+	}
+
+	pace := float32(1)
+	switch {
+	case v.window.Pressed(gpu.KeyCtrl):
+		pace = flyBoost
+	case v.window.Pressed(gpu.KeyAlt):
+		pace = flyCreep
 	}
 
 	v.eye.fly(
 		held(gpu.KeyW)-held(gpu.KeyS),
 		held(gpu.KeyD)-held(gpu.KeyA),
 		held(gpu.KeySpace)-held(gpu.KeyShift),
-		speed)
+		pace,
+		now)
+}
+
+// plant marks the block under the crosshair on a click. Waiting works too, but a
+// click is what a hand already on the mouse reaches for first.
+func (v *Viewer) plant() {
+	if !v.edges.button(gpu.ButtonLeft).started {
+		return
+	}
+
+	hit, sighted := v.Pick(dwellReach)
+	if !sighted {
+		return
+	}
+
+	v.Plant(hit.Block)
 }
 
 // fire runs whatever bind claimed a key this frame, the viewer's own included

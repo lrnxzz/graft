@@ -149,14 +149,19 @@ func (v *Viewer) installDefaults() error {
 		v.openChat("")
 	}
 	command := func() {
-		v.openChat("/")
+		v.openChat(Opener)
 	}
 
 	v.Bind(gpu.KeyT, say)
 	v.Bind(gpu.KeySlash, command)
+	v.Bind(gpu.KeyPeriod, command)
 
 	return nil
 }
+
+// Opener is what a command line starts with. A keyboard may not have a slash
+// within reach, so the dot is what the chat key prefills.
+const Opener = "."
 
 // AddWorldLayer registers geometry drawn inside the world, with depth still on
 func (v *Viewer) AddWorldLayer(layer WorldLayer) {
@@ -254,9 +259,8 @@ func (v *Viewer) rest(now float64) {
 	}
 
 	hit, sighted := v.Pick(dwellReach)
-	yaw, pitch := v.eye.facing()
 
-	at, held, showing := v.dwell.look(v.eye.eye(), yaw, pitch, hit, sighted, now)
+	at, held, showing := v.dwell.look(hit, sighted, now)
 	v.marking.Aiming(at, held, showing)
 
 	block, done := v.dwell.settled(now)
@@ -264,7 +268,14 @@ func (v *Viewer) rest(now float64) {
 		return
 	}
 
+	v.Plant(block)
+}
+
+// Plant sets a point, whether the wait ran it out or the player clicked. Both
+// ways end here so a mark looks the same however it was made.
+func (v *Viewer) Plant(block gocraft.Position) {
 	v.marking.Settled()
+	v.dwell.arm()
 
 	for _, handle := range v.settled {
 		handle(block)

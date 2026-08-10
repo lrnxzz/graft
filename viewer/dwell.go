@@ -5,29 +5,24 @@ import (
 )
 
 const (
-	// how long the camera has to rest on a block before it is marked
-	dwellSeconds = 3.0
+	// how long the crosshair has to stay on a block before it is marked
+	dwellSeconds = 1.5
 
-	// the camera never sits perfectly still, so resting is a small budget rather
-	// than an exact match: a hand on the mouse drifts a pixel a frame
-	dwellDrift = 0.35
-	dwellTurn  = 1.5
-
-	// once a block is marked the camera has to leave it before it can be marked
-	// again, or resting on it would plant a point every three seconds forever
+	// once a block is marked the crosshair has to leave it before it can be
+	// marked again, or resting on it would plant a point forever
 	dwellReach = 96.0
 )
 
-// dwell watches a loose camera for stillness. Holding the aim on one block long
-// enough is how a point is set: no click, so both hands stay on flying.
+// dwell watches what the crosshair is on. Keeping it on one block long enough is
+// how a point is set without reaching for a key.
+//
+// It follows the block and not the camera: an earlier version asked the camera
+// to hold still, and a single frame of flying moved it further than the budget
+// allowed, so the wait could never finish while you were steering.
 type dwell struct {
 	at      gocraft.Position
 	holding bool
 	since   float64
-
-	from  gocraft.Vec3d
-	yaw   float32
-	pitch float32
 
 	planted gocraft.Position
 	spent   bool
@@ -35,12 +30,7 @@ type dwell struct {
 
 // look reports the block being rested on and how far through the wait it is,
 // from 0 to 1. It answers false when nothing is being held.
-func (d *dwell) look(eye gocraft.Vec3d, yaw, pitch float32, hit gocraft.RayHit, sighted bool, now float64) (gocraft.Position, float64, bool) {
-	moved := eye.Distance(d.from) > dwellDrift
-	turned := abs(yaw-d.yaw) > dwellTurn || abs(pitch-d.pitch) > dwellTurn
-
-	d.from, d.yaw, d.pitch = eye, yaw, pitch
-
+func (d *dwell) look(hit gocraft.RayHit, sighted bool, now float64) (gocraft.Position, float64, bool) {
 	if !sighted {
 		d.holding = false
 		d.spent = false
@@ -53,7 +43,7 @@ func (d *dwell) look(eye gocraft.Vec3d, yaw, pitch float32, hit gocraft.RayHit, 
 		d.spent = false
 	}
 
-	if moved || turned || hit.Block != d.at || !d.holding {
+	if hit.Block != d.at || !d.holding {
 		d.at = hit.Block
 		d.since = now
 		d.holding = true
@@ -79,14 +69,11 @@ func (d *dwell) settled(now float64) (gocraft.Position, bool) {
 }
 
 func (d *dwell) forget() {
-	d.holding = false
-	d.spent = false
+	d.arm()
 }
 
-func abs(value float32) float32 {
-	if value < 0 {
-		return -value
-	}
-
-	return value
+// arm forgets the wait and the block it planted, so the next look starts over
+func (d *dwell) arm() {
+	d.holding = false
+	d.spent = false
 }

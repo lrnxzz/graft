@@ -33,7 +33,28 @@ type eye struct {
 	// the player looked away.
 	loose bool
 	at    mgl32.Vec3
+
+	// the camera carries speed of its own so it eases in and out instead of
+	// snapping between still and full pace, and so a dropped frame moves it the
+	// same distance a smooth one would
+	drift  mgl32.Vec3
+	cruise float32
+	last   float64
 }
+
+// how the camera flies, in blocks a second rather than blocks a frame: the old
+// pace moved twice as far on a fast machine as on a slow one
+const (
+	flyCruise  = 11.0
+	flySlowest = 2.0
+	flyFastest = 55.0
+
+	// how hard the camera chases the pace being asked of it, per second
+	flyEase = 11.0
+
+	// a hitch must not fling the camera across the world
+	flyStep = 0.05
+)
 
 func newEye(spawn agent.Snapshot, aspect float32) eye {
 	at := eyeOf(spawn.Position)
@@ -67,6 +88,12 @@ func (e *eye) facing() (yaw, pitch float32) {
 func (e *eye) leave() {
 	e.at = e.camera.Position
 	e.loose = true
+	e.drift = mgl32.Vec3{}
+	e.last = 0
+
+	if e.cruise == 0 {
+		e.cruise = flyCruise
+	}
 }
 
 func (e *eye) enter() {
@@ -91,18 +118,54 @@ func (e *eye) forward() gocraft.Vec3d {
 
 // fly moves a loose camera. Forward is where it looks, so flying and aiming are
 // the same gesture, and rise leaves the horizon alone.
-func (e *eye) fly(forward, strafe, rise, speed float32) {
+func (e *eye) fly(forward, strafe, rise, pace float32, now float64) {
 	if !e.loose {
 		return
 	}
 
+	step := e.step(now)
+
 	facing := direction(e.yaw, e.pitch)
 	side := mgl32.Vec3{-facing.Z(), 0, facing.X()}.Normalize()
 
-	e.at = e.at.
-		Add(facing.Mul(forward * speed)).
-		Add(side.Mul(strafe * speed)).
-		Add(mgl32.Vec3{0, rise * speed, 0})
+	wish := facing.Mul(forward).
+		Add(side.Mul(strafe)).
+		Add(mgl32.Vec3{0, rise, 0})
+
+	// a diagonal is not a shortcut: pressing two keys asks for one speed
+	if wish.Len() > 1 {
+		wish = wish.Normalize()
+	}
+
+	wish = wish.Mul(e.cruise * pace)
+
+	e.drift = e.drift.Add(wish.Sub(e.drift).Mul(min(1, flyEase*step)))
+	e.at = e.at.Add(e.drift.Mul(step))
+}
+
+// step is how much of a second passed, capped so a stall does not teleport the
+// camera and clean on the first frame out of the body
+func (e *eye) step(now float64) float32 {
+	if e.last == 0 {
+		e.last = now
+
+		return 0
+	}
+
+	step := float32(now - e.last)
+	e.last = now
+
+	return min(step, flyStep)
+}
+
+// Pace is the cruise the camera settles at, which the wheel raises and lowers so
+// the same stick both crosses a valley and lines up on a doorway
+func (e *eye) pace(by float64) {
+	e.cruise = clamp(e.cruise*float32(1+by*0.12), flySlowest, flyFastest)
+}
+
+func (e *eye) cruising() float32 {
+	return e.cruise
 }
 
 // follow catches the camera up to the last tick and glides the rest of the way,
