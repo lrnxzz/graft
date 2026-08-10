@@ -219,7 +219,7 @@ func (v *Viewer) suggest() bool {
 	line, cursor := v.chat.Line()
 
 	words, from, to := v.offering(line, cursor)
-	v.suggesting.Offers(words, from, to)
+	v.suggesting.Offers(words, run(line, from, to), from, to)
 
 	if !v.suggesting.Showing() {
 		return false
@@ -236,17 +236,40 @@ func (v *Viewer) suggest() bool {
 		return true
 	}
 
-	if !v.edges.key(gpu.KeyTab).started {
+	if v.edges.key(gpu.KeyTab).started {
+		return v.accept()
+	}
+
+	// Enter takes the row once you have picked one, and otherwise only when the
+	// word would add something. A word already typed in full is not worth a
+	// keystroke, so the line goes instead of standing still.
+	if v.edges.key(gpu.KeyEnter).started && (v.suggesting.Moved() || v.suggesting.Adds()) {
+		return v.accept()
+	}
+
+	return false
+}
+
+func (v *Viewer) accept() bool {
+	word, from, to, chosen := v.suggesting.Chosen()
+	if !chosen {
 		return false
 	}
 
-	word, from, to, chosen := v.suggesting.Chosen()
-	if chosen {
-		v.chat.Splice(from, to, word)
-		v.suggesting.Clear()
-	}
+	v.chat.Splice(from, to, word)
+	v.suggesting.Clear()
 
 	return true
+}
+
+// run is what the offer would replace, which the list shows apart from the rest
+// of each word
+func run(line string, from, to int) string {
+	if from < 0 || to > len(line) || from > to {
+		return ""
+	}
+
+	return line[from:to]
 }
 
 func (v *Viewer) toggleFreecam() {

@@ -1,23 +1,33 @@
 package viewer
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/lrnxzz/go-craft/viewer/gpu"
 )
 
 const (
 	suggestRows   = 8
 	suggestScale  = 2
-	suggestPad    = 4
+	suggestPad    = 6
 	suggestBottom = 46
-	suggestWidth  = 6
+	suggestLeft   = 6
+	suggestEdge   = 1
+	suggestBar    = 2
+	suggestGap    = 8
 )
 
 var (
-	suggestBack   = gpu.RGBA(0.04, 0.05, 0.08, 0.92)
-	suggestEdge   = gpu.RGBA(1, 1, 1, 0.10)
-	suggestChosen = gpu.RGBA(0.49, 0.83, 0.99, 0.22)
-	suggestText   = gpu.RGBA(0.91, 0.93, 0.96, 1)
-	suggestDim    = gpu.RGBA(0.91, 0.93, 0.96, 0.45)
+	suggestShade  = gpu.RGBA(0, 0, 0, 0.45)
+	suggestBack   = gpu.RGBA(0.05, 0.06, 0.09, 0.94)
+	suggestFrame  = gpu.RGBA(1, 1, 1, 0.09)
+	suggestPick   = gpu.RGBA(0.49, 0.83, 0.99, 0.16)
+	suggestAccent = gpu.RGBA(0.49, 0.83, 0.99, 1)
+	suggestTyped  = gpu.RGBA(0.49, 0.83, 0.99, 0.9)
+	suggestBright = gpu.RGBA(0.95, 0.96, 0.98, 1)
+	suggestText   = gpu.RGBA(0.72, 0.75, 0.80, 1)
+	suggestFaint  = gpu.RGBA(0.45, 0.48, 0.54, 1)
 )
 
 // Suggesting is the list under the chat while a command is being typed. It is a
@@ -25,31 +35,44 @@ var (
 // the hud and a plugin's own overlay.
 type Suggesting struct {
 	words  []string
+	typed  string
 	chosen int
+	first  int
+	moved  bool
 	from   int
 	to     int
 }
 
 // Offers replaces what is on show. The choice is kept when the list has not
 // changed, so typing a letter that narrows nothing does not jump the highlight.
-func (s *Suggesting) Offers(words []string, from, to int) {
-	if same(s.words, words) {
-		s.from, s.to = from, to
+func (s *Suggesting) Offers(words []string, typed string, from, to int) {
+	s.typed, s.from, s.to = typed, from, to
 
+	if same(s.words, words) {
 		return
 	}
 
-	s.words, s.from, s.to = words, from, to
+	s.words = words
 	s.chosen = 0
+	s.first = 0
+	s.moved = false
 }
 
 func (s *Suggesting) Clear() {
 	s.words = nil
 	s.chosen = 0
+	s.first = 0
+	s.moved = false
 }
 
 func (s *Suggesting) Showing() bool {
 	return len(s.words) > 0
+}
+
+// Moved reports whether the player picked a row rather than being handed the
+// first one, which is what tells Enter to accept instead of send
+func (s *Suggesting) Moved() bool {
+	return s.moved
 }
 
 func (s *Suggesting) Move(by int) {
@@ -58,6 +81,20 @@ func (s *Suggesting) Move(by int) {
 	}
 
 	s.chosen = (s.chosen + by + len(s.words)) % len(s.words)
+	s.moved = true
+
+	s.scroll()
+}
+
+// scroll keeps the chosen row inside the window, since a list longer than the
+// panel would otherwise highlight a row nobody can see
+func (s *Suggesting) scroll() {
+	if s.chosen < s.first {
+		s.first = s.chosen
+	}
+	if s.chosen >= s.first+suggestRows {
+		s.first = s.chosen - suggestRows + 1
+	}
 }
 
 // Chosen is the word to splice in and the run it replaces
@@ -69,43 +106,106 @@ func (s *Suggesting) Chosen() (string, int, int, bool) {
 	return s.words[s.chosen], s.from, s.to, true
 }
 
+// Adds reports whether accepting would change the line at all. A word already
+// typed in full is not worth a keystroke, so Enter sends instead.
+func (s *Suggesting) Adds() bool {
+	word, _, _, chosen := s.Chosen()
+
+	return chosen && word != s.typed
+}
+
 func (s *Suggesting) Draw(canvas *Canvas) {
 	if len(s.words) == 0 {
 		return
 	}
 
-	shown := s.words
-	if len(shown) > suggestRows {
-		shown = shown[:suggestRows]
-	}
+	shown := s.window()
 
 	line := float32(glyphSize * suggestScale)
-	height := float32(len(shown))*line + 2*suggestPad
+	rows := float32(len(shown))*line + 2*suggestPad
 
-	widest := float32(0)
-	for _, word := range shown {
+	height := rows
+	if s.more() > 0 {
+		height += line
+	}
+
+	widest := canvas.TextWidth(s.tally(), suggestScale)
+	for _, word := range s.words {
 		widest = max(widest, canvas.TextWidth(word, suggestScale))
 	}
 
 	screen := canvas.Screen()
-	corner := gpu.At(suggestWidth, screen.Height()-suggestBottom-height)
-	panel := gpu.RectAt(corner, widest+2*suggestPad+line, height)
+	corner := gpu.At(suggestLeft, screen.Height()-suggestBottom-height)
+	panel := gpu.RectAt(corner, widest+2*suggestPad+suggestBar+suggestGap, height)
 
+	canvas.Fill(panel.Offset(2, 2), suggestShade)
 	canvas.Fill(panel, suggestBack)
-	canvas.Fill(gpu.RectAt(corner, panel.Width(), 1), suggestEdge)
+	frame(canvas, panel)
 
 	for row, word := range shown {
-		at := corner.Offset(suggestPad, suggestPad+float32(row)*line)
+		at := corner.Offset(suggestPad+suggestBar+suggestGap, suggestPad+float32(row)*line)
 
-		tint := suggestDim
-		if row == s.chosen {
-			canvas.Fill(gpu.RectAt(corner.Offset(0, at.Y-corner.Y), panel.Width(), line), suggestChosen)
-
-			tint = suggestText
+		if row+s.first == s.chosen {
+			s.pick(canvas, gpu.RectAt(gpu.At(corner.X, at.Y-2), panel.Width(), line))
 		}
 
-		canvas.Shadowed(word, at, suggestScale, tint)
+		s.word(canvas, word, at, row+s.first == s.chosen)
 	}
+
+	if s.more() > 0 {
+		canvas.Shadowed(s.tally(), corner.Offset(suggestPad+suggestBar+suggestGap, rows-suggestPad), suggestScale, suggestFaint)
+	}
+}
+
+// window is the run of words the panel has room for, following the choice
+func (s *Suggesting) window() []string {
+	last := min(s.first+suggestRows, len(s.words))
+
+	return s.words[s.first:last]
+}
+
+func (s *Suggesting) more() int {
+	return len(s.words) - len(s.window()) - s.first
+}
+
+func (s *Suggesting) tally() string {
+	if s.more() <= 0 {
+		return ""
+	}
+
+	return "+" + strconv.Itoa(s.more()) + " more"
+}
+
+// pick is the chosen row: a wash across the panel and a bar down its edge, so
+// the choice reads even where the wash is too faint to see
+func (s *Suggesting) pick(canvas *Canvas, row gpu.Rect) {
+	canvas.Fill(row, suggestPick)
+	canvas.Fill(gpu.RectAt(row.Min, suggestBar, row.Height()), suggestAccent)
+}
+
+// word draws what was typed apart from what completing it would add, which is
+// the whole point of the list: you see what the keystroke buys you
+func (s *Suggesting) word(canvas *Canvas, word string, at gpu.Point, chosen bool) {
+	rest := suggestText
+	if chosen {
+		rest = suggestBright
+	}
+
+	if s.typed == "" || !strings.HasPrefix(word, s.typed) {
+		canvas.Shadowed(word, at, suggestScale, rest)
+
+		return
+	}
+
+	pen := canvas.Shadowed(s.typed, at, suggestScale, suggestTyped)
+	canvas.Shadowed(word[len(s.typed):], pen, suggestScale, rest)
+}
+
+func frame(canvas *Canvas, panel gpu.Rect) {
+	canvas.Fill(gpu.RectAt(panel.Min, panel.Width(), suggestEdge), suggestFrame)
+	canvas.Fill(gpu.RectAt(panel.Min.Offset(0, panel.Height()-suggestEdge), panel.Width(), suggestEdge), suggestFrame)
+	canvas.Fill(gpu.RectAt(panel.Min, suggestEdge, panel.Height()), suggestFrame)
+	canvas.Fill(gpu.RectAt(panel.Min.Offset(panel.Width()-suggestEdge, 0), suggestEdge, panel.Height()), suggestFrame)
 }
 
 func same(before, after []string) bool {
