@@ -39,34 +39,3 @@ func (s *steering) wanted() (graft.Controls, float32, float32, bool) {
 
 	return s.controls, s.yaw, s.pitch, s.aimed
 }
-
-// latest is what the bot last reported, written by the tick and read from
-// anywhere. It carries its own lock because it flows the opposite way to
-// steering, and sharing one would make a reader wait on a writer it never meets.
-type latest struct {
-	mu    sync.Mutex
-	ticks uint64
-	seen  Snapshot
-}
-
-func (l *latest) publish(player *graft.Player) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	l.ticks++
-	l.seen = Snapshot{
-		Tick:     l.ticks,
-		Position: player.Position,
-		Yaw:      player.Yaw,
-		Pitch:    player.Pitch,
-		OnGround: player.OnGround,
-		Health:   player.Health,
-	}
-}
-
-func (l *latest) read() Snapshot {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	return l.seen
-}

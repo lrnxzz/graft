@@ -49,15 +49,6 @@ type Agent struct {
 	audience audience
 }
 
-type Snapshot struct {
-	Tick     uint64
-	Position graft.Vec3d
-	Yaw      float32
-	Pitch    float32
-	OnGround bool
-	Health   float32
-}
-
 func (a *Agent) Snapshot() Snapshot {
 	return a.latest.read()
 }
@@ -252,13 +243,13 @@ func (a *Agent) Dig(ctx context.Context, reach float64) (graft.RayHit, error) {
 	proposed := &Digging{
 		Block: hit.Block,
 		State: hit.State,
-		Tool:  a.session.Inventory().Held().Item,
+		Tool:  a.held(),
 	}
 	if err := a.allowed(proposed); err != nil {
 		return graft.RayHit{}, err
 	}
 
-	finished, err := a.miner.begin(hit, reach, a.session.Player().GameMode, a.session.Inventory().Held().Item)
+	finished, err := a.miner.begin(hit, reach, a.session.Player().GameMode, a.held())
 	if err != nil {
 		return graft.RayHit{}, err
 	}
@@ -282,30 +273,33 @@ func (a *Agent) StopDigging() error {
 }
 
 func (a *Agent) Digging() bool {
-	_, active := a.miner.excavating()
+	_, active := a.miner.current()
 
 	return active
 }
 
-// Excavating is the block being broken and how far through it the bot is, from
-// 0 to 1. It reports false when nothing is being dug.
-type Excavating struct {
-	Block    graft.Position
-	Progress float64
-}
-
 func (a *Agent) Excavating() (Excavating, bool) {
-	return a.miner.excavation()
+	dig, active := a.miner.current()
+	if !active {
+		return Excavating{}, false
+	}
+
+	underway := Excavating{
+		Block:    dig.hit.Block,
+		Progress: dig.progress,
+	}
+
+	return underway, true
 }
 
 func (a *Agent) excavate() {
-	reach, active := a.miner.excavating()
+	dig, active := a.miner.current()
 	if !active {
 		return
 	}
 
-	hit, sighted := a.Target(reach)
-	_ = a.miner.tick(hit, sighted, a.session.Inventory().Held().Item)
+	hit, sighted := a.Target(dig.reach)
+	_ = a.miner.tick(hit, sighted, a.held())
 }
 
 func (a *Agent) Place(reach float64) error {
@@ -316,7 +310,7 @@ func (a *Agent) Place(reach float64) error {
 
 	proposed := &Placing{
 		Block: hit.Block.Neighbor(hit.Face),
-		Item:  a.session.Inventory().Held().Item,
+		Item:  a.held(),
 	}
 	if err := a.allowed(proposed); err != nil {
 		return err
@@ -371,15 +365,14 @@ func (a *Agent) Navigate(ctx context.Context, goal pathfinder.Goal) (graft.Posit
 // that stance, asking for a bridge would only plan a step it cannot carry out.
 func (a *Agent) loadout() pathfinder.Loadout {
 	return pathfinder.Loadout{
-		Tool:    a.session.Inventory().Held().Item,
+		Tool:    a.held(),
 		Digging: a.session.Player().GameMode != graft.Adventure,
 	}
 }
 
-// Path is where the bot is walking and how many of those waypoints are behind it
-type Path struct {
-	Waypoints []graft.Position
-	Walked    int
+// held is the item under the bot's hand, which nearly every action wants to know
+func (a *Agent) held() graft.ItemID {
+	return a.session.Inventory().Held().Item
 }
 
 func (a *Agent) Path() Path {
@@ -455,7 +448,7 @@ func (a *Agent) mine(player *graft.Player, command order) {
 
 	// the navigator watches the world to know the block fell, so the dig channel
 	// has no reader here and the buffered send simply drops on the floor
-	_, _ = a.miner.begin(hit, graft.BlockReach, player.GameMode, a.session.Inventory().Held().Item)
+	_, _ = a.miner.begin(hit, graft.BlockReach, player.GameMode, a.held())
 }
 
 func (a *Agent) build(player *graft.Player, command order) {

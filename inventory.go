@@ -23,8 +23,12 @@ type Inventory struct {
 	held  int
 }
 
+func inRange(index int) bool {
+	return index >= 0 && index < InventorySize
+}
+
 func (i *Inventory) Slot(index int) ItemStack {
-	if index < 0 || index >= InventorySize {
+	if !inRange(index) {
 		return ItemStack{}
 	}
 
@@ -32,7 +36,7 @@ func (i *Inventory) Slot(index int) ItemStack {
 }
 
 func (i *Inventory) SetSlot(index int, stack ItemStack) {
-	if index < 0 || index >= InventorySize {
+	if !inRange(index) {
 		return
 	}
 
@@ -46,7 +50,7 @@ func (i *Inventory) Load(stacks []ItemStack) {
 }
 
 func (i *Inventory) Swap(a, b int) {
-	if a < 0 || a >= InventorySize || b < 0 || b >= InventorySize {
+	if !inRange(a) || !inRange(b) {
 		return
 	}
 

@@ -30,7 +30,7 @@ func (c Controls) Heading(yaw float32) Vec3d {
 	}
 
 	rad := float64(yaw) * math.Pi / 180
-	f, g := math.Sin(rad), math.Cos(rad)
+	sin, cos := math.Sin(rad), math.Cos(rad)
 
-	return Vec3(strafe*g-forward*f, 0, forward*g+strafe*f).Normalize()
+	return Vec3(strafe*cos-forward*sin, 0, forward*cos+strafe*sin).Normalize()
 }

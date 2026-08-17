@@ -98,3 +98,33 @@ func LookAngles(from, to Vec3d) (float32, float32) {
 func (p *Player) Alive() bool {
 	return p.Health > 0
 }
+
+// Angle is the protocol's rotation unit: a full turn in 256 steps
+type Angle uint8
+
+func (a Angle) Append(dst []byte) []byte {
+	return codec.UByte(a).Append(dst)
+}
+
+func (a *Angle) Decode(r *codec.Reader) error {
+	var raw codec.UByte
+	if err := raw.Decode(r); err != nil {
+		return err
+	}
+
+	*a = Angle(raw)
+
+	return nil
+}
+
+func (a Angle) Degrees() float64 {
+	return float64(a) * 360 / 256
+}
+
+func (a Angle) Radians() float64 {
+	return float64(a) * 2 * math.Pi / 256
+}
+
+func AngleFromDegrees(degrees float64) Angle {
+	return Angle(int64(math.Round(degrees / 360 * 256)))
+}

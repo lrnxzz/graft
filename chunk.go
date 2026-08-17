@@ -121,6 +121,12 @@ func (c *Column) MinY() int {
 	return c.minY
 }
 
+// Covers reports whether the column's sections span this height, which is what
+// keeps a stray Y from indexing outside them
+func (c *Column) Covers(y int) bool {
+	return y >= c.minY && y < c.minY+len(c.sections)*chunkWidth
+}
+
 func (c *Column) Height() int {
 	return len(c.sections) * 16
 }

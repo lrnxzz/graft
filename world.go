@@ -80,10 +80,7 @@ func (w *World) Block(x, y, z int) (BlockState, bool) {
 	defer w.mu.RUnlock()
 
 	c, ok := w.columns[At(x, y, z).Chunk()]
-	if !ok {
-		return 0, false
-	}
-	if y < c.minY || y >= c.minY+len(c.sections)*chunkWidth {
+	if !ok || !c.Covers(y) {
 		return 0, false
 	}
 
@@ -95,7 +92,7 @@ func (w *World) SetBlock(x, y, z int, state BlockState) {
 	defer w.mu.Unlock()
 
 	c, ok := w.columns[At(x, y, z).Chunk()]
-	if !ok {
+	if !ok || !c.Covers(y) {
 		return
 	}
 

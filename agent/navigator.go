@@ -29,6 +29,15 @@ const (
 	leapBlockLength = 2
 )
 
+var placeFaces = [...]graft.BlockFace{
+	graft.FaceDown,
+	graft.FaceNorth,
+	graft.FaceSouth,
+	graft.FaceWest,
+	graft.FaceEast,
+	graft.FaceUp,
+}
+
 type order struct {
 	action   pathfinder.Action
 	target   graft.Position
@@ -107,6 +116,12 @@ func (n *navigator) arrive(reached graft.Position) {
 func (n *navigator) settle() {
 	n.steps = nil
 	n.done = nil
+}
+
+// Path is where the bot is walking and how many of those waypoints are behind it
+type Path struct {
+	Waypoints []graft.Position
+	Walked    int
 }
 
 func (n *navigator) route() Path {
@@ -245,15 +260,6 @@ func aimFor(world *graft.World, current pathfinder.Step) (graft.Vec3d, bool) {
 	}
 
 	return graft.Vec3d{}, false
-}
-
-var placeFaces = [...]graft.BlockFace{
-	graft.FaceDown,
-	graft.FaceNorth,
-	graft.FaceSouth,
-	graft.FaceWest,
-	graft.FaceEast,
-	graft.FaceUp,
 }
 
 func (n *navigator) stride(player *graft.Player, waypoint graft.Position) (order, bool) {

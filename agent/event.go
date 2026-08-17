@@ -136,6 +136,8 @@ func (*Navigating) Name() string {
 // the order they were added, and one that panics or blocks only delays the bot —
 // it can never drop the connection.
 func On[N Notice](a *Agent, handle func(N)) {
+	// the prototype is a zero value, and for the pointer notices that is nil —
+	// safe only because every Name() ignores its receiver
 	var prototype N
 
 	typed := func(raised Notice) {
@@ -152,6 +154,7 @@ func On[N Notice](a *Agent, handle func(N)) {
 // The handler runs on whichever goroutine asked for the action, before anything
 // has been sent.
 func Before[I Intent](a *Agent, handle func(I)) {
+	// nil-receiver Name(), same as On
 	var prototype I
 
 	typed := func(proposed Intent) {

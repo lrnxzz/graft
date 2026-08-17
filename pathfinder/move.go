@@ -6,43 +6,6 @@ import graft "github.com/lrnxzz/graft"
 // jumps through, which is the widest any single move gets
 const maxBreaks = 3
 
-type corner struct {
-	first  graft.BlockFace
-	second graft.BlockFace
-}
-
-func cornerBetween(first, second graft.BlockFace) corner {
-	return corner{
-		first:  first,
-		second: second,
-	}
-}
-
-var cardinalFaces = [...]graft.BlockFace{
-	graft.FaceNorth,
-	graft.FaceSouth,
-	graft.FaceWest,
-	graft.FaceEast,
-}
-
-var diagonalCorners = [...]corner{
-	cornerBetween(graft.FaceNorth, graft.FaceWest),
-	cornerBetween(graft.FaceNorth, graft.FaceEast),
-	cornerBetween(graft.FaceSouth, graft.FaceWest),
-	cornerBetween(graft.FaceSouth, graft.FaceEast),
-}
-
-var leapDirections = [...]graft.Position{
-	graft.At(1, 0, 0),
-	graft.At(-1, 0, 0),
-	graft.At(0, 0, 1),
-	graft.At(0, 0, -1),
-	graft.At(1, 0, 1),
-	graft.At(1, 0, -1),
-	graft.At(-1, 0, 1),
-	graft.At(-1, 0, -1),
-}
-
 type move struct {
 	to      graft.Position
 	cost    float64

@@ -7,6 +7,10 @@ import (
 	"github.com/lrnxzz/graft/lib"
 )
 
+// searchBudget bounds how many nodes one plan may expand, which is what turns an
+// unreachable goal into a partial route instead of an endless search
+const searchBudget = 8192
+
 type Planner struct {
 	world   World
 	terrain Terrain

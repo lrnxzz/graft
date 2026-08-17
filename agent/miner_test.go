@@ -74,7 +74,7 @@ func TestMinerFinishesAfterVanillaBreakTime(t *testing.T) {
 	if err := <-finished; err != nil {
 		t.Fatal(err)
 	}
-	if _, active := m.excavating(); active {
+	if _, active := m.current(); active {
 		t.Error("miner should be idle after finishing")
 	}
 }
@@ -140,7 +140,7 @@ func TestMinerCancelsWhenLookingAway(t *testing.T) {
 	if err := <-finished; !errors.Is(err, errDigAbandoned) {
 		t.Errorf("dig err = %v, want abandoned", err)
 	}
-	if _, active := m.excavating(); active {
+	if _, active := m.current(); active {
 		t.Error("miner should be idle after abandoning")
 	}
 }
@@ -203,7 +203,7 @@ func TestMinerCreativeBreaksWithStartOnly(t *testing.T) {
 	if err := <-finished; err != nil {
 		t.Errorf("creative dig err = %v, want nil", err)
 	}
-	if _, active := m.excavating(); active {
+	if _, active := m.current(); active {
 		t.Error("creative digging should not leave the miner active")
 	}
 }

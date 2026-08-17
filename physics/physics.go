@@ -17,19 +17,15 @@ const (
 
 type Collider func(graft.BlockState) []graft.AABB
 
-type clamper = func(obstacle, moving graft.AABB, delta float64) float64
-
 type Body struct {
 	Velocity graft.Vec3d
 	collider Collider
 }
 
 func New(collider Collider) *Body {
-	simulated := Body{
+	return &Body{
 		collider: collider,
 	}
-
-	return &simulated
 }
 
 func (p *Body) Tick(world *graft.World, player *graft.Player, controls graft.Controls) {
@@ -92,7 +88,7 @@ func (p *Body) stepUp(world *graft.World, box graft.AABB, velocity, moved graft.
 func (p *Body) collide(world *graft.World, box graft.AABB, velocity graft.Vec3d) graft.Vec3d {
 	obstacles := p.obstacles(world, box.Stretch(velocity.X, velocity.Y, velocity.Z))
 
-	slide := func(box graft.AABB, delta float64, clamp clamper) float64 {
+	slide := func(box graft.AABB, delta float64, clamp func(obstacle, moving graft.AABB, delta float64) float64) float64 {
 		for _, obstacle := range obstacles {
 			delta = clamp(obstacle, box, delta)
 		}

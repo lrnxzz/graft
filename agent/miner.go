@@ -81,9 +81,9 @@ func (m *miner) begin(hit graft.RayHit, reach float64, mode graft.GameMode, held
 	return dig.finished, m.complete()
 }
 
-// finish retires the dig in progress and tells whoever asked for the block how it
-// went; the channel is buffered for exactly this one send, so the tick loop that
-// calls it never waits for a reader
+// complete retires the dig in progress and tells whoever asked for the block how
+// it went; the channel is buffered for exactly this one send, so the tick loop
+// that calls it never waits for a reader
 func (m *miner) complete() error {
 	dig := m.dig
 	m.dig = nil
@@ -117,31 +117,24 @@ func (m *miner) stop() error {
 	return m.digger.CancelDigging(dig.hit)
 }
 
-func (m *miner) excavating() (float64, bool) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if m.dig == nil {
-		return 0, false
-	}
-
-	return m.dig.reach, true
+// Excavating is the block being broken and how far through it the bot is, from
+// 0 to 1. It reports false when nothing is being dug.
+type Excavating struct {
+	Block    graft.Position
+	Progress float64
 }
 
-func (m *miner) excavation() (Excavating, bool) {
+// current is a copy of the dig in progress, which is the one reading every
+// caller wants under the one lock
+func (m *miner) current() (excavation, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	if m.dig == nil {
-		return Excavating{}, false
+		return excavation{}, false
 	}
 
-	underway := Excavating{
-		Block:    m.dig.hit.Block,
-		Progress: m.dig.progress,
-	}
-
-	return underway, true
+	return *m.dig, true
 }
 
 func (m *miner) tick(target graft.RayHit, sighted bool, held graft.ItemID) error {

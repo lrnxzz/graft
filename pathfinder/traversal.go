@@ -6,6 +6,50 @@ import (
 	graft "github.com/lrnxzz/graft"
 )
 
+const (
+	maxFall   = 3
+	maxLeap   = 4
+	leapReach = 4.3
+	headroom  = 2
+)
+
+type corner struct {
+	first  graft.BlockFace
+	second graft.BlockFace
+}
+
+func cornerBetween(first, second graft.BlockFace) corner {
+	return corner{
+		first:  first,
+		second: second,
+	}
+}
+
+var cardinalFaces = [...]graft.BlockFace{
+	graft.FaceNorth,
+	graft.FaceSouth,
+	graft.FaceWest,
+	graft.FaceEast,
+}
+
+var diagonalCorners = [...]corner{
+	cornerBetween(graft.FaceNorth, graft.FaceWest),
+	cornerBetween(graft.FaceNorth, graft.FaceEast),
+	cornerBetween(graft.FaceSouth, graft.FaceWest),
+	cornerBetween(graft.FaceSouth, graft.FaceEast),
+}
+
+var leapDirections = [...]graft.Position{
+	graft.At(1, 0, 0),
+	graft.At(-1, 0, 0),
+	graft.At(0, 0, 1),
+	graft.At(0, 0, -1),
+	graft.At(1, 0, 1),
+	graft.At(1, 0, -1),
+	graft.At(-1, 0, 1),
+	graft.At(-1, 0, -1),
+}
+
 func (p *Planner) state(at graft.Position) (graft.BlockState, bool) {
 	return p.world.BlockAt(at)
 }

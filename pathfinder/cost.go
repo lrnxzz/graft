@@ -14,11 +14,3 @@ const (
 	costPlace    = 2.0
 	costTick     = 0.21
 )
-
-const (
-	searchBudget = 8192
-	maxFall      = 3
-	maxLeap      = 4
-	leapReach    = 4.3
-	headroom     = 2
-)

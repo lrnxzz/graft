@@ -9,7 +9,7 @@ import (
 
 type BlockState int32
 
-var blockStates = codec.PaletteType{
+var blockPalette = codec.PaletteType{
 	Entries:     4096,
 	IndirectMax: 8,
 	DirectBits:  15,
@@ -17,15 +17,13 @@ var blockStates = codec.PaletteType{
 
 func BlockStates() codec.PalettedContainer[BlockState] {
 	return codec.PalettedContainer[BlockState]{
-		PaletteType: blockStates,
+		PaletteType: blockPalette,
 	}
 }
 
-type propertyValues = []string
-
 type Property struct {
 	Name   string
-	Values propertyValues
+	Values []string
 }
 
 func (p *Property) UnmarshalJSON(data []byte) error {
@@ -37,14 +35,14 @@ func (p *Property) UnmarshalJSON(data []byte) error {
 	p.Name = raw.Name
 	switch raw.Type {
 	case "bool":
-		p.Values = propertyValues{
+		p.Values = []string{
 			"true",
 			"false",
 		}
 	case "enum":
 		p.Values = raw.Values
 	default:
-		p.Values = make(propertyValues, raw.NumValues)
+		p.Values = make([]string, raw.NumValues)
 		for i := range p.Values {
 			p.Values[i] = strconv.Itoa(i)
 		}
