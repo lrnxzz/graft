@@ -1,15 +1,15 @@
-package gocraft_test
+package graft_test
 
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
 )
 
 func TestIdentifierParts(t *testing.T) {
 	tests := []struct {
-		id        gocraft.Identifier
+		id        graft.Identifier
 		namespace string
 		path      string
 	}{
@@ -42,7 +42,7 @@ func TestIdentifierParts(t *testing.T) {
 
 func TestIdentifierValid(t *testing.T) {
 	tests := []struct {
-		id    gocraft.Identifier
+		id    graft.Identifier
 		valid bool
 	}{
 		{
@@ -79,9 +79,9 @@ func TestIdentifierValid(t *testing.T) {
 }
 
 func TestIdentifierRecoversEncodedValue(t *testing.T) {
-	want := gocraft.NewIdentifier("mymod", "block/custom")
+	want := graft.NewIdentifier("mymod", "block/custom")
 
-	var got gocraft.Identifier
+	var got graft.Identifier
 	if err := codec.Unmarshal(want.Append(nil), &got); err != nil {
 		t.Fatal(err)
 	}

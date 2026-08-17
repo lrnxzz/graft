@@ -3,22 +3,22 @@ package agent
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/pathfinder"
-	"github.com/lrnxzz/go-craft/physics"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/pathfinder"
+	"github.com/lrnxzz/graft/physics"
 )
 
 type simTerrain struct{}
 
-func (simTerrain) Passable(state gocraft.BlockState) bool {
+func (simTerrain) Passable(state graft.BlockState) bool {
 	return state == 0
 }
 
-func (simTerrain) Dangerous(state gocraft.BlockState) bool {
+func (simTerrain) Dangerous(state graft.BlockState) bool {
 	return state == 9
 }
 
-func (simTerrain) BreakTicks(state gocraft.BlockState, _ gocraft.ItemID) (int, bool) {
+func (simTerrain) BreakTicks(state graft.BlockState, _ graft.ItemID) (int, bool) {
 	if state == 0 || state == 9 {
 		return 0, false
 	}
@@ -26,17 +26,17 @@ func (simTerrain) BreakTicks(state gocraft.BlockState, _ gocraft.ItemID) (int, b
 	return 20, true
 }
 
-func simCollider(state gocraft.BlockState) []gocraft.AABB {
+func simCollider(state graft.BlockState) []graft.AABB {
 	if state == 0 {
 		return nil
 	}
 
-	return []gocraft.AABB{gocraft.Box(gocraft.Vec3(0, 0, 0), gocraft.Vec3(1, 1, 1))}
+	return []graft.AABB{graft.Box(graft.Vec3(0, 0, 0), graft.Vec3(1, 1, 1))}
 }
 
-func walk(world *gocraft.World, route pathfinder.Route, budget int) (gocraft.Vec3d, <-chan arrival) {
+func walk(world *graft.World, route pathfinder.Route, budget int) (graft.Vec3d, <-chan arrival) {
 	start := route.Waypoints()[0]
-	player := &gocraft.Player{Position: start.Center().Offset(0, -0.5, 0)}
+	player := &graft.Player{Position: start.Center().Offset(0, -0.5, 0)}
 	body := physics.New(simCollider)
 
 	var nav navigator
@@ -57,19 +57,19 @@ func walk(world *gocraft.World, route pathfinder.Route, budget int) (gocraft.Vec
 }
 
 func TestNavigatorWalksFlatGround(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, 1)
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, simTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 1, 2)
-	goal := pathfinder.GoalAt(gocraft.At(10, 1, 2))
+	from := graft.At(2, 1, 2)
+	goal := pathfinder.GoalAt(graft.At(10, 1, 2))
 
 	route, ok := planner.Plan(from, goal)
 	if !ok {
@@ -83,26 +83,26 @@ func TestNavigatorWalksFlatGround(t *testing.T) {
 		t.Fatalf("navigation error: %v (ended at %v)", result.err, end)
 	}
 
-	gap := end.Horizontal().Distance(gocraft.Vec2(10.5, 2.5))
+	gap := end.Horizontal().Distance(graft.Vec2(10.5, 2.5))
 	if gap > 1 {
 		t.Errorf("ended at %v, want within a block of the goal", end)
 	}
 }
 
 func TestNavigatorCutsDiagonals(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, 1)
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, simTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 1, 2)
-	goal := pathfinder.GoalAt(gocraft.At(10, 1, 10))
+	from := graft.At(2, 1, 2)
+	goal := pathfinder.GoalAt(graft.At(10, 1, 10))
 
 	route, ok := planner.Plan(from, goal)
 	if !ok {
@@ -118,7 +118,7 @@ func TestNavigatorCutsDiagonals(t *testing.T) {
 }
 
 func TestNavigatorClimbsStairs(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, 1)
@@ -132,12 +132,12 @@ func TestNavigatorClimbsStairs(t *testing.T) {
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, simTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 1, 8)
-	goal := pathfinder.GoalAt(gocraft.At(10, 4, 8))
+	from := graft.At(2, 1, 8)
+	goal := pathfinder.GoalAt(graft.At(10, 4, 8))
 
 	route, ok := planner.Plan(from, goal)
 	if !ok {
@@ -153,7 +153,7 @@ func TestNavigatorClimbsStairs(t *testing.T) {
 }
 
 func TestNavigatorDropsLedges(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, 1)
@@ -163,12 +163,12 @@ func TestNavigatorDropsLedges(t *testing.T) {
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, simTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 4, 8)
-	goal := pathfinder.GoalAt(gocraft.At(12, 1, 8))
+	from := graft.At(2, 4, 8)
+	goal := pathfinder.GoalAt(graft.At(12, 1, 8))
 
 	route, ok := planner.Plan(from, goal)
 	if !ok {
@@ -184,7 +184,7 @@ func TestNavigatorDropsLedges(t *testing.T) {
 }
 
 func TestNavigatorLeapsGaps(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			if x != 5 {
@@ -193,12 +193,12 @@ func TestNavigatorLeapsGaps(t *testing.T) {
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, simTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 7, 8)
-	goal := pathfinder.GoalAt(gocraft.At(8, 7, 8))
+	from := graft.At(2, 7, 8)
+	goal := pathfinder.GoalAt(graft.At(8, 7, 8))
 
 	route, ok := planner.Plan(from, goal)
 	if !ok {
@@ -214,10 +214,10 @@ func TestNavigatorLeapsGaps(t *testing.T) {
 }
 
 func TestNavigatorRoundsWallCorners(t *testing.T) {
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	for cx := int32(0); cx <= 2; cx++ {
 		for cz := int32(-1); cz <= 0; cz++ {
-			column := gocraft.ChunkColumn(cx, cz, -64, 384)
+			column := graft.ChunkColumn(cx, cz, -64, 384)
 			for x := range 16 {
 				for z := range 16 {
 					column.SetBlock(x, -61, z, 1)
@@ -233,8 +233,8 @@ func TestNavigatorRoundsWallCorners(t *testing.T) {
 	}
 
 	planner := pathfinder.NewPlanner(world, simTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(26, -60, 0)
-	goal := pathfinder.GoalAt(gocraft.At(34, -60, 0))
+	from := graft.At(26, -60, 0)
+	goal := pathfinder.GoalAt(graft.At(34, -60, 0))
 
 	route, ok := planner.Plan(from, goal)
 	if !ok {

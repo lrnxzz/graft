@@ -3,7 +3,7 @@ package pathfinder
 import (
 	"fmt"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	graft "github.com/lrnxzz/graft"
 )
 
 type Action uint8
@@ -29,10 +29,10 @@ func (a Action) String() string {
 
 type Step struct {
 	Action Action
-	Target gocraft.Position
+	Target graft.Position
 }
 
-func step(action Action, target gocraft.Position) Step {
+func step(action Action, target graft.Position) Step {
 	return Step{
 		Action: action,
 		Target: target,
@@ -45,8 +45,8 @@ type Route struct {
 	Complete bool
 }
 
-func (r Route) Waypoints() []gocraft.Position {
-	waypoints := make([]gocraft.Position, 0, len(r.Steps))
+func (r Route) Waypoints() []graft.Position {
+	waypoints := make([]graft.Position, 0, len(r.Steps))
 	for _, current := range r.Steps {
 		if current.Action == Walk {
 			waypoints = append(waypoints, current.Target)

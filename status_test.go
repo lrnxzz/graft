@@ -1,4 +1,4 @@
-package gocraft_test
+package graft_test
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
 )
 
 func serveStatus(listener net.Listener, response codec.String) {
@@ -57,7 +57,7 @@ func TestPing(t *testing.T) {
 	response := codec.String(`{
 		"version": {"name": "1.20.4", "protocol": 765},
 		"players": {"max": 20, "online": 3, "sample": [{"name": "steve", "id": "uuid"}]},
-		"description": {"text": "go-craft ", "extra": [{"text": "test"}]}
+		"description": {"text": "graft ", "extra": [{"text": "test"}]}
 	}`)
 
 	go serveStatus(listener, response)
@@ -65,7 +65,7 @@ func TestPing(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	status, err := gocraft.Ping(ctx, listener.Addr().String())
+	status, err := graft.Ping(ctx, listener.Addr().String())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,8 +76,8 @@ func TestPing(t *testing.T) {
 	if status.Players.Online != 3 || status.Players.Max != 20 || len(status.Players.Sample) != 1 {
 		t.Errorf("players = %d/%d with %d samples, want 3/20 with 1", status.Players.Online, status.Players.Max, len(status.Players.Sample))
 	}
-	if motd := status.MOTD(); motd != "go-craft test" {
-		t.Errorf("MOTD() = %q, want %q", motd, "go-craft test")
+	if motd := status.MOTD(); motd != "graft test" {
+		t.Errorf("MOTD() = %q, want %q", motd, "graft test")
 	}
 	if status.Latency <= 0 {
 		t.Errorf("latency = %s, want > 0", status.Latency)
@@ -104,7 +104,7 @@ func TestStatusMOTD(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		status := gocraft.Status{
+		status := graft.Status{
 			Description: json.RawMessage(tt.description),
 		}
 

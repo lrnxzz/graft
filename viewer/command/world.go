@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec/v765/blocks"
-	"github.com/lrnxzz/go-craft/codec/v765/items"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec/v765/blocks"
+	"github.com/lrnxzz/graft/codec/v765/items"
 )
 
 const namespace = "minecraft:"
@@ -15,18 +15,18 @@ const namespace = "minecraft:"
 // Spot is three coordinates. Each may be absolute, relative to where the bot
 // stands with ~, or relative to where it faces with ^ — the three forms players
 // already know, so nobody has to learn ours.
-func Spot(label string) Param[gocraft.Position] {
-	read := func(stream *Stream, call Call) (gocraft.Position, error) {
+func Spot(label string) Param[graft.Position] {
+	read := func(stream *Stream, call Call) (graft.Position, error) {
 		axes, local, err := coordinates(label, stream)
 		if err != nil {
-			return gocraft.Position{}, err
+			return graft.Position{}, err
 		}
 
 		if local {
 			return ahead(call, axes), nil
 		}
 
-		return gocraft.Position{
+		return graft.Position{
 			X: int(axes[0]),
 			Y: int(axes[1]),
 			Z: int(axes[2]),
@@ -40,7 +40,7 @@ func Spot(label string) Param[gocraft.Position] {
 			return nil
 		}
 
-		hit, sighted := call.bot.Target(gocraft.BlockReach)
+		hit, sighted := call.bot.Target(graft.BlockReach)
 		if !sighted {
 			return nil
 		}
@@ -48,7 +48,7 @@ func Spot(label string) Param[gocraft.Position] {
 		return []string{strconv.Itoa(hit.Block.X) + " " + strconv.Itoa(hit.Block.Y) + " " + strconv.Itoa(hit.Block.Z)}
 	}
 
-	return Param[gocraft.Position]{
+	return Param[graft.Position]{
 		label: label,
 		shape: "x y z",
 		read:  read,
@@ -117,7 +117,7 @@ func coordinates(label string, stream *Stream) ([3]float64, bool, error) {
 
 // ahead turns local offsets into a block: left, up and forward from where the
 // bot is looking, which is what ^ means to a player
-func ahead(call Call, axes [3]float64) gocraft.Position {
+func ahead(call Call, axes [3]float64) graft.Position {
 	standing := call.Standing()
 	if call.bot == nil {
 		return standing
@@ -128,9 +128,9 @@ func ahead(call Call, axes [3]float64) gocraft.Position {
 	yaw := float64(snapshot.Yaw) * math.Pi / 180
 	pitch := float64(snapshot.Pitch) * math.Pi / 180
 
-	forward := gocraft.Vec3(-math.Sin(yaw)*math.Cos(pitch), -math.Sin(pitch), math.Cos(yaw)*math.Cos(pitch))
-	left := gocraft.Vec3(math.Cos(yaw), 0, math.Sin(yaw))
-	up := gocraft.Vec3(0, 1, 0)
+	forward := graft.Vec3(-math.Sin(yaw)*math.Cos(pitch), -math.Sin(pitch), math.Cos(yaw)*math.Cos(pitch))
+	left := graft.Vec3(math.Cos(yaw), 0, math.Sin(yaw))
+	up := graft.Vec3(0, 1, 0)
 
 	at := standing.Center().
 		Add(left.Scale(axes[0])).
@@ -142,11 +142,11 @@ func ahead(call Call, axes [3]float64) gocraft.Position {
 
 // Block is a block name checked against the registry, so a command refuses a
 // name the world never had instead of walking off after it
-func Block(label string) Param[gocraft.Block] {
-	read := func(stream *Stream, _ Call) (gocraft.Block, error) {
+func Block(label string) Param[graft.Block] {
+	read := func(stream *Stream, _ Call) (graft.Block, error) {
 		token, held := stream.Take()
 		if !held {
-			return gocraft.Block{}, missing(label)
+			return graft.Block{}, missing(label)
 		}
 
 		found, known := lookup(token.Text, blocks.Named)
@@ -154,14 +154,14 @@ func Block(label string) Param[gocraft.Block] {
 			return found, nil
 		}
 
-		return gocraft.Block{}, unknown(label, token, "block", blocks.Names)
+		return graft.Block{}, unknown(label, token, "block", blocks.Names)
 	}
 
 	offer := func(_ Call, typed string) []string {
 		return suggest(blocks.Names, typed)
 	}
 
-	return Param[gocraft.Block]{
+	return Param[graft.Block]{
 		label: label,
 		shape: "block",
 		read:  read,
@@ -169,11 +169,11 @@ func Block(label string) Param[gocraft.Block] {
 	}
 }
 
-func Item(label string) Param[gocraft.Item] {
-	read := func(stream *Stream, _ Call) (gocraft.Item, error) {
+func Item(label string) Param[graft.Item] {
+	read := func(stream *Stream, _ Call) (graft.Item, error) {
 		token, held := stream.Take()
 		if !held {
-			return gocraft.Item{}, missing(label)
+			return graft.Item{}, missing(label)
 		}
 
 		found, known := lookup(token.Text, items.Named)
@@ -181,14 +181,14 @@ func Item(label string) Param[gocraft.Item] {
 			return found, nil
 		}
 
-		return gocraft.Item{}, unknown(label, token, "item", items.Names)
+		return graft.Item{}, unknown(label, token, "item", items.Names)
 	}
 
 	offer := func(_ Call, typed string) []string {
 		return suggest(items.Names, typed)
 	}
 
-	return Param[gocraft.Item]{
+	return Param[graft.Item]{
 		label: label,
 		shape: "item",
 		read:  read,
@@ -198,20 +198,20 @@ func Item(label string) Param[gocraft.Item] {
 
 // a player may write either form, and the registry is keyed on whichever the
 // data happened to carry, so both are tried rather than guessed at
-func lookup[T any](name string, find func(gocraft.Identifier) (T, bool)) (T, bool) {
-	written := gocraft.Identifier(name)
+func lookup[T any](name string, find func(graft.Identifier) (T, bool)) (T, bool) {
+	written := graft.Identifier(name)
 
 	found, known := find(written)
 	if known {
 		return found, true
 	}
 
-	return find(gocraft.Identifier(written.Path()))
+	return find(graft.Identifier(written.Path()))
 }
 
 // unknown reports a name the registry never had, with the nearest one it does,
 // because a typo in a thousand names is otherwise a guessing game
-func unknown(label string, token Token, sort string, names []gocraft.Identifier) error {
+func unknown(label string, token Token, sort string, names []graft.Identifier) error {
 	refused := &Refusal{
 		Label:  label,
 		Got:    token.Text,
@@ -232,7 +232,7 @@ const offered = 12
 
 // suggest ranks by prefix first and then by containment, so typing the middle of
 // a name still finds it while the obvious match stays on top
-func suggest(names []gocraft.Identifier, typed string) []string {
+func suggest(names []graft.Identifier, typed string) []string {
 	wanted := strings.ToLower(strings.TrimPrefix(typed, namespace))
 
 	var (

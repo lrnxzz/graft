@@ -1,8 +1,8 @@
 package v765
 
 import (
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
 )
 
 const (
@@ -15,7 +15,7 @@ const (
 
 type PlayerAction struct {
 	Status   codec.VarInt
-	Location gocraft.Position
+	Location graft.Position
 	Face     codec.Byte
 	Sequence codec.VarInt
 }
@@ -46,7 +46,7 @@ func (p *PlayerAction) Decode(r *codec.Reader) error {
 
 type UseItemOn struct {
 	Hand        codec.VarInt
-	Location    gocraft.Position
+	Location    graft.Position
 	Face        codec.VarInt
 	CursorX     codec.Float
 	CursorY     codec.Float

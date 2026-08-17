@@ -1,4 +1,4 @@
-module github.com/lrnxzz/go-craft/mojang
+module github.com/lrnxzz/graft/mojang
 
 go 1.26.3
 
@@ -9,3 +9,5 @@ require (
 	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 )
+
+replace github.com/lrnxzz/graft => ..

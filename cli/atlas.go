@@ -15,8 +15,8 @@ import (
 	"sort"
 	"strings"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/atlas"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/atlas"
 	"github.com/spf13/cobra"
 )
 
@@ -235,8 +235,8 @@ func fetch(url string) ([]byte, error) {
 
 // the model name is where the wire data becomes a domain identity, so the
 // conversion happens once here and never again downstream
-func resolveFaces(models map[string]blockModel, textures map[string]image.Image) map[gocraft.Identifier]faceNames {
-	faces := map[gocraft.Identifier]faceNames{}
+func resolveFaces(models map[string]blockModel, textures map[string]image.Image) map[graft.Identifier]faceNames {
+	faces := map[graft.Identifier]faceNames{}
 	for name := range models {
 		merged := mergeTextures(models, name)
 
@@ -247,7 +247,7 @@ func resolveFaces(models map[string]blockModel, textures map[string]image.Image)
 			continue
 		}
 
-		faces[gocraft.Identifier(name)] = faceNames{
+		faces[graft.Identifier(name)] = faceNames{
 			up:   up,
 			down: down,
 			side: side,
@@ -310,12 +310,12 @@ func dereference(merged map[string]string, ref string, depth int) string {
 }
 
 func trimNamespace(ref string) string {
-	path := gocraft.Identifier(ref).Path()
+	path := graft.Identifier(ref).Path()
 
 	return strings.TrimPrefix(path, "block/")
 }
 
-func assignTiles(faces map[gocraft.Identifier]faceNames) map[string]int {
+func assignTiles(faces map[graft.Identifier]faceNames) map[string]int {
 	used := map[string]bool{}
 	for _, face := range faces {
 		used[face.up], used[face.down], used[face.side] = true, true, true
@@ -355,10 +355,10 @@ func writeAtlas(pathname string, textures map[string]image.Image, index map[stri
 	return writePNG(pathname, canvas)
 }
 
-func writeBlocks(pathname string, faces map[gocraft.Identifier]faceNames, index map[string]int) error {
+func writeBlocks(pathname string, faces map[graft.Identifier]faceNames, index map[string]int) error {
 	data := atlas.BlockSheet{
 		Sheet:  sheetOf(len(index)),
-		Blocks: make(map[gocraft.Identifier]atlas.Faces, len(faces)),
+		Blocks: make(map[graft.Identifier]atlas.Faces, len(faces)),
 	}
 	for name, face := range faces {
 		data.Blocks[name] = atlas.Faces{

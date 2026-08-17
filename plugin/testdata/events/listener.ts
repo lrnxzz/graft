@@ -1,4 +1,4 @@
-import { plugin } from "gocraft"
+import { plugin } from "graft"
 
 export const seen: string[] = []
 

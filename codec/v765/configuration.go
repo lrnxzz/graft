@@ -1,8 +1,8 @@
 package v765
 
 import (
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
 )
 
 type ClientInformation struct {
@@ -263,7 +263,7 @@ func (p *RegistryData) Decode(r *codec.Reader) error {
 }
 
 type FeatureFlags struct {
-	Features codec.Slice[gocraft.Identifier]
+	Features codec.Slice[graft.Identifier]
 }
 
 func (*FeatureFlags) ID() int32 {

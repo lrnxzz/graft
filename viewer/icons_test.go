@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lrnxzz/go-craft/viewer"
-	"github.com/lrnxzz/go-craft/viewer/ultralight"
+	"github.com/lrnxzz/graft/viewer"
+	"github.com/lrnxzz/graft/viewer/ultralight"
 )
 
 func TestIconStylesheetPaints(t *testing.T) {

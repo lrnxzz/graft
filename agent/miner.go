@@ -6,20 +6,20 @@ import (
 	"errors"
 	"fmt"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec/v765/blocks"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec/v765/blocks"
 )
 
 var errDigAbandoned = errors.New("agent: digging abandoned")
 
 type excavator interface {
-	StartDigging(gocraft.RayHit) error
-	CancelDigging(gocraft.RayHit) error
-	FinishDigging(gocraft.RayHit) error
+	StartDigging(graft.RayHit) error
+	CancelDigging(graft.RayHit) error
+	FinishDigging(graft.RayHit) error
 }
 
 type excavation struct {
-	hit      gocraft.RayHit
+	hit      graft.RayHit
 	reach    float64
 	progress float64
 	instant  bool
@@ -40,7 +40,7 @@ type miner struct {
 // begin refuses outright when the block cannot be mined at all; whatever depends
 // on the world lands on the returned channel instead, which already carries the
 // answer when the block gave way on the first strike
-func (m *miner) begin(hit gocraft.RayHit, reach float64, mode gocraft.GameMode, held gocraft.ItemID) (<-chan error, error) {
+func (m *miner) begin(hit graft.RayHit, reach float64, mode graft.GameMode, held graft.ItemID) (<-chan error, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -49,7 +49,7 @@ func (m *miner) begin(hit gocraft.RayHit, reach float64, mode gocraft.GameMode, 
 	}
 
 	// creative breaks on the start packet alone, so its first strike is total
-	instant := mode == gocraft.Creative
+	instant := mode == graft.Creative
 	damage := 1.0
 
 	if !instant {
@@ -144,7 +144,7 @@ func (m *miner) excavation() (Excavating, bool) {
 	return underway, true
 }
 
-func (m *miner) tick(target gocraft.RayHit, sighted bool, held gocraft.ItemID) error {
+func (m *miner) tick(target graft.RayHit, sighted bool, held graft.ItemID) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

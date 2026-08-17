@@ -6,14 +6,14 @@ import (
 	"encoding/json"
 	"image/png"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/atlas"
-	"github.com/lrnxzz/go-craft/codec/v765/blocks"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
-	"github.com/lrnxzz/go-craft/viewer/mesh"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/atlas"
+	"github.com/lrnxzz/graft/codec/v765/blocks"
+	"github.com/lrnxzz/graft/viewer/gpu"
+	"github.com/lrnxzz/graft/viewer/mesh"
 )
 
-//go:generate go run github.com/lrnxzz/go-craft/cli gen atlas 765
+//go:generate go run github.com/lrnxzz/graft/cli gen atlas 765
 
 //go:embed assets/atlas.png
 var atlasImage []byte
@@ -23,7 +23,7 @@ var atlasMapping []byte
 
 type Tileset struct {
 	atlas  *gpu.Atlas
-	blocks map[gocraft.Identifier]atlas.Faces
+	blocks map[graft.Identifier]atlas.Faces
 }
 
 func LoadTileset() (*Tileset, error) {
@@ -51,11 +51,11 @@ func (t *Tileset) Atlas() *gpu.Atlas {
 	return t.atlas
 }
 
-func (t *Tileset) Tile(state gocraft.BlockState, face mesh.Face) gpu.UV {
+func (t *Tileset) Tile(state graft.BlockState, face mesh.Face) gpu.UV {
 	return t.atlas.Tile(t.index(state, face))
 }
 
-func (t *Tileset) index(state gocraft.BlockState, face mesh.Face) int {
+func (t *Tileset) index(state graft.BlockState, face mesh.Face) int {
 	block, ok := blocks.Of(state)
 	if !ok {
 		return 0

@@ -4,10 +4,10 @@ import (
 	"math"
 
 	"github.com/go-gl/mathgl/mgl32"
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/agent"
-	"github.com/lrnxzz/go-craft/codec"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/agent"
+	"github.com/lrnxzz/graft/codec"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 const (
@@ -104,16 +104,16 @@ func (e *eye) away() bool {
 	return e.loose
 }
 
-func (e *eye) eye() gocraft.Vec3d {
+func (e *eye) eye() graft.Vec3d {
 	at := e.camera.Position
 
-	return gocraft.Vec3(float64(at.X()), float64(at.Y()), float64(at.Z()))
+	return graft.Vec3(float64(at.X()), float64(at.Y()), float64(at.Z()))
 }
 
-func (e *eye) forward() gocraft.Vec3d {
+func (e *eye) forward() graft.Vec3d {
 	facing := direction(e.yaw, e.pitch)
 
-	return gocraft.Vec3(float64(facing.X()), float64(facing.Y()), float64(facing.Z()))
+	return graft.Vec3(float64(facing.X()), float64(facing.Y()), float64(facing.Z()))
 }
 
 // fly moves a loose camera. Forward is where it looks, so flying and aiming are
@@ -202,8 +202,8 @@ func (e *eye) reframe(screen gpu.Rect) {
 	e.camera.Aspect = screen.Width() / screen.Height()
 }
 
-func eyeOf(position gocraft.Vec3d) mgl32.Vec3 {
-	return mgl32.Vec3{float32(position.X), float32(position.Y) + gocraft.EyeHeight, float32(position.Z)}
+func eyeOf(position graft.Vec3d) mgl32.Vec3 {
+	return mgl32.Vec3{float32(position.X), float32(position.Y) + graft.EyeHeight, float32(position.Z)}
 }
 
 func direction(yaw, pitch float32) mgl32.Vec3 {

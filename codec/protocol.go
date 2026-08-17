@@ -89,7 +89,7 @@ func Bind[T any, P packetPtr[T]](proto *Protocol) {
 		id:    prototype.ID(),
 	}
 	if _, exists := proto.factories[key]; exists {
-		panic(fmt.Sprintf("gocraft: duplicate packet registration for %s %s id 0x%02x", key.state, key.dir, key.id))
+		panic(fmt.Sprintf("graft: duplicate packet registration for %s %s id 0x%02x", key.state, key.dir, key.id))
 	}
 	proto.factories[key] = factory
 }

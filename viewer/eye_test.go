@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/go-gl/mathgl/mgl32"
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/agent"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/agent"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 // Out of the body the camera stops following the bot. Without this the freecam
@@ -18,7 +18,7 @@ func TestALooseCameraIgnoresTheBot(t *testing.T) {
 
 	walked := agent.Snapshot{
 		Tick:     7,
-		Position: gocraft.Vec3(200, 64, 200),
+		Position: graft.Vec3(200, 64, 200),
 	}
 
 	e.follow(walked, 1)

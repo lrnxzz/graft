@@ -1,10 +1,10 @@
-package gocraft_test
+package graft_test
 
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
 )
 
 func singleSection(block, biome codec.VarInt) []byte {
@@ -24,7 +24,7 @@ func singleSection(block, biome codec.VarInt) []byte {
 }
 
 func TestChunkSectionDecodesBlocksAndBiomes(t *testing.T) {
-	var section gocraft.ChunkSection
+	var section graft.ChunkSection
 	if err := section.Decode(codec.NewReader(singleSection(5, 7))); err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestChunkSectionDecodesBlocksAndBiomes(t *testing.T) {
 func TestColumnResolvesSectionByWorldY(t *testing.T) {
 	payload := append(singleSection(10, 0), singleSection(20, 0)...)
 
-	column := gocraft.ChunkColumn(3, -4, -64, 32)
+	column := graft.ChunkColumn(3, -4, -64, 32)
 	if err := column.Decode(codec.NewReader(payload)); err != nil {
 		t.Fatal(err)
 	}

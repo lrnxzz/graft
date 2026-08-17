@@ -98,7 +98,7 @@ func (Navigating) Intent() string {
 
 // Notices and Intents are what a plugin may subscribe to. They exist so the
 // names live in one place: the runtime rejects anything else, and the test that
-// guards gocraft.d.ts reads them rather than a second list.
+// guards graft.d.ts reads them rather than a second list.
 func Notices() []Notice {
 	return []Notice{
 		Spawned{},

@@ -2,7 +2,7 @@ package mesh
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 const (

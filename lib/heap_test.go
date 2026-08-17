@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/lib"
+	"github.com/lrnxzz/graft/lib"
 )
 
 func TestHeapPopsInOrder(t *testing.T) {

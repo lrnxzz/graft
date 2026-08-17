@@ -3,15 +3,15 @@ package v765_test
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
-	v765 "github.com/lrnxzz/go-craft/codec/v765"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
+	v765 "github.com/lrnxzz/graft/codec/v765"
 )
 
 func TestPlayerActionRoundTrips(t *testing.T) {
 	original := &v765.PlayerAction{
 		Status: 2,
-		Location: gocraft.Position{
+		Location: graft.Position{
 			X: 10,
 			Y: 64,
 			Z: -3,
@@ -38,7 +38,7 @@ func TestPlayerActionRoundTrips(t *testing.T) {
 func TestUseItemOnRoundTrips(t *testing.T) {
 	original := &v765.UseItemOn{
 		Hand: 0,
-		Location: gocraft.Position{
+		Location: graft.Position{
 			X: 1,
 			Y: 70,
 			Z: 2,

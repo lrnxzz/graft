@@ -3,7 +3,7 @@ package viewer
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	graft "github.com/lrnxzz/graft"
 )
 
 // The cage, the ring and the beam are the only clock the player gets, so the
@@ -14,7 +14,7 @@ func TestTheMarkingGrowsWithTheWait(t *testing.T) {
 		painter Painter
 	)
 
-	at := gocraft.At(10, 64, 10)
+	at := graft.At(10, 64, 10)
 
 	marking.Aiming(at, 0.1, true)
 	painter.reset(Camera{}, 0)
@@ -42,7 +42,7 @@ func TestNothingIsDrawnWithoutAHold(t *testing.T) {
 		painter Painter
 	)
 
-	marking.Aiming(gocraft.At(10, 64, 10), 0.5, false)
+	marking.Aiming(graft.At(10, 64, 10), 0.5, false)
 	painter.reset(Camera{}, 0)
 	marking.DrawWorld(&painter)
 
@@ -58,7 +58,7 @@ func TestTheFlashLastsOneFrame(t *testing.T) {
 		painter Painter
 	)
 
-	marking.Aiming(gocraft.At(10, 64, 10), 1, true)
+	marking.Aiming(graft.At(10, 64, 10), 1, true)
 	marking.Settled()
 
 	if !marking.settling {

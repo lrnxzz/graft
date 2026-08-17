@@ -3,8 +3,8 @@ package viewer
 import (
 	_ "embed"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 //go:embed assets/shaders/paint.vert
@@ -50,24 +50,24 @@ func (p *Painter) Camera() Camera {
 }
 
 // Line draws a straight segment between two points in the world
-func (p *Painter) Line(from, to gocraft.Vec3d, tint gpu.Color) {
+func (p *Painter) Line(from, to graft.Vec3d, tint gpu.Color) {
 	p.vertex(from, tint)
 	p.vertex(to, tint)
 }
 
 // Box outlines an axis-aligned volume with its twelve edges
-func (p *Painter) Box(box gocraft.AABB, tint gpu.Color) {
+func (p *Painter) Box(box graft.AABB, tint gpu.Color) {
 	lo, hi := box.Min, box.Max
 
-	corners := [...]gocraft.Vec3d{
-		gocraft.Vec3(lo.X, lo.Y, lo.Z),
-		gocraft.Vec3(hi.X, lo.Y, lo.Z),
-		gocraft.Vec3(hi.X, lo.Y, hi.Z),
-		gocraft.Vec3(lo.X, lo.Y, hi.Z),
-		gocraft.Vec3(lo.X, hi.Y, lo.Z),
-		gocraft.Vec3(hi.X, hi.Y, lo.Z),
-		gocraft.Vec3(hi.X, hi.Y, hi.Z),
-		gocraft.Vec3(lo.X, hi.Y, hi.Z),
+	corners := [...]graft.Vec3d{
+		graft.Vec3(lo.X, lo.Y, lo.Z),
+		graft.Vec3(hi.X, lo.Y, lo.Z),
+		graft.Vec3(hi.X, lo.Y, hi.Z),
+		graft.Vec3(lo.X, lo.Y, hi.Z),
+		graft.Vec3(lo.X, hi.Y, lo.Z),
+		graft.Vec3(hi.X, hi.Y, lo.Z),
+		graft.Vec3(hi.X, hi.Y, hi.Z),
+		graft.Vec3(lo.X, hi.Y, hi.Z),
 	}
 	for _, edge := range boxEdges {
 		p.Line(corners[edge.from], corners[edge.to], tint)
@@ -75,9 +75,9 @@ func (p *Painter) Box(box gocraft.AABB, tint gpu.Color) {
 }
 
 // Highlight outlines a single block, the vanilla selection look
-func (p *Painter) Highlight(block gocraft.Position, tint gpu.Color) {
+func (p *Painter) Highlight(block graft.Position, tint gpu.Color) {
 	corner := block.Corner()
-	box := gocraft.Box(corner, corner.Offset(1, 1, 1))
+	box := graft.Box(corner, corner.Offset(1, 1, 1))
 
 	p.Box(box.Grow(outlineSwell, outlineSwell, outlineSwell), tint)
 }
@@ -139,7 +139,7 @@ var boxEdges = [...]boxEdge{
 	},
 }
 
-func (p *Painter) vertex(at gocraft.Vec3d, tint gpu.Color) {
+func (p *Painter) vertex(at graft.Vec3d, tint gpu.Color) {
 	p.segments = append(p.segments,
 		float32(at.X), float32(at.Y), float32(at.Z),
 		tint.Red, tint.Green, tint.Blue, tint.Alpha)

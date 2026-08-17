@@ -34,7 +34,7 @@ func (r *Reader) take(n int) []byte {
 		return nil
 	}
 	if n < 0 || n > r.Remaining() {
-		r.fail(fmt.Errorf("gocraft: payload needs %d bytes, has %d", n, r.Remaining()))
+		r.fail(fmt.Errorf("graft: payload needs %d bytes, has %d", n, r.Remaining()))
 		return nil
 	}
 	view := r.buf[r.off : r.off+n]

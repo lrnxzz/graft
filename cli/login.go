@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/lrnxzz/go-craft/mojang"
+	"github.com/lrnxzz/graft/mojang"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +14,7 @@ import (
 // read; stdout would leave a copy in shell history, a pipe or a CI log
 const sessionMode = 0o600
 
-var errNoClientID = errors.New("gocraft: a Microsoft client id is required (--client-id or GOCRAFT_CLIENT_ID)")
+var errNoClientID = errors.New("graft: a Microsoft client id is required (--client-id or GRAFT_CLIENT_ID)")
 
 func loginCommand() *cobra.Command {
 	var (
@@ -61,8 +61,8 @@ func loginCommand() *cobra.Command {
 		},
 	}
 
-	command.Flags().StringVar(&clientID, "client-id", os.Getenv("GOCRAFT_CLIENT_ID"), "Microsoft application (Azure) client id")
-	command.Flags().StringVar(&output, "out", "gocraft-session.json", "file the session is written to, readable only by you")
+	command.Flags().StringVar(&clientID, "client-id", os.Getenv("GRAFT_CLIENT_ID"), "Microsoft application (Azure) client id")
+	command.Flags().StringVar(&output, "out", "graft-session.json", "file the session is written to, readable only by you")
 
 	return command
 }

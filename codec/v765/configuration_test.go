@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
-	v765 "github.com/lrnxzz/go-craft/codec/v765"
-	"github.com/lrnxzz/go-craft/nbt"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
+	v765 "github.com/lrnxzz/graft/codec/v765"
+	"github.com/lrnxzz/graft/nbt"
 )
 
 func TestClientInformationPreservesSettings(t *testing.T) {
@@ -114,7 +114,7 @@ func TestRegistryDataCarriesNBTCodec(t *testing.T) {
 
 func TestFeatureFlagsCarriesFeatureList(t *testing.T) {
 	original := &v765.FeatureFlags{
-		Features: codec.Slice[gocraft.Identifier]{"minecraft:vanilla", "minecraft:bundle"},
+		Features: codec.Slice[graft.Identifier]{"minecraft:vanilla", "minecraft:bundle"},
 	}
 
 	proto := v765.Protocol()

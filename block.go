@@ -1,10 +1,10 @@
-package gocraft
+package graft
 
 import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/lrnxzz/go-craft/codec"
+	"github.com/lrnxzz/graft/codec"
 )
 
 type BlockState int32

@@ -1,16 +1,16 @@
-package gocraft_test
+package graft_test
 
 import (
 	"math"
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	graft "github.com/lrnxzz/graft"
 )
 
 type lookCase struct {
 	yaw   float32
 	pitch float32
-	want  gocraft.Vec3d
+	want  graft.Vec3d
 }
 
 func TestPlayerLookDirection(t *testing.T) {
@@ -18,31 +18,31 @@ func TestPlayerLookDirection(t *testing.T) {
 		{
 			yaw:   0,
 			pitch: 0,
-			want:  gocraft.Vec3(0, 0, 1),
+			want:  graft.Vec3(0, 0, 1),
 		},
 		{
 			yaw:   90,
 			pitch: 0,
-			want:  gocraft.Vec3(-1, 0, 0),
+			want:  graft.Vec3(-1, 0, 0),
 		},
 		{
 			yaw:   -90,
 			pitch: 0,
-			want:  gocraft.Vec3(1, 0, 0),
+			want:  graft.Vec3(1, 0, 0),
 		},
 		{
 			yaw:   0,
 			pitch: 90,
-			want:  gocraft.Vec3(0, -1, 0),
+			want:  graft.Vec3(0, -1, 0),
 		},
 		{
 			yaw:   0,
 			pitch: -90,
-			want:  gocraft.Vec3(0, 1, 0),
+			want:  graft.Vec3(0, 1, 0),
 		},
 	}
 	for _, c := range cases {
-		player := &gocraft.Player{
+		player := &graft.Player{
 			Yaw:   c.yaw,
 			Pitch: c.pitch,
 		}
@@ -55,20 +55,20 @@ func TestPlayerLookDirection(t *testing.T) {
 }
 
 func TestPlayerEye(t *testing.T) {
-	player := &gocraft.Player{
-		Position: gocraft.Vec3(1, 64, -3),
+	player := &graft.Player{
+		Position: graft.Vec3(1, 64, -3),
 	}
 
 	got := player.Eye()
-	want := gocraft.Vec3(1, 65.62, -3)
+	want := graft.Vec3(1, 65.62, -3)
 	if !got.ApproxEqual(want, 1e-9) {
 		t.Errorf("Eye() = %v, want %v", got, want)
 	}
 }
 
 func TestPlayerBox(t *testing.T) {
-	player := &gocraft.Player{
-		Position: gocraft.Vec3(0, 10, 0),
+	player := &graft.Player{
+		Position: graft.Vec3(0, 10, 0),
 	}
 
 	box := player.Box()
@@ -81,7 +81,7 @@ func TestPlayerBox(t *testing.T) {
 }
 
 func TestPlayerAlive(t *testing.T) {
-	player := &gocraft.Player{
+	player := &graft.Player{
 		Health: 20,
 	}
 	if !player.Alive() {
@@ -95,16 +95,16 @@ func TestPlayerAlive(t *testing.T) {
 }
 
 func TestLookAnglesMatchLookDirection(t *testing.T) {
-	from := gocraft.Vec3(0.5, 65, 0.5)
-	targets := []gocraft.Vec3d{
-		gocraft.Vec3(10, 65, 0.5),
-		gocraft.Vec3(0.5, 70, 10),
-		gocraft.Vec3(-3, 60, -8),
-		gocraft.Vec3(0.5, 80, 0.5),
+	from := graft.Vec3(0.5, 65, 0.5)
+	targets := []graft.Vec3d{
+		graft.Vec3(10, 65, 0.5),
+		graft.Vec3(0.5, 70, 10),
+		graft.Vec3(-3, 60, -8),
+		graft.Vec3(0.5, 80, 0.5),
 	}
 	for _, target := range targets {
-		yaw, pitch := gocraft.LookAngles(from, target)
-		player := &gocraft.Player{
+		yaw, pitch := graft.LookAngles(from, target)
+		player := &graft.Player{
 			Yaw:   yaw,
 			Pitch: pitch,
 		}

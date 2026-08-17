@@ -85,7 +85,7 @@ func (c *Conn) ReadFrame() (Frame, error) {
 		return Frame{}, err
 	}
 	if frameLen <= 0 || frameLen > maxFrameLen {
-		return Frame{}, fmt.Errorf("gocraft: frame of %d bytes is out of range", frameLen)
+		return Frame{}, fmt.Errorf("graft: frame of %d bytes is out of range", frameLen)
 	}
 
 	frame := make([]byte, frameLen)
@@ -160,7 +160,7 @@ func (c *Conn) inflate(frame []byte) ([]byte, error) {
 		return compressed, nil
 	}
 	if inflatedLen < 0 || inflatedLen > maxInflatedLen {
-		return nil, fmt.Errorf("gocraft: inflated frame of %d bytes is out of range", inflatedLen)
+		return nil, fmt.Errorf("graft: inflated frame of %d bytes is out of range", inflatedLen)
 	}
 
 	zr, err := zlib.NewReader(bytes.NewReader(compressed))

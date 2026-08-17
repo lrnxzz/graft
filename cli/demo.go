@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/lrnxzz/go-craft/agent"
-	"github.com/lrnxzz/go-craft/host"
-	"github.com/lrnxzz/go-craft/pathfinder"
+	"github.com/lrnxzz/graft/agent"
+	"github.com/lrnxzz/graft/host"
+	"github.com/lrnxzz/graft/pathfinder"
 	"github.com/spf13/cobra"
 )
 
@@ -18,14 +18,14 @@ func demoCommand() *cobra.Command {
 
 	command := &cobra.Command{
 		Use:   "demo <host[:port]>",
-		Short: "Walk the obstacle course carved by gocraft course, lap after lap",
+		Short: "Walk the obstacle course carved by graft course, lap after lap",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return laps(cmd.Context(), args[0], username)
 		},
 	}
 
-	command.Flags().StringVar(&username, "username", "gocraft_bot", "bot username")
+	command.Flags().StringVar(&username, "username", "graft_bot", "bot username")
 
 	return command
 }

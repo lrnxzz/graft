@@ -3,8 +3,8 @@ package pathfinder
 import (
 	"slices"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/lib"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/lib"
 )
 
 type Planner struct {
@@ -22,14 +22,14 @@ func NewPlanner(world World, terrain Terrain, loadout Loadout) *Planner {
 }
 
 type node struct {
-	position gocraft.Position
+	position graft.Position
 	parent   *node
 	arrival  move
 	cost     float64
 	priority float64
 }
 
-func (p *Planner) Plan(from gocraft.Position, goal Goal) (Route, bool) {
+func (p *Planner) Plan(from graft.Position, goal Goal) (Route, bool) {
 	if goal.Reached(from) {
 		standing := Route{
 			Steps:    []Step{step(Walk, from)},
@@ -44,7 +44,7 @@ func (p *Planner) Plan(from gocraft.Position, goal Goal) (Route, bool) {
 	}
 	open := lib.NewHeap(better)
 
-	best := map[gocraft.Position]float64{}
+	best := map[graft.Position]float64{}
 	best[from] = 0
 
 	start := &node{
@@ -97,7 +97,7 @@ func (p *Planner) Plan(from gocraft.Position, goal Goal) (Route, bool) {
 	return assemble(closest, false), true
 }
 
-func (p *Planner) expand(from gocraft.Position, reach func(move)) {
+func (p *Planner) expand(from graft.Position, reach func(move)) {
 	for _, face := range cardinalFaces {
 		ahead := from.Neighbor(face)
 

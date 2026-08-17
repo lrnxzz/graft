@@ -1,6 +1,6 @@
 package viewer
 
-import "github.com/lrnxzz/go-craft/viewer/gpu"
+import "github.com/lrnxzz/graft/viewer/gpu"
 
 // assets are the atlases and the font. The renderer, the canvas and the hand all
 // read from them, so they outlive all three and are freed here rather than by

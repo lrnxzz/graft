@@ -341,7 +341,7 @@ func (v *String) Decode(r *Reader) error {
 		return r.fail(err)
 	}
 	if n < 0 || n > maxStringBytes {
-		return r.fail(fmt.Errorf("gocraft: string of %d bytes is out of range", n))
+		return r.fail(fmt.Errorf("graft: string of %d bytes is out of range", n))
 	}
 	raw := r.take(int(n))
 	if raw == nil {
@@ -384,14 +384,14 @@ func (s *Slice[T]) Decode(r *Reader) error {
 		return err
 	}
 	if n < 0 || int(n) > r.Remaining() {
-		return r.fail(fmt.Errorf("gocraft: slice of %d elements is out of range", n))
+		return r.fail(fmt.Errorf("graft: slice of %d elements is out of range", n))
 	}
 	elements := make(Slice[T], 0, min(int(n), maxPrealloc))
 	for range int(n) {
 		var element T
 		ptr, ok := any(&element).(FieldPtr)
 		if !ok {
-			return r.fail(fmt.Errorf("gocraft: %T does not implement FieldPtr", &element))
+			return r.fail(fmt.Errorf("graft: %T does not implement FieldPtr", &element))
 		}
 		if err := ptr.Decode(r); err != nil {
 			return err
@@ -463,7 +463,7 @@ func (o *Option[T]) Decode(r *Reader) error {
 	}
 	ptr, ok := any(&o.value).(FieldPtr)
 	if !ok {
-		return r.fail(fmt.Errorf("gocraft: %T does not implement FieldPtr", &o.value))
+		return r.fail(fmt.Errorf("graft: %T does not implement FieldPtr", &o.value))
 	}
 	return ptr.Decode(r)
 }

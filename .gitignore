@@ -1,7 +1,7 @@
 # compiled binaries
 /cli/cli
-/viewer/gocraft
-/viewer/cmd/gocraft/gocraft
+/viewer/graft
+/viewer/cmd/graft/graft
 
 # test and coverage artifacts
 *.test

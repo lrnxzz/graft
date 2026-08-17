@@ -8,15 +8,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lrnxzz/go-craft/mojang"
+	"github.com/lrnxzz/graft/mojang"
 )
 
 func sessionToken(t *testing.T) string {
 	t.Helper()
 
-	token := os.Getenv("GOCRAFT_ACCESS_TOKEN")
+	token := os.Getenv("GRAFT_ACCESS_TOKEN")
 	if token == "" {
-		t.Skip("GOCRAFT_ACCESS_TOKEN not set")
+		t.Skip("GRAFT_ACCESS_TOKEN not set")
 	}
 
 	return token

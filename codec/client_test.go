@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lrnxzz/go-craft/codec"
+	"github.com/lrnxzz/graft/codec"
 )
 
 func TestClientDispatchesReceivedPacket(t *testing.T) {

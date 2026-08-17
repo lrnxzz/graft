@@ -27,9 +27,9 @@ linters:
       check-type-assertions: true
       exclude-functions:
         - (io.Closer).Close
-        - (*github.com/lrnxzz/go-craft/codec.Conn).Close
-        - (*github.com/lrnxzz/go-craft/codec.Client).Close
-        - (*github.com/lrnxzz/go-craft/codec.Reader).fail
+        - (*github.com/lrnxzz/graft/codec.Conn).Close
+        - (*github.com/lrnxzz/graft/codec.Client).Close
+        - (*github.com/lrnxzz/graft/codec.Reader).fail
     gocritic:
       enabled-tags:
         - diagnostic

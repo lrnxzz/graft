@@ -16,7 +16,7 @@ const (
 	TickRate = 50 * time.Millisecond
 )
 
-var errClientClosed = errors.New("gocraft: client closed")
+var errClientClosed = errors.New("graft: client closed")
 
 type ticker struct {
 	rate time.Duration
@@ -37,7 +37,7 @@ func (l *loop) send(packet Packet) error {
 	case l.outbound <- packet:
 		return nil
 	case <-l.done:
-		return errors.New("gocraft: send on a closed client")
+		return errors.New("graft: send on a closed client")
 	}
 }
 

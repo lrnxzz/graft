@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/codec"
+	"github.com/lrnxzz/graft/codec"
 )
 
 type profileEntry struct {
@@ -48,7 +48,7 @@ func TestFieldTypesSurviveEncoding(t *testing.T) {
 		codec.Double(-math.MaxFloat64),
 		codec.VarInt(-1),
 		codec.VarLong(math.MinInt64),
-		codec.String("gocraft ⛏"),
+		codec.String("graft ⛏"),
 		id,
 		codec.Slice[codec.VarInt]{0, -1, 25565, math.MaxInt32},
 		codec.Slice[profileEntry]{
@@ -134,7 +134,7 @@ func TestMarshalUnmarshalHandshake(t *testing.T) {
 }
 
 func TestStringRejectsMalformedPayload(t *testing.T) {
-	truncated := codec.String("gocraft").Append(nil)
+	truncated := codec.String("graft").Append(nil)
 
 	tests := []struct {
 		input []byte

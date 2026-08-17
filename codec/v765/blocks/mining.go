@@ -3,14 +3,14 @@ package blocks
 import (
 	"math"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	graft "github.com/lrnxzz/graft"
 )
 
-//go:generate go run github.com/lrnxzz/go-craft/cli gen materials 765
+//go:generate go run github.com/lrnxzz/graft/cli gen materials 765
 
-type toolSpeeds = map[gocraft.ItemID]float64
+type toolSpeeds = map[graft.ItemID]float64
 
-func DigDamage(state gocraft.BlockState, held gocraft.ItemID) (float64, bool) {
+func DigDamage(state graft.BlockState, held graft.ItemID) (float64, bool) {
 	block, ok := Of(state)
 	if !ok || !block.Diggable || block.Hardness < 0 {
 		return 0, false
@@ -38,7 +38,7 @@ func DigDamage(state gocraft.BlockState, held gocraft.ItemID) (float64, bool) {
 	return damage, true
 }
 
-func BreakTicks(state gocraft.BlockState, held gocraft.ItemID) (int, bool) {
+func BreakTicks(state graft.BlockState, held graft.ItemID) (int, bool) {
 	damage, ok := DigDamage(state, held)
 	if !ok {
 		return 0, false

@@ -1,7 +1,7 @@
-package gocraft
+package graft
 
 import (
-	"github.com/lrnxzz/go-craft/codec"
+	"github.com/lrnxzz/graft/codec"
 
 	"fmt"
 	"math"

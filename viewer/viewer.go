@@ -3,10 +3,10 @@ package viewer
 import (
 	"context"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/agent"
-	"github.com/lrnxzz/go-craft/codec/v765/blocks"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/agent"
+	"github.com/lrnxzz/graft/codec/v765/blocks"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 const (
@@ -44,14 +44,14 @@ type Viewer struct {
 
 	dwell   dwell
 	marking Marking
-	settled []func(gocraft.Position)
+	settled []func(graft.Position)
 
 	suggesting Suggesting
 	offering   func(line string, cursor int) ([]string, int, int)
 }
 
 func New(bot *agent.Agent, visible bool) (*Viewer, error) {
-	window, err := gpu.OpenWindow("gocraft", defaultWidth, defaultHeight, visible)
+	window, err := gpu.OpenWindow("graft", defaultWidth, defaultHeight, visible)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +222,7 @@ func (v *Viewer) Offers(offer func(line string, cursor int) (words []string, fro
 // Pick answers what the crosshair is pointing at. Out of the body that is the
 // camera's own ray, not the bot's, so a plugin marking a spot marks the one the
 // player can see rather than the one the body happens to face.
-func (v *Viewer) Pick(reach float64) (gocraft.RayHit, bool) {
+func (v *Viewer) Pick(reach float64) (graft.RayHit, bool) {
 	if !v.eye.away() {
 		return v.bot.Target(reach)
 	}
@@ -235,19 +235,19 @@ func (v *Viewer) Pick(reach float64) (gocraft.RayHit, bool) {
 func (v *Viewer) Detach() {
 	v.eye.leave()
 	v.dwell.forget()
-	v.bot.SetControls(gocraft.Controls{})
+	v.bot.SetControls(graft.Controls{})
 }
 
 func (v *Viewer) Attach() {
 	v.eye.enter()
 	v.dwell.forget()
-	v.marking.Aiming(gocraft.Position{}, 0, false)
+	v.marking.Aiming(graft.Position{}, 0, false)
 }
 
 // Settles registers what happens when the player rests the aim on a block long
 // enough for it to be marked. It is how a point is set with both hands still on
 // flying, and it only ever fires while the camera is out of the body.
-func (v *Viewer) Settles(handle func(at gocraft.Position)) {
+func (v *Viewer) Settles(handle func(at graft.Position)) {
 	v.settled = append(v.settled, handle)
 }
 
@@ -273,7 +273,7 @@ func (v *Viewer) rest(now float64) {
 
 // Plant sets a point, whether the wait ran it out or the player clicked. Both
 // ways end here so a mark looks the same however it was made.
-func (v *Viewer) Plant(block gocraft.Position) {
+func (v *Viewer) Plant(block graft.Position) {
 	v.marking.Settled()
 	v.dwell.arm()
 

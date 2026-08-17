@@ -6,9 +6,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/plugin"
-	"github.com/lrnxzz/go-craft/viewer"
-	"github.com/lrnxzz/go-craft/viewer/ultralight"
+	"github.com/lrnxzz/graft/plugin"
+	"github.com/lrnxzz/graft/viewer"
+	"github.com/lrnxzz/graft/viewer/ultralight"
 )
 
 // A plugin is written in TypeScript, compiled, run in goja, asked for its markup

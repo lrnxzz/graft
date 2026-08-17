@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lrnxzz/go-craft/codec"
-	"github.com/lrnxzz/go-craft/nbt"
+	"github.com/lrnxzz/graft/codec"
+	"github.com/lrnxzz/graft/nbt"
 )
 
 const filterPartial codec.VarInt = 2

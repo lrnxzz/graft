@@ -8,26 +8,26 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lrnxzz/go-craft/codec"
-	v765 "github.com/lrnxzz/go-craft/codec/v765"
+	"github.com/lrnxzz/graft/codec"
+	v765 "github.com/lrnxzz/graft/codec/v765"
 )
 
 func liveServer(t *testing.T) (host string, port uint16) {
 	t.Helper()
 
-	addr := os.Getenv("GOCRAFT_IT_ADDR")
+	addr := os.Getenv("GRAFT_IT_ADDR")
 	if addr == "" {
-		t.Skip("set GOCRAFT_IT_ADDR to a running 1.20.4 server to run this integration test")
+		t.Skip("set GRAFT_IT_ADDR to a running 1.20.4 server to run this integration test")
 	}
 
 	host, raw, err := net.SplitHostPort(addr)
 	if err != nil {
-		t.Fatalf("GOCRAFT_IT_ADDR %q: %v", addr, err)
+		t.Fatalf("GRAFT_IT_ADDR %q: %v", addr, err)
 	}
 
 	parsed, err := strconv.ParseUint(raw, 10, 16)
 	if err != nil {
-		t.Fatalf("GOCRAFT_IT_ADDR port %q: %v", raw, err)
+		t.Fatalf("GRAFT_IT_ADDR port %q: %v", raw, err)
 	}
 
 	return host, uint16(parsed)
@@ -53,7 +53,7 @@ func TestJoinReachesPlay(t *testing.T) {
 		return c.Close()
 	}
 
-	if _, err := v765.Join(client, host, port, "gocraft_it", ready); err != nil {
+	if _, err := v765.Join(client, host, port, "graft_it", ready); err != nil {
 		t.Fatalf("join: %v", err)
 	}
 

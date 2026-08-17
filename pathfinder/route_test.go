@@ -3,8 +3,8 @@ package pathfinder_test
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/pathfinder"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/pathfinder"
 )
 
 type actionCase struct {
@@ -45,36 +45,36 @@ func TestRouteWaypointsKeepOnlyTheStepsWalked(t *testing.T) {
 		Steps: []pathfinder.Step{
 			{
 				Action: pathfinder.Walk,
-				Target: gocraft.At(0, 1, 0),
+				Target: graft.At(0, 1, 0),
 			},
 			{
 				Action: pathfinder.Break,
-				Target: gocraft.At(1, 1, 0),
+				Target: graft.At(1, 1, 0),
 			},
 			{
 				Action: pathfinder.Break,
-				Target: gocraft.At(1, 2, 0),
+				Target: graft.At(1, 2, 0),
 			},
 			{
 				Action: pathfinder.Walk,
-				Target: gocraft.At(1, 1, 0),
+				Target: graft.At(1, 1, 0),
 			},
 			{
 				Action: pathfinder.Place,
-				Target: gocraft.At(2, 0, 0),
+				Target: graft.At(2, 0, 0),
 			},
 			{
 				Action: pathfinder.Walk,
-				Target: gocraft.At(2, 1, 0),
+				Target: graft.At(2, 1, 0),
 			},
 		},
 	}
 
 	got := route.Waypoints()
-	want := []gocraft.Position{
-		gocraft.At(0, 1, 0),
-		gocraft.At(1, 1, 0),
-		gocraft.At(2, 1, 0),
+	want := []graft.Position{
+		graft.At(0, 1, 0),
+		graft.At(1, 1, 0),
+		graft.At(2, 1, 0),
 	}
 
 	if len(got) != len(want) {

@@ -46,7 +46,7 @@ var constantSource = template.Must(template.New("constants").Parse(
 
 package {{.Package}}
 
-import gocraft "github.com/lrnxzz/go-craft"
+import graft "github.com/lrnxzz/graft"
 
 const (
 {{- range .Values}}
@@ -69,19 +69,19 @@ func constants[T constant](name, scalar string) generator[[]T] {
 }
 
 func blocksCommand() *cobra.Command {
-	blocks := constants[stateConstant]("blocks", "gocraft.BlockState")
+	blocks := constants[stateConstant]("blocks", "graft.BlockState")
 
 	return blocks.command()
 }
 
 func biomesCommand() *cobra.Command {
-	biomes := constants[idConstant]("biomes", "gocraft.BiomeID")
+	biomes := constants[idConstant]("biomes", "graft.BiomeID")
 
 	return biomes.command()
 }
 
 func itemsCommand() *cobra.Command {
-	items := constants[idConstant]("items", "gocraft.ItemID")
+	items := constants[idConstant]("items", "graft.ItemID")
 
 	return items.command()
 }

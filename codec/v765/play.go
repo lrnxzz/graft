@@ -1,13 +1,13 @@
 package v765
 
 import (
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
 )
 
 type DeathLocation struct {
-	DimensionName gocraft.Identifier
-	Location      gocraft.Position
+	DimensionName graft.Identifier
+	Location      graft.Position
 }
 
 func (p DeathLocation) Append(dst []byte) []byte {
@@ -21,15 +21,15 @@ func (p *DeathLocation) Decode(r *codec.Reader) error {
 type JoinGame struct {
 	EntityID            codec.Int
 	Hardcore            codec.Bool
-	Worlds              codec.Slice[gocraft.Identifier]
+	Worlds              codec.Slice[graft.Identifier]
 	MaxPlayers          codec.VarInt
 	ViewDistance        codec.VarInt
 	SimulationDistance  codec.VarInt
 	ReducedDebugInfo    codec.Bool
 	EnableRespawnScreen codec.Bool
 	LimitedCrafting     codec.Bool
-	DimensionType       gocraft.Identifier
-	DimensionName       gocraft.Identifier
+	DimensionType       graft.Identifier
+	DimensionName       graft.Identifier
 	HashedSeed          codec.Long
 	GameMode            codec.UByte
 	PreviousGameMode    codec.Byte
@@ -69,9 +69,9 @@ func (p *JoinGame) Decode(r *codec.Reader) error {
 		&p.Debug, &p.Flat, &p.Death, &p.PortalCooldown)
 }
 
-func (p *JoinGame) Apply(player *gocraft.Player) {
+func (p *JoinGame) Apply(player *graft.Player) {
 	player.EntityID = p.EntityID.Int32()
-	player.GameMode = gocraft.GameMode(p.GameMode)
+	player.GameMode = graft.GameMode(p.GameMode)
 	player.Dimension = p.DimensionName
 }
 
@@ -173,10 +173,10 @@ const (
 	relativePitch
 )
 
-func (p *SyncPlayerPosition) Apply(player *gocraft.Player) {
+func (p *SyncPlayerPosition) Apply(player *graft.Player) {
 	flags := byte(p.Flags)
 
-	target := gocraft.Vec3(p.X.Float64(), p.Y.Float64(), p.Z.Float64())
+	target := graft.Vec3(p.X.Float64(), p.Y.Float64(), p.Z.Float64())
 	if flags&relativeX != 0 {
 		target.X += player.Position.X
 	}
@@ -287,8 +287,8 @@ func (p *ChunkData) Decode(r *codec.Reader) error {
 	return codec.DecodeAll(r, &p.X, &p.Z, &p.Heightmaps, &p.Sections)
 }
 
-func (p *ChunkData) Column(minY, height int) (*gocraft.Column, error) {
-	column := gocraft.ChunkColumn(p.X.Int32(), p.Z.Int32(), minY, height)
+func (p *ChunkData) Column(minY, height int) (*graft.Column, error) {
+	column := graft.ChunkColumn(p.X.Int32(), p.Z.Int32(), minY, height)
 	if err := column.Decode(codec.NewReader(p.Sections)); err != nil {
 		return nil, err
 	}
@@ -326,7 +326,7 @@ func (p *UnloadChunk) Decode(r *codec.Reader) error {
 }
 
 type BlockUpdate struct {
-	Location gocraft.Position
+	Location graft.Position
 	Block    codec.VarInt
 }
 
@@ -358,7 +358,7 @@ type BlockChange struct {
 	X     int
 	Y     int
 	Z     int
-	State gocraft.BlockState
+	State graft.BlockState
 }
 
 func (p *BlockUpdate) Change() BlockChange {
@@ -366,7 +366,7 @@ func (p *BlockUpdate) Change() BlockChange {
 		X:     p.Location.X,
 		Y:     p.Location.Y,
 		Z:     p.Location.Z,
-		State: gocraft.BlockState(p.Block),
+		State: graft.BlockState(p.Block),
 	}
 }
 
@@ -411,7 +411,7 @@ func (p *SectionBlocksUpdate) Changes() []BlockChange {
 			X:     baseX + int(block.Unsigned(8, 4)),
 			Y:     baseY + int(block.Unsigned(0, 4)),
 			Z:     baseZ + int(block.Unsigned(4, 4)),
-			State: gocraft.BlockState(block.Unsigned(12, 52)),
+			State: graft.BlockState(block.Unsigned(12, 52)),
 		}
 	}
 
@@ -455,10 +455,10 @@ const (
 	abilityInstantBuild
 )
 
-func (p *PlayerAbilities) Apply(player *gocraft.Player) {
+func (p *PlayerAbilities) Apply(player *graft.Player) {
 	flags := byte(p.Flags)
 
-	player.Abilities = gocraft.Abilities{
+	player.Abilities = graft.Abilities{
 		Invulnerable: flags&abilityInvulnerable != 0,
 		Flying:       flags&abilityFlying != 0,
 		AllowFlight:  flags&abilityAllowFlight != 0,
@@ -498,7 +498,7 @@ func (p *SetExperience) Decode(r *codec.Reader) error {
 	return codec.DecodeAll(r, &p.Bar, &p.Level, &p.TotalExperience)
 }
 
-func (p *SetExperience) Apply(player *gocraft.Player) {
+func (p *SetExperience) Apply(player *graft.Player) {
 	player.Experience = p.Bar.Float32()
 	player.Level = p.Level.Int32()
 	player.TotalExperience = p.TotalExperience.Int32()
@@ -534,7 +534,7 @@ func (p *SetHealth) Decode(r *codec.Reader) error {
 	return codec.DecodeAll(r, &p.Health, &p.Food, &p.Saturation)
 }
 
-func (p *SetHealth) Apply(player *gocraft.Player) {
+func (p *SetHealth) Apply(player *graft.Player) {
 	player.Health = p.Health.Float32()
 	player.Food = p.Food.Int32()
 	player.Saturation = p.Saturation.Float32()

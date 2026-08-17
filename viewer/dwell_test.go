@@ -3,11 +3,11 @@ package viewer
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	graft "github.com/lrnxzz/graft"
 )
 
-func aimedAt(at gocraft.Position) gocraft.RayHit {
-	return gocraft.RayHit{
+func aimedAt(at graft.Position) graft.RayHit {
+	return graft.RayHit{
 		Block: at,
 	}
 }
@@ -16,7 +16,7 @@ func aimedAt(at gocraft.Position) gocraft.RayHit {
 func TestRestingLongEnoughSettles(t *testing.T) {
 	var d dwell
 
-	at := gocraft.At(10, 64, 10)
+	at := graft.At(10, 64, 10)
 
 	d.look(aimedAt(at), true, 0)
 
@@ -40,7 +40,7 @@ func TestRestingLongEnoughSettles(t *testing.T) {
 func TestFlyingWhileAimedAtOneBlockStillSettles(t *testing.T) {
 	var d dwell
 
-	at := gocraft.At(10, 64, 10)
+	at := graft.At(10, 64, 10)
 
 	d.look(aimedAt(at), true, 0)
 	d.look(aimedAt(at), true, 0.5)
@@ -56,8 +56,8 @@ func TestFlyingWhileAimedAtOneBlockStillSettles(t *testing.T) {
 func TestCrossingToAnotherBlockRestartsTheWait(t *testing.T) {
 	var d dwell
 
-	d.look(aimedAt(gocraft.At(10, 64, 10)), true, 0)
-	d.look(aimedAt(gocraft.At(11, 64, 10)), true, dwellSeconds-0.1)
+	d.look(aimedAt(graft.At(10, 64, 10)), true, 0)
+	d.look(aimedAt(graft.At(11, 64, 10)), true, dwellSeconds-0.1)
 
 	if _, settled := d.settled(dwellSeconds + 0.1); settled {
 		t.Fatal("the wait carried over to a block it never rested on")
@@ -69,7 +69,7 @@ func TestCrossingToAnotherBlockRestartsTheWait(t *testing.T) {
 func TestASettledBlockDoesNotRepeat(t *testing.T) {
 	var d dwell
 
-	hit := aimedAt(gocraft.At(10, 64, 10))
+	hit := aimedAt(graft.At(10, 64, 10))
 
 	d.look(hit, true, 0)
 	d.settled(dwellSeconds + 0.1)
@@ -85,8 +85,8 @@ func TestASettledBlockDoesNotRepeat(t *testing.T) {
 func TestLeavingTheBlockArmsItAgain(t *testing.T) {
 	var d dwell
 
-	here := aimedAt(gocraft.At(10, 64, 10))
-	there := aimedAt(gocraft.At(20, 64, 20))
+	here := aimedAt(graft.At(10, 64, 10))
+	there := aimedAt(graft.At(20, 64, 20))
 
 	d.look(here, true, 0)
 	d.settled(dwellSeconds + 0.1)
@@ -104,7 +104,7 @@ func TestLeavingTheBlockArmsItAgain(t *testing.T) {
 func TestArmingClearsTheWait(t *testing.T) {
 	var d dwell
 
-	hit := aimedAt(gocraft.At(10, 64, 10))
+	hit := aimedAt(graft.At(10, 64, 10))
 
 	d.look(hit, true, 0)
 	d.arm()
@@ -118,7 +118,7 @@ func TestArmingClearsTheWait(t *testing.T) {
 func TestAimingAtSkyHoldsNothing(t *testing.T) {
 	var d dwell
 
-	if _, _, holding := d.look(gocraft.RayHit{}, false, 0); holding {
+	if _, _, holding := d.look(graft.RayHit{}, false, 0); holding {
 		t.Fatal("the sky was held")
 	}
 

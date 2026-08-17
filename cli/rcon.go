@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/lrnxzz/go-craft/rcon"
+	"github.com/lrnxzz/graft/rcon"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +36,7 @@ func rconCommand() *cobra.Command {
 		},
 	}
 
-	command.Flags().StringVar(&password, "password", "gocraft", "rcon password")
+	command.Flags().StringVar(&password, "password", "graft", "rcon password")
 
 	return command
 }

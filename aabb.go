@@ -1,4 +1,4 @@
-package gocraft
+package graft
 
 type AABB struct {
 	Min Vec3d

@@ -1,4 +1,4 @@
-import { plugin } from "gocraft"
+import { plugin } from "graft"
 
 export const picked: string[] = []
 
@@ -15,8 +15,8 @@ export default plugin({
         page: bot => `
           <div class="list">
             <p>${bot.name}</p>
-            <div class="ore" onclick="gocraft.send('pick', 'stone')">stone</div>
-            <div class="ore" onclick="gocraft.send('pick', 'iron_ore')">iron</div>
+            <div class="ore" onclick="graft.send('pick', 'stone')">stone</div>
+            <div class="ore" onclick="graft.send('pick', 'iron_ore')">iron</div>
           </div>`,
         on: {
           pick: (block, bot) => {

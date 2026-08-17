@@ -3,7 +3,7 @@ package items_test
 import (
 	"testing"
 
-	"github.com/lrnxzz/go-craft/codec/v765/items"
+	"github.com/lrnxzz/graft/codec/v765/items"
 )
 
 func TestOfResolvesID(t *testing.T) {

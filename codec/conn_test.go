@@ -6,7 +6,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/codec"
+	"github.com/lrnxzz/graft/codec"
 )
 
 func TestConnPreservesFramesAcrossThresholds(t *testing.T) {

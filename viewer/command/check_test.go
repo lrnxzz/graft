@@ -3,7 +3,7 @@ package command_test
 import (
 	"testing"
 
-	"github.com/lrnxzz/go-craft/viewer/command"
+	"github.com/lrnxzz/graft/viewer/command"
 )
 
 func read(t *testing.T, line string) command.Reading {

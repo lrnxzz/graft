@@ -3,12 +3,12 @@ package pathfinder_test
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/pathfinder"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/pathfinder"
 )
 
 func TestPlannerTunnelsThroughTallWalls(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
@@ -20,13 +20,13 @@ func TestPlannerTunnelsThroughTallWalls(t *testing.T) {
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	digging := pathfinder.Loadout{Digging: true}
 	planner := pathfinder.NewPlanner(world, testTerrain{}, digging)
-	from := gocraft.At(2, 1, 8)
-	goal := pathfinder.GoalAt(gocraft.At(8, 1, 8))
+	from := graft.At(2, 1, 8)
+	goal := pathfinder.GoalAt(graft.At(8, 1, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -82,7 +82,7 @@ func breakOrder(route pathfinder.Route) (int, int) {
 // a two block wall is cheaper to climb than to bore through: breaking the top
 // block alone leaves a ledge the bot can step up onto
 func TestPlannerClimbsShortWallsInsteadOfBoring(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
@@ -93,13 +93,13 @@ func TestPlannerClimbsShortWallsInsteadOfBoring(t *testing.T) {
 		column.SetBlock(5, 2, z, stone)
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	digging := pathfinder.Loadout{Digging: true}
 	planner := pathfinder.NewPlanner(world, testTerrain{}, digging)
-	from := gocraft.At(2, 1, 8)
-	goal := pathfinder.GoalAt(gocraft.At(8, 1, 8))
+	from := graft.At(2, 1, 8)
+	goal := pathfinder.GoalAt(graft.At(8, 1, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -125,7 +125,7 @@ func TestPlannerClimbsShortWallsInsteadOfBoring(t *testing.T) {
 }
 
 func TestPlannerRefusesToTunnelUnbreakableWalls(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
@@ -136,13 +136,13 @@ func TestPlannerRefusesToTunnelUnbreakableWalls(t *testing.T) {
 		column.SetBlock(5, 2, z, bedrock)
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	digging := pathfinder.Loadout{Digging: true}
 	planner := pathfinder.NewPlanner(world, testTerrain{}, digging)
-	from := gocraft.At(2, 1, 8)
-	goal := pathfinder.GoalAt(gocraft.At(8, 1, 8))
+	from := graft.At(2, 1, 8)
+	goal := pathfinder.GoalAt(graft.At(8, 1, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -153,7 +153,7 @@ func TestPlannerRefusesToTunnelUnbreakableWalls(t *testing.T) {
 
 // mining is priced in walk-equivalent blocks, so a short detour has to win
 func TestPlannerWalksAroundWhenTunnellingCostsMore(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
@@ -168,13 +168,13 @@ func TestPlannerWalksAroundWhenTunnellingCostsMore(t *testing.T) {
 		column.SetBlock(5, 2, z, stone)
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	digging := pathfinder.Loadout{Digging: true}
 	planner := pathfinder.NewPlanner(world, testTerrain{}, digging)
-	from := gocraft.At(2, 1, 8)
-	goal := pathfinder.GoalAt(gocraft.At(8, 1, 8))
+	from := graft.At(2, 1, 8)
+	goal := pathfinder.GoalAt(graft.At(8, 1, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -190,7 +190,7 @@ func TestPlannerWalksAroundWhenTunnellingCostsMore(t *testing.T) {
 }
 
 func TestPlannerDigsDownToDescend(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for y := range 5 {
 			for z := range 16 {
@@ -199,13 +199,13 @@ func TestPlannerDigsDownToDescend(t *testing.T) {
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	digging := pathfinder.Loadout{Digging: true}
 	planner := pathfinder.NewPlanner(world, testTerrain{}, digging)
-	from := gocraft.At(8, 5, 8)
-	goal := pathfinder.GoalAt(gocraft.At(8, 2, 8))
+	from := graft.At(8, 5, 8)
+	goal := pathfinder.GoalAt(graft.At(8, 2, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -224,7 +224,7 @@ func TestPlannerDigsDownToDescend(t *testing.T) {
 }
 
 func TestPlannerBridgesGapsWiderThanAJump(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			if x >= 5 && x <= 10 {
@@ -235,13 +235,13 @@ func TestPlannerBridgesGapsWiderThanAJump(t *testing.T) {
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	building := pathfinder.Loadout{Scaffold: 64}
 	planner := pathfinder.NewPlanner(world, testTerrain{}, building)
-	from := gocraft.At(2, 1, 8)
-	goal := pathfinder.GoalAt(gocraft.At(13, 1, 8))
+	from := graft.At(2, 1, 8)
+	goal := pathfinder.GoalAt(graft.At(13, 1, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -260,7 +260,7 @@ func TestPlannerBridgesGapsWiderThanAJump(t *testing.T) {
 }
 
 func TestPlannerNeedsScaffoldToBridge(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			if x >= 5 && x <= 10 {
@@ -271,12 +271,12 @@ func TestPlannerNeedsScaffoldToBridge(t *testing.T) {
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, testTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 1, 8)
-	goal := pathfinder.GoalAt(gocraft.At(13, 1, 8))
+	from := graft.At(2, 1, 8)
+	goal := pathfinder.GoalAt(graft.At(13, 1, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -288,7 +288,7 @@ func TestPlannerNeedsScaffoldToBridge(t *testing.T) {
 // the ordering that matters: the bot must never be told to walk into a block
 // the route has not cleared for it first
 func TestPlannerClearsEveryBlockItWalksInto(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
@@ -301,20 +301,20 @@ func TestPlannerClearsEveryBlockItWalksInto(t *testing.T) {
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	digging := pathfinder.Loadout{Digging: true}
 	planner := pathfinder.NewPlanner(world, testTerrain{}, digging)
-	from := gocraft.At(2, 1, 8)
-	goal := pathfinder.GoalAt(gocraft.At(12, 1, 8))
+	from := graft.At(2, 1, 8)
+	goal := pathfinder.GoalAt(graft.At(12, 1, 8))
 
 	route, ok := planner.Plan(from, goal)
 	if !ok || !route.Complete {
 		t.Fatalf("route = %+v, ok = %v, want a complete route", route, ok)
 	}
 
-	cleared := map[gocraft.Position]bool{}
+	cleared := map[graft.Position]bool{}
 	for _, current := range route.Steps {
 		if current.Action == pathfinder.Break {
 			cleared[current.Target] = true
@@ -325,7 +325,7 @@ func TestPlannerClearsEveryBlockItWalksInto(t *testing.T) {
 			continue
 		}
 
-		occupied := [...]gocraft.Position{
+		occupied := [...]graft.Position{
 			current.Target,
 			current.Target.Add(0, 1, 0),
 		}

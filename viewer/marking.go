@@ -3,8 +3,8 @@ package viewer
 import (
 	"math"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 const (
@@ -26,7 +26,7 @@ const (
 // closes, a ring that spins and a beam that stands. It draws only the block being
 // settled on — the points already planted are the plugin's to draw.
 type Marking struct {
-	at       gocraft.Position
+	at       graft.Position
 	held     float64
 	showing  bool
 	settling bool
@@ -34,7 +34,7 @@ type Marking struct {
 
 // Aiming is called by the frame with what the camera rests on and how far through
 // the wait it is
-func (m *Marking) Aiming(at gocraft.Position, held float64, showing bool) {
+func (m *Marking) Aiming(at graft.Position, held float64, showing bool) {
 	m.at, m.held, m.showing = at, held, showing
 }
 
@@ -60,7 +60,7 @@ func (m *Marking) DrawWorld(painter *Painter) {
 
 // the cage is eight struts reaching in from the corners of a shrinking cube: at
 // the start they are far out and faint, at the end they touch the block
-func (m *Marking) cage(painter *Painter, middle gocraft.Vec3d) {
+func (m *Marking) cage(painter *Painter, middle graft.Vec3d) {
 	reach := cageReach * (1 - m.held)
 	tint := gpu.RGBA(0.49, 0.83, 0.99, float32(0.25+0.75*m.held))
 
@@ -75,12 +75,12 @@ func (m *Marking) cage(painter *Painter, middle gocraft.Vec3d) {
 		painter.Line(far, near, tint)
 	}
 
-	painter.Box(gocraft.Box(middle.Offset(-0.52, -0.52, -0.52), middle.Offset(0.52, 0.52, 0.52)), tint)
+	painter.Box(graft.Box(middle.Offset(-0.52, -0.52, -0.52), middle.Offset(0.52, 0.52, 0.52)), tint)
 }
 
 // the ring turns while the wait fills and closes it: an arc that grows to a full
 // circle is the clock, read without a number
-func (m *Marking) ring(painter *Painter, middle gocraft.Vec3d, now float64) {
+func (m *Marking) ring(painter *Painter, middle graft.Vec3d, now float64) {
 	filled := int(float64(ringSegments) * m.held)
 	if filled < 1 {
 		return
@@ -97,7 +97,7 @@ func (m *Marking) ring(painter *Painter, middle gocraft.Vec3d, now float64) {
 	}
 }
 
-func ringAt(middle gocraft.Vec3d, turn float64, segment int) gocraft.Vec3d {
+func ringAt(middle graft.Vec3d, turn float64, segment int) graft.Vec3d {
 	angle := turn + float64(segment)*2*math.Pi/ringSegments
 
 	return middle.Offset(math.Cos(angle)*ringRadius, ringRise, math.Sin(angle)*ringRadius)
@@ -105,7 +105,7 @@ func ringAt(middle gocraft.Vec3d, turn float64, segment int) gocraft.Vec3d {
 
 // the beam is how a point is found again from far away, and it breathes so it is
 // never mistaken for terrain
-func (m *Marking) beam(painter *Painter, middle gocraft.Vec3d, now float64) {
+func (m *Marking) beam(painter *Painter, middle graft.Vec3d, now float64) {
 	breath := 0.55 + 0.45*math.Sin(now*beamPulse)
 	tint := gpu.RGBA(0.49, 0.83, 0.99, float32(breath*m.held))
 
@@ -116,13 +116,13 @@ func (m *Marking) beam(painter *Painter, middle gocraft.Vec3d, now float64) {
 	painter.Line(middle.Offset(-0.2, 0, -0.2), top.Offset(-0.2, 0, -0.2), tint)
 }
 
-var corners = [...]gocraft.Vec3d{
-	gocraft.Vec3(1, 1, 1),
-	gocraft.Vec3(1, 1, -1),
-	gocraft.Vec3(1, -1, 1),
-	gocraft.Vec3(1, -1, -1),
-	gocraft.Vec3(-1, 1, 1),
-	gocraft.Vec3(-1, 1, -1),
-	gocraft.Vec3(-1, -1, 1),
-	gocraft.Vec3(-1, -1, -1),
+var corners = [...]graft.Vec3d{
+	graft.Vec3(1, 1, 1),
+	graft.Vec3(1, 1, -1),
+	graft.Vec3(1, -1, 1),
+	graft.Vec3(1, -1, -1),
+	graft.Vec3(-1, 1, 1),
+	graft.Vec3(-1, 1, -1),
+	graft.Vec3(-1, -1, 1),
+	graft.Vec3(-1, -1, -1),
 }

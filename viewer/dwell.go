@@ -1,7 +1,7 @@
 package viewer
 
 import (
-	gocraft "github.com/lrnxzz/go-craft"
+	graft "github.com/lrnxzz/graft"
 )
 
 const (
@@ -20,22 +20,22 @@ const (
 // to hold still, and a single frame of flying moved it further than the budget
 // allowed, so the wait could never finish while you were steering.
 type dwell struct {
-	at      gocraft.Position
+	at      graft.Position
 	holding bool
 	since   float64
 
-	planted gocraft.Position
+	planted graft.Position
 	spent   bool
 }
 
 // look reports the block being rested on and how far through the wait it is,
 // from 0 to 1. It answers false when nothing is being held.
-func (d *dwell) look(hit gocraft.RayHit, sighted bool, now float64) (gocraft.Position, float64, bool) {
+func (d *dwell) look(hit graft.RayHit, sighted bool, now float64) (graft.Position, float64, bool) {
 	if !sighted {
 		d.holding = false
 		d.spent = false
 
-		return gocraft.Position{}, 0, false
+		return graft.Position{}, 0, false
 	}
 
 	// leaving the block that was just planted arms it again
@@ -57,9 +57,9 @@ func (d *dwell) look(hit gocraft.RayHit, sighted bool, now float64) (gocraft.Pos
 }
 
 // settled reports the block the wait just completed on, once
-func (d *dwell) settled(now float64) (gocraft.Position, bool) {
+func (d *dwell) settled(now float64) (graft.Position, bool) {
 	if !d.holding || d.spent || now-d.since < dwellSeconds {
-		return gocraft.Position{}, false
+		return graft.Position{}, false
 	}
 
 	d.planted = d.at

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/viewer/command"
+	"github.com/lrnxzz/graft/viewer/command"
 )
 
 // The tree is what a line walks down, so the tests follow lines rather than

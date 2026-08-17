@@ -1,10 +1,10 @@
-#ifndef GOCRAFT_ULTRALIGHT_BRIDGE_H
-#define GOCRAFT_ULTRALIGHT_BRIDGE_H
+#ifndef GRAFT_ULTRALIGHT_BRIDGE_H
+#define GRAFT_ULTRALIGHT_BRIDGE_H
 
 #include <stdint.h>
 #include <Ultralight/CAPI.h>
 
-// ul_listen makes every page this view loads carry a gocraft.send function that
+// ul_listen makes every page this view loads carry a graft.send function that
 // calls back into Go. The owner is a cgo handle, and it rides on the function
 // object itself rather than on the page, so a stale reference cannot make one
 // view's message arrive as another's.

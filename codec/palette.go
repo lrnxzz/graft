@@ -166,7 +166,7 @@ func (c *PalettedContainer[T]) Decode(r *Reader) error {
 
 	expected := c.longs(c.bitsPerEntry)
 	if len(c.data) != expected {
-		return r.fail(fmt.Errorf("gocraft: paletted container has %d longs, want %d", len(c.data), expected))
+		return r.fail(fmt.Errorf("graft: paletted container has %d longs, want %d", len(c.data), expected))
 	}
 
 	return nil

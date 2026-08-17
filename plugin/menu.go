@@ -71,7 +71,7 @@ func (m *Menu) Written() bool {
 	return m.page != nil
 }
 
-// Send delivers what the page asked for through gocraft.send. An unclaimed name
+// Send delivers what the page asked for through graft.send. An unclaimed name
 // is not an error: markup outlives the handler that used to answer it.
 func (m *Menu) Send(name string, args []string) error {
 	handle := m.on[name]

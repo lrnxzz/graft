@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	graft "github.com/lrnxzz/graft"
 )
 
 func newBus() *Agent {
@@ -109,7 +109,7 @@ func TestAGuardRefusesAnIntentAndSaysWhy(t *testing.T) {
 		}
 	})
 
-	deep := &Digging{Block: gocraft.At(0, -1, 0)}
+	deep := &Digging{Block: graft.At(0, -1, 0)}
 	err := bot.allowed(deep)
 	if err == nil {
 		t.Fatal("the guard refused the dig and the intent survived")
@@ -123,7 +123,7 @@ func TestAGuardRefusesAnIntentAndSaysWhy(t *testing.T) {
 		t.Errorf("refusal = %+v, want the intent and the reason", refusal)
 	}
 
-	high := &Digging{Block: gocraft.At(0, 64, 0)}
+	high := &Digging{Block: graft.At(0, 64, 0)}
 	if err := bot.allowed(high); err != nil {
 		t.Errorf("an unrelated dig was refused: %v", err)
 	}

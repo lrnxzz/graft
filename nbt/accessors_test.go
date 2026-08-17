@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/nbt"
+	"github.com/lrnxzz/graft/nbt"
 )
 
 func TestGet(t *testing.T) {

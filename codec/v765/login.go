@@ -1,8 +1,8 @@
 package v765
 
 import (
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
 )
 
 type LoginStart struct {
@@ -134,7 +134,7 @@ func (p *LoginSuccess) Decode(r *codec.Reader) error {
 	return codec.DecodeAll(r, &p.UUID, &p.Username, &p.Properties)
 }
 
-func (p *LoginSuccess) Apply(player *gocraft.Player) {
+func (p *LoginSuccess) Apply(player *graft.Player) {
 	player.UUID = p.UUID
 	player.Username = p.Username.String()
 }

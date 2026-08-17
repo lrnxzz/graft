@@ -1,9 +1,9 @@
-package gocraft
+package graft
 
 import (
 	"strings"
 
-	"github.com/lrnxzz/go-craft/codec"
+	"github.com/lrnxzz/graft/codec"
 )
 
 const DefaultNamespace = "minecraft"

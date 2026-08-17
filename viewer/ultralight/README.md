@@ -52,7 +52,7 @@ uri, para o engine so reduzir.
   `bridge.c` registra um *vectored continue handler* que responde por esse codigo
   e por mais nenhum. Medido: o handler de primeira chance e chamado e a resposta
   dele e ignorada — quem segura e o de continuacao. Nenhum teste cobre isso,
-  porque a excecao nao existe fora do Windows; `gocraft -check` e a verificacao.
+  porque a excecao nao existe fora do Windows; `graft -check` e a verificacao.
 - **uma thread por renderer.** Todas as chamadas pertencem a thread que abriu o
   engine. No viewer isso sai de graca, porque a janela ja prende a main; fora
   dela, quem chama tem que se prender sozinho — sem isso quebra em cerca de uma

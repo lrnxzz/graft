@@ -11,13 +11,13 @@ import (
 	"strings"
 	"sync"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/atlas"
-	"github.com/lrnxzz/go-craft/codec/v765/items"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/atlas"
+	"github.com/lrnxzz/graft/codec/v765/items"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
-//go:generate go run github.com/lrnxzz/go-craft/cli gen icons 765
+//go:generate go run github.com/lrnxzz/graft/cli gen icons 765
 
 //go:embed assets/icons.png
 var iconsImage []byte
@@ -62,7 +62,7 @@ func (s *Iconset) Atlas() *gpu.Atlas {
 	return s.atlas
 }
 
-func (s *Iconset) Icon(item gocraft.ItemID) (gpu.UV, bool) {
+func (s *Iconset) Icon(item graft.ItemID) (gpu.UV, bool) {
 	registered, known := items.Of(item)
 	if !known {
 		return gpu.UV{}, false

@@ -3,8 +3,8 @@ package viewer
 import (
 	"context"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 type press struct {
@@ -53,14 +53,14 @@ func (e *edges) button(button gpu.Button) press {
 
 func (v *Viewer) control(ctx context.Context) {
 	if v.chat.Typing() {
-		v.bot.SetControls(gocraft.Controls{})
+		v.bot.SetControls(graft.Controls{})
 		v.compose()
 
 		return
 	}
 
 	if v.Showing() {
-		v.bot.SetControls(gocraft.Controls{})
+		v.bot.SetControls(graft.Controls{})
 		v.drive()
 
 		return
@@ -71,7 +71,7 @@ func (v *Viewer) control(ctx context.Context) {
 	// a bind may have just opened the chat or a menu, and neither wants the
 	// keystroke that opened it to also reach the game
 	if v.chat.Typing() || v.Showing() {
-		v.bot.SetControls(gocraft.Controls{})
+		v.bot.SetControls(graft.Controls{})
 
 		return
 	}
@@ -80,7 +80,7 @@ func (v *Viewer) control(ctx context.Context) {
 
 	// out of the body the keys move the camera, and the bot keeps standing still
 	if v.eye.away() {
-		v.bot.SetControls(gocraft.Controls{})
+		v.bot.SetControls(graft.Controls{})
 		v.fly(now)
 		v.aim()
 		v.plant()
@@ -188,7 +188,7 @@ func (v *Viewer) walk(now float64) {
 	forward := v.edges.key(gpu.KeyW)
 	sprinting := v.driving.sprint(forward, now)
 
-	held := gocraft.Controls{
+	held := graft.Controls{
 		Forward: forward.down,
 		Back:    v.window.Pressed(gpu.KeyS),
 		Left:    v.window.Pressed(gpu.KeyA),
@@ -222,7 +222,7 @@ func (v *Viewer) strike(ctx context.Context, now float64) {
 			// the frame must not wait on the block, and the crack overlay
 			// already shows the progress, so the outcome goes nowhere
 			go func() {
-				_, _ = v.bot.Dig(ctx, gocraft.BlockReach)
+				_, _ = v.bot.Dig(ctx, graft.BlockReach)
 			}()
 		}
 	case digging.released:
@@ -231,7 +231,7 @@ func (v *Viewer) strike(ctx context.Context, now float64) {
 
 	if v.edges.button(gpu.ButtonRight).started {
 		v.driving.swung(now)
-		_ = v.bot.Place(gocraft.BlockReach)
+		_ = v.bot.Place(graft.BlockReach)
 	}
 }
 
@@ -371,7 +371,7 @@ func (v *Viewer) compose() {
 }
 
 func (v *Viewer) hotkeys() {
-	for index := range gocraft.HotbarSize {
+	for index := range graft.HotbarSize {
 		if v.edges.key(gpu.Digit(index)).started {
 			_ = v.bot.SelectHotbar(index)
 		}
@@ -383,7 +383,7 @@ func (v *Viewer) hotkeys() {
 	}
 
 	held := v.bot.Inventory().HeldIndex() - scrolled
-	_ = v.bot.SelectHotbar(wrap(held, gocraft.HotbarSize))
+	_ = v.bot.SelectHotbar(wrap(held, graft.HotbarSize))
 }
 
 func wrap(index, size int) int {

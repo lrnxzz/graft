@@ -1,9 +1,9 @@
-package gocraft
+package graft
 
 import (
 	"fmt"
 
-	"github.com/lrnxzz/go-craft/codec"
+	"github.com/lrnxzz/graft/codec"
 )
 
 const chunkWidth = 16

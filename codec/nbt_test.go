@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/codec"
-	"github.com/lrnxzz/go-craft/nbt"
+	"github.com/lrnxzz/graft/codec"
+	"github.com/lrnxzz/graft/nbt"
 )
 
 func TestNBTFieldAdvancesReader(t *testing.T) {

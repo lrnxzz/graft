@@ -3,7 +3,7 @@ package blocks_test
 import (
 	"testing"
 
-	"github.com/lrnxzz/go-craft/codec/v765/blocks"
+	"github.com/lrnxzz/graft/codec/v765/blocks"
 )
 
 func TestGeneratedConstantsMatchRegistry(t *testing.T) {

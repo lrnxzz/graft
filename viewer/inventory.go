@@ -3,9 +3,9 @@ package viewer
 import (
 	_ "embed"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/agent"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/agent"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 //go:embed assets/inventory.png
@@ -49,7 +49,7 @@ func (s *InventoryScreen) Draw(canvas *Canvas) {
 	canvas.Sprite(s.panel, frame, art, gpu.White)
 
 	inventory := s.bot.Inventory()
-	for index := range gocraft.InventorySize {
+	for index := range graft.InventorySize {
 		origin := frame.Min.Add(containerSlot(index).Scale(guiScale))
 		canvas.Icon(inventory.Slot(index).Item, iconAt(origin))
 	}
@@ -87,7 +87,7 @@ func (s *InventoryScreen) Close() {
 func slotAt(cursor gpu.Point, screen gpu.Rect) (int, bool) {
 	frame := containerFrame(screen)
 
-	for index := range gocraft.InventorySize {
+	for index := range graft.InventorySize {
 		if slotCell(frame, containerSlot(index)).Contains(cursor) {
 			return index, true
 		}
@@ -109,12 +109,12 @@ func slotCell(panel gpu.Rect, origin gpu.Point) gpu.Rect {
 }
 
 var containerSlots = map[int]gpu.Point{
-	gocraft.SlotCraftingOutput: gpu.At(154, 28),
-	gocraft.SlotHead:           gpu.At(8, 8),
-	gocraft.SlotChest:          gpu.At(8, 26),
-	gocraft.SlotLegs:           gpu.At(8, 44),
-	gocraft.SlotFeet:           gpu.At(8, 62),
-	gocraft.SlotOffhand:        gpu.At(77, 62),
+	graft.SlotCraftingOutput: gpu.At(154, 28),
+	graft.SlotHead:           gpu.At(8, 8),
+	graft.SlotChest:          gpu.At(8, 26),
+	graft.SlotLegs:           gpu.At(8, 44),
+	graft.SlotFeet:           gpu.At(8, 62),
+	graft.SlotOffhand:        gpu.At(77, 62),
 }
 
 func craftingSlot(index int) gpu.Point {
@@ -124,23 +124,23 @@ func craftingSlot(index int) gpu.Point {
 }
 
 func mainSlot(index int) gpu.Point {
-	row := (index - gocraft.SlotMainStart) / gocraft.HotbarSize
-	column := (index - gocraft.SlotMainStart) % gocraft.HotbarSize
+	row := (index - graft.SlotMainStart) / graft.HotbarSize
+	column := (index - graft.SlotMainStart) % graft.HotbarSize
 
 	return gpu.At(8+float32(column*slotSize), 84+float32(row*slotSize))
 }
 
 func hotbarSlot(index int) gpu.Point {
-	return gpu.At(8+float32((index-gocraft.SlotHotbarStart)*slotSize), 142)
+	return gpu.At(8+float32((index-graft.SlotHotbarStart)*slotSize), 142)
 }
 
 func containerSlot(index int) gpu.Point {
 	switch {
-	case index >= gocraft.SlotHotbarStart && index < gocraft.SlotOffhand:
+	case index >= graft.SlotHotbarStart && index < graft.SlotOffhand:
 		return hotbarSlot(index)
-	case index >= gocraft.SlotMainStart && index < gocraft.SlotHotbarStart:
+	case index >= graft.SlotMainStart && index < graft.SlotHotbarStart:
 		return mainSlot(index)
-	case index >= 1 && index < gocraft.SlotHead:
+	case index >= 1 && index < graft.SlotHead:
 		return craftingSlot(index)
 	default:
 		return containerSlots[index]

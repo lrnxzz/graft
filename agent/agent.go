@@ -10,12 +10,12 @@ import (
 	"sync"
 	"time"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
-	v765 "github.com/lrnxzz/go-craft/codec/v765"
-	"github.com/lrnxzz/go-craft/codec/v765/blocks"
-	"github.com/lrnxzz/go-craft/pathfinder"
-	"github.com/lrnxzz/go-craft/physics"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
+	v765 "github.com/lrnxzz/graft/codec/v765"
+	"github.com/lrnxzz/graft/codec/v765/blocks"
+	"github.com/lrnxzz/graft/pathfinder"
+	"github.com/lrnxzz/graft/physics"
 )
 
 const (
@@ -51,7 +51,7 @@ type Agent struct {
 
 type Snapshot struct {
 	Tick     uint64
-	Position gocraft.Vec3d
+	Position graft.Vec3d
 	Yaw      float32
 	Pitch    float32
 	OnGround bool
@@ -63,7 +63,7 @@ func (a *Agent) Snapshot() Snapshot {
 }
 
 func Join(ctx context.Context, address, username string) (*Agent, error) {
-	host, port, err := gocraft.SplitAddress(address)
+	host, port, err := graft.SplitAddress(address)
 	if err != nil {
 		return nil, err
 	}
@@ -123,15 +123,15 @@ func (a *Agent) Ready(ctx context.Context) error {
 	return nil
 }
 
-func (a *Agent) World() *gocraft.World {
+func (a *Agent) World() *graft.World {
 	return a.session.World()
 }
 
-func (a *Agent) Player() *gocraft.Player {
+func (a *Agent) Player() *graft.Player {
 	return a.session.Player()
 }
 
-func (a *Agent) SetControls(controls gocraft.Controls) {
+func (a *Agent) SetControls(controls graft.Controls) {
 	a.steering.hold(controls)
 }
 
@@ -139,20 +139,20 @@ func (a *Agent) Look(yaw, pitch float32) {
 	a.steering.aim(yaw, pitch)
 }
 
-func (a *Agent) LookAt(target gocraft.Vec3d) {
+func (a *Agent) LookAt(target graft.Vec3d) {
 	player := a.session.Player()
-	yaw, pitch := gocraft.LookAngles(player.Eye(), target)
+	yaw, pitch := graft.LookAngles(player.Eye(), target)
 
 	a.Look(yaw, pitch)
 }
 
-func (a *Agent) Target(reach float64) (gocraft.RayHit, bool) {
+func (a *Agent) Target(reach float64) (graft.RayHit, bool) {
 	player := a.session.Player()
 
 	return a.session.World().Raycast(player.Eye(), player.LookDirection(), reach, blocks.Solid)
 }
 
-func (a *Agent) Inventory() *gocraft.Inventory {
+func (a *Agent) Inventory() *graft.Inventory {
 	return a.session.Inventory()
 }
 
@@ -160,14 +160,14 @@ func (a *Agent) SelectHotbar(index int) error {
 	return a.session.SelectHotbar(index)
 }
 
-func (a *Agent) Hold(item gocraft.ItemID) error {
+func (a *Agent) Hold(item graft.ItemID) error {
 	inventory := a.session.Inventory()
 
 	if inventory.Held().Is(item) {
 		return nil
 	}
 
-	for index := range gocraft.HotbarSize {
+	for index := range graft.HotbarSize {
 		if inventory.Hotbar(index).Is(item) {
 			return a.session.SelectHotbar(index)
 		}
@@ -184,7 +184,7 @@ func (a *Agent) Hold(item gocraft.ItemID) error {
 func (a *Agent) SwapHands() error {
 	inventory := a.session.Inventory()
 
-	return a.session.SwapWithOffhand(gocraft.HotbarSlot(inventory.HeldIndex()))
+	return a.session.SwapWithOffhand(graft.HotbarSlot(inventory.HeldIndex()))
 }
 
 func (a *Agent) ClickSlot(slot int) error {
@@ -221,7 +221,7 @@ func (a *Agent) noticeBlock(_ *codec.Client, p *v765.BlockUpdate) error {
 	change := p.Change()
 
 	a.post(BlockChanged{
-		At:    gocraft.At(change.X, change.Y, change.Z),
+		At:    graft.At(change.X, change.Y, change.Z),
 		State: change.State,
 	})
 
@@ -237,16 +237,16 @@ func (a *Agent) noticeHealth(_ *codec.Client, p *v765.SetHealth) error {
 	return nil
 }
 
-func (a *Agent) Carried() gocraft.ItemStack {
+func (a *Agent) Carried() graft.ItemStack {
 	return a.session.Carried()
 }
 
 // Dig blocks until the world settles the block, so a caller that must not wait
 // runs it in a goroutine and drops the result
-func (a *Agent) Dig(ctx context.Context, reach float64) (gocraft.RayHit, error) {
+func (a *Agent) Dig(ctx context.Context, reach float64) (graft.RayHit, error) {
 	hit, ok := a.Target(reach)
 	if !ok {
-		return gocraft.RayHit{}, errNoBlockInReach
+		return graft.RayHit{}, errNoBlockInReach
 	}
 
 	proposed := &Digging{
@@ -255,25 +255,25 @@ func (a *Agent) Dig(ctx context.Context, reach float64) (gocraft.RayHit, error) 
 		Tool:  a.session.Inventory().Held().Item,
 	}
 	if err := a.allowed(proposed); err != nil {
-		return gocraft.RayHit{}, err
+		return graft.RayHit{}, err
 	}
 
 	finished, err := a.miner.begin(hit, reach, a.session.Player().GameMode, a.session.Inventory().Held().Item)
 	if err != nil {
-		return gocraft.RayHit{}, err
+		return graft.RayHit{}, err
 	}
 
 	select {
 	case err := <-finished:
 		if err != nil {
-			return gocraft.RayHit{}, err
+			return graft.RayHit{}, err
 		}
 
 		return hit, nil
 	case <-ctx.Done():
 		_ = a.StopDigging()
 
-		return gocraft.RayHit{}, ctx.Err()
+		return graft.RayHit{}, ctx.Err()
 	}
 }
 
@@ -290,7 +290,7 @@ func (a *Agent) Digging() bool {
 // Excavating is the block being broken and how far through it the bot is, from
 // 0 to 1. It reports false when nothing is being dug.
 type Excavating struct {
-	Block    gocraft.Position
+	Block    graft.Position
 	Progress float64
 }
 
@@ -328,10 +328,10 @@ func (a *Agent) Place(reach float64) error {
 // Navigate blocks until the bot arrives, gives up, or the context ends; the walk
 // itself is driven by the tick loop, so a caller that wants to do something else
 // meanwhile runs this in a goroutine
-func (a *Agent) Navigate(ctx context.Context, goal pathfinder.Goal) (gocraft.Position, error) {
+func (a *Agent) Navigate(ctx context.Context, goal pathfinder.Goal) (graft.Position, error) {
 	proposed := &Navigating{Goal: goal}
 	if err := a.allowed(proposed); err != nil {
-		return gocraft.Position{}, err
+		return graft.Position{}, err
 	}
 
 	from := a.session.Player().Position.Floor()
@@ -339,7 +339,7 @@ func (a *Agent) Navigate(ctx context.Context, goal pathfinder.Goal) (gocraft.Pos
 
 	route, ok := planner.Plan(from, goal)
 	if !ok {
-		return gocraft.Position{}, errNoRoute
+		return graft.Position{}, errNoRoute
 	}
 
 	done := make(chan arrival, 1)
@@ -357,7 +357,7 @@ func (a *Agent) Navigate(ctx context.Context, goal pathfinder.Goal) (gocraft.Pos
 	case <-ctx.Done():
 		a.Stop()
 
-		return gocraft.Position{}, ctx.Err()
+		return graft.Position{}, ctx.Err()
 	}
 }
 
@@ -372,13 +372,13 @@ func (a *Agent) Navigate(ctx context.Context, goal pathfinder.Goal) (gocraft.Pos
 func (a *Agent) loadout() pathfinder.Loadout {
 	return pathfinder.Loadout{
 		Tool:    a.session.Inventory().Held().Item,
-		Digging: a.session.Player().GameMode != gocraft.Adventure,
+		Digging: a.session.Player().GameMode != graft.Adventure,
 	}
 }
 
 // Path is where the bot is walking and how many of those waypoints are behind it
 type Path struct {
-	Waypoints []gocraft.Position
+	Waypoints []graft.Position
 	Walked    int
 }
 
@@ -388,7 +388,7 @@ func (a *Agent) Path() Path {
 
 func (a *Agent) Stop() {
 	a.navigator.abandon(errNavigationStopped)
-	a.steering.hold(gocraft.Controls{})
+	a.steering.hold(graft.Controls{})
 }
 
 func (a *Agent) tick() {
@@ -422,7 +422,7 @@ func (a *Agent) tick() {
 	a.latest.publish(player)
 }
 
-func (a *Agent) navigate(player *gocraft.Player) {
+func (a *Agent) navigate(player *graft.Player) {
 	command, navigating := a.navigator.tick(a.session.World(), player)
 	if !navigating {
 		return
@@ -443,7 +443,7 @@ func (a *Agent) navigate(player *gocraft.Player) {
 
 // the crosshair only lands on the block a tick after the look is sent, so both
 // actions verify what they are actually pointing at before committing
-func (a *Agent) mine(player *gocraft.Player, command order) {
+func (a *Agent) mine(player *graft.Player, command order) {
 	if a.Digging() {
 		return
 	}
@@ -455,10 +455,10 @@ func (a *Agent) mine(player *gocraft.Player, command order) {
 
 	// the navigator watches the world to know the block fell, so the dig channel
 	// has no reader here and the buffered send simply drops on the floor
-	_, _ = a.miner.begin(hit, gocraft.BlockReach, player.GameMode, a.session.Inventory().Held().Item)
+	_, _ = a.miner.begin(hit, graft.BlockReach, player.GameMode, a.session.Inventory().Held().Item)
 }
 
-func (a *Agent) build(player *gocraft.Player, command order) {
+func (a *Agent) build(player *graft.Player, command order) {
 	hit, sighted := a.sight(player, command)
 	if !sighted || hit.Block.Neighbor(hit.Face) != command.target {
 		return
@@ -467,8 +467,8 @@ func (a *Agent) build(player *gocraft.Player, command order) {
 	_ = a.session.PlaceBlock(hit)
 }
 
-func (a *Agent) sight(player *gocraft.Player, command order) (gocraft.RayHit, bool) {
+func (a *Agent) sight(player *graft.Player, command order) (graft.RayHit, bool) {
 	direction := command.aim.Sub(player.Eye())
 
-	return a.session.World().Raycast(player.Eye(), direction, gocraft.BlockReach, blocks.Solid)
+	return a.session.World().Raycast(player.Eye(), direction, graft.BlockReach, blocks.Solid)
 }

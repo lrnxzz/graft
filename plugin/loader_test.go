@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/plugin"
+	"github.com/lrnxzz/graft/plugin"
 )
 
 func loadFolder(t *testing.T) (*plugin.Plugins, []plugin.Failure) {

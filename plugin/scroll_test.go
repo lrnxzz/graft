@@ -3,7 +3,7 @@ package plugin_test
 import (
 	"testing"
 
-	"github.com/lrnxzz/go-craft/plugin"
+	"github.com/lrnxzz/graft/plugin"
 )
 
 func openedMenu(t *testing.T) (plugin.Node, *paper) {

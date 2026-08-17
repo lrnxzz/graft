@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/plugin"
+	"github.com/lrnxzz/graft/plugin"
 )
 
-// gocraft.d.ts is what a plugin author reads, and nothing in Go makes it true.
+// graft.d.ts is what a plugin author reads, and nothing in Go makes it true.
 // It had already drifted from the payloads the host sends in six of eleven
 // declarations before this test existed, so it is checked against the catalogue
 // rather than against a second list written by hand.
@@ -20,7 +20,7 @@ var declared = regexp.MustCompile(`(?m)^\s{4}(\w+): \{ ?([^}]*?) ?\}`)
 func contract(t *testing.T, block string) map[string][]string {
 	t.Helper()
 
-	source, err := os.ReadFile("gocraft.d.ts")
+	source, err := os.ReadFile("graft.d.ts")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -29,7 +29,7 @@ func contract(t *testing.T, block string) map[string][]string {
 
 	start := strings.Index(string(source), opening)
 	if start < 0 {
-		t.Fatalf("gocraft.d.ts declares no %s", block)
+		t.Fatalf("graft.d.ts declares no %s", block)
 	}
 
 	rest := string(source)[start+len(opening):]
@@ -79,7 +79,7 @@ func TestEveryNoticeIsDeclaredAsItIsSent(t *testing.T) {
 
 		got, known := promised[notice.Event()]
 		if !known {
-			t.Errorf("the bot raises %q and gocraft.d.ts never declares it", notice.Event())
+			t.Errorf("the bot raises %q and graft.d.ts never declares it", notice.Event())
 
 			continue
 		}
@@ -91,7 +91,7 @@ func TestEveryNoticeIsDeclaredAsItIsSent(t *testing.T) {
 	}
 
 	for event := range promised {
-		t.Errorf("gocraft.d.ts declares %q and the bot never raises it", event)
+		t.Errorf("graft.d.ts declares %q and the bot never raises it", event)
 	}
 }
 
@@ -103,7 +103,7 @@ func TestEveryIntentIsDeclaredAsItIsSent(t *testing.T) {
 
 		got, known := promised[about.Intent()]
 		if !known {
-			t.Errorf("the bot guards %q and gocraft.d.ts never declares it", about.Intent())
+			t.Errorf("the bot guards %q and graft.d.ts never declares it", about.Intent())
 
 			continue
 		}
@@ -115,6 +115,6 @@ func TestEveryIntentIsDeclaredAsItIsSent(t *testing.T) {
 	}
 
 	for intent := range promised {
-		t.Errorf("gocraft.d.ts declares %q and the bot never guards it", intent)
+		t.Errorf("graft.d.ts declares %q and the bot never guards it", intent)
 	}
 }

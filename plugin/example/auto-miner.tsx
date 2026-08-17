@@ -4,7 +4,7 @@ import {
   highlight, beacon,
   Panel, Row, Text, Bar, Icon, List, Option, Raw,
   type Block, type Bot, type Ui,
-} from "gocraft"
+} from "graft"
 
 const mineable: Block[] = [
   "coal_ore", "deepslate_coal_ore",

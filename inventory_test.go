@@ -1,37 +1,37 @@
-package gocraft_test
+package graft_test
 
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	graft "github.com/lrnxzz/graft"
 )
 
 func TestInventoryLoadAndSlotBounds(t *testing.T) {
-	stacks := make([]gocraft.ItemStack, gocraft.InventorySize)
-	stacks[gocraft.SlotMainStart] = gocraft.ItemStack{
+	stacks := make([]graft.ItemStack, graft.InventorySize)
+	stacks[graft.SlotMainStart] = graft.ItemStack{
 		Item:  7,
 		Count: 3,
 	}
 
-	var inventory gocraft.Inventory
+	var inventory graft.Inventory
 	inventory.Load(stacks)
 
-	got := inventory.Slot(gocraft.SlotMainStart)
+	got := inventory.Slot(graft.SlotMainStart)
 	if !got.Is(7) || got.Count != 3 {
 		t.Errorf("slot = %+v, want item 7 count 3", got)
 	}
-	if !inventory.Slot(-1).Empty() || !inventory.Slot(gocraft.InventorySize).Empty() {
+	if !inventory.Slot(-1).Empty() || !inventory.Slot(graft.InventorySize).Empty() {
 		t.Error("out of range slots should read as empty")
 	}
 }
 
 func TestInventoryFindPrefersHotbar(t *testing.T) {
-	var inventory gocraft.Inventory
-	inventory.SetSlot(gocraft.SlotMainStart, gocraft.ItemStack{
+	var inventory graft.Inventory
+	inventory.SetSlot(graft.SlotMainStart, graft.ItemStack{
 		Item:  5,
 		Count: 1,
 	})
-	inventory.SetSlot(gocraft.HotbarSlot(4), gocraft.ItemStack{
+	inventory.SetSlot(graft.HotbarSlot(4), graft.ItemStack{
 		Item:  5,
 		Count: 1,
 	})
@@ -40,26 +40,26 @@ func TestInventoryFindPrefersHotbar(t *testing.T) {
 	if !ok {
 		t.Fatal("item should be found")
 	}
-	if slot != gocraft.HotbarSlot(4) {
-		t.Errorf("found slot %d, want hotbar slot %d", slot, gocraft.HotbarSlot(4))
+	if slot != graft.HotbarSlot(4) {
+		t.Errorf("found slot %d, want hotbar slot %d", slot, graft.HotbarSlot(4))
 	}
 }
 
 func TestInventoryCountSumsStorage(t *testing.T) {
-	var inventory gocraft.Inventory
-	inventory.SetSlot(gocraft.SlotMainStart, gocraft.ItemStack{
+	var inventory graft.Inventory
+	inventory.SetSlot(graft.SlotMainStart, graft.ItemStack{
 		Item:  9,
 		Count: 30,
 	})
-	inventory.SetSlot(gocraft.HotbarSlot(0), gocraft.ItemStack{
+	inventory.SetSlot(graft.HotbarSlot(0), graft.ItemStack{
 		Item:  9,
 		Count: 12,
 	})
-	inventory.SetSlot(gocraft.SlotOffhand, gocraft.ItemStack{
+	inventory.SetSlot(graft.SlotOffhand, graft.ItemStack{
 		Item:  9,
 		Count: 1,
 	})
-	inventory.SetSlot(gocraft.SlotHead, gocraft.ItemStack{
+	inventory.SetSlot(graft.SlotHead, graft.ItemStack{
 		Item:  9,
 		Count: 1,
 	})
@@ -70,14 +70,14 @@ func TestInventoryCountSumsStorage(t *testing.T) {
 }
 
 func TestInventorySwapAndHeld(t *testing.T) {
-	var inventory gocraft.Inventory
-	inventory.SetSlot(gocraft.SlotMainStart, gocraft.ItemStack{
+	var inventory graft.Inventory
+	inventory.SetSlot(graft.SlotMainStart, graft.ItemStack{
 		Item:  2,
 		Count: 1,
 	})
 
-	inventory.Swap(gocraft.SlotMainStart, gocraft.HotbarSlot(0))
-	if !inventory.Hotbar(0).Is(2) || !inventory.Slot(gocraft.SlotMainStart).Empty() {
+	inventory.Swap(graft.SlotMainStart, graft.HotbarSlot(0))
+	if !inventory.Hotbar(0).Is(2) || !inventory.Slot(graft.SlotMainStart).Empty() {
 		t.Error("swap should move the stack into the hotbar")
 	}
 
@@ -93,9 +93,9 @@ func TestInventorySwapAndHeld(t *testing.T) {
 }
 
 func TestInventoryFirstEmpty(t *testing.T) {
-	var inventory gocraft.Inventory
-	for index := gocraft.SlotHotbarStart; index <= gocraft.SlotOffhand; index++ {
-		inventory.SetSlot(index, gocraft.ItemStack{
+	var inventory graft.Inventory
+	for index := graft.SlotHotbarStart; index <= graft.SlotOffhand; index++ {
+		inventory.SetSlot(index, graft.ItemStack{
 			Item:  1,
 			Count: 1,
 		})
@@ -105,7 +105,7 @@ func TestInventoryFirstEmpty(t *testing.T) {
 	if !ok {
 		t.Fatal("main storage should still have room")
 	}
-	if slot != gocraft.SlotMainStart {
-		t.Errorf("first empty = %d, want %d", slot, gocraft.SlotMainStart)
+	if slot != graft.SlotMainStart {
+		t.Errorf("first empty = %d, want %d", slot, graft.SlotMainStart)
 	}
 }

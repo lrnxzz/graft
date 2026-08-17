@@ -49,7 +49,7 @@ jobs:
           go-version-file: go.mod
       - name: join
         env:
-          GOCRAFT_IT_ADDR: localhost:25565
+          GRAFT_IT_ADDR: localhost:25565
         run: |
           for dir in $(find codec -name session_test.go -printf '%h\n' | sort -u); do
             echo "# $dir"

@@ -1,6 +1,6 @@
 package viewer
 
-import "github.com/lrnxzz/go-craft/viewer/gpu"
+import "github.com/lrnxzz/graft/viewer/gpu"
 
 // Layer draws over the world, in screen space. Everything the viewer itself puts
 // on screen — the hud, the chat, the crosshair — is a Layer, so a plugin's is not

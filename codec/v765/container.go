@@ -1,7 +1,7 @@
 package v765
 
 import (
-	"github.com/lrnxzz/go-craft/codec"
+	"github.com/lrnxzz/graft/codec"
 )
 
 type SetContainerContent struct {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/rcon"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/rcon"
 	"github.com/spf13/cobra"
 )
 
@@ -38,7 +38,7 @@ func courseCommand() *cobra.Command {
 		},
 	}
 
-	command.Flags().StringVar(&password, "password", "gocraft", "rcon password")
+	command.Flags().StringVar(&password, "password", "graft", "rcon password")
 
 	return command
 }
@@ -86,22 +86,22 @@ func rejected(answer string) bool {
 	return false
 }
 
-func (b *builder) fill(from, to gocraft.Position, block string) {
+func (b *builder) fill(from, to graft.Position, block string) {
 	b.run(fmt.Sprintf("fill %d %d %d %d %d %d %s",
 		from.X, from.Y, from.Z, to.X, to.Y, to.Z, block))
 }
 
 func (b *builder) slab(x1, x2, y int, block string) {
-	b.fill(gocraft.At(x1, y, laneMin), gocraft.At(x2, y, laneMax), block)
+	b.fill(graft.At(x1, y, laneMin), graft.At(x2, y, laneMax), block)
 }
 
 func (b *builder) barrier(x1, x2, z int) {
-	b.fill(gocraft.At(x1, stand, z), gocraft.At(x2, ceiling, z), "bedrock")
+	b.fill(graft.At(x1, stand, z), graft.At(x2, ceiling, z), "bedrock")
 }
 
 type station struct {
 	name  string
-	goal  gocraft.Position
+	goal  graft.Position
 	build func(*builder)
 }
 
@@ -110,13 +110,13 @@ type station struct {
 var stations = [...]station{
 	{
 		name: "flat ground",
-		goal: gocraft.At(6, stand, 0),
+		goal: graft.At(6, stand, 0),
 		build: func(*builder) {
 		},
 	},
 	{
 		name: "stairs up three",
-		goal: gocraft.At(16, stand+3, 0),
+		goal: graft.At(16, stand+3, 0),
 		build: func(b *builder) {
 			for step := range 3 {
 				b.slab(11+step*2, 12+step*2, ground+1+step, "stone_bricks")
@@ -126,60 +126,60 @@ var stations = [...]station{
 	},
 	{
 		name: "three block drop",
-		goal: gocraft.At(24, stand, 0),
+		goal: graft.At(24, stand, 0),
 		build: func(b *builder) {
 			b.slab(21, 21, ground+3, "stone_bricks")
 		},
 	},
 	{
 		name: "parkour gap",
-		goal: gocraft.At(34, stand, 0),
+		goal: graft.At(34, stand, 0),
 		build: func(b *builder) {
-			b.fill(gocraft.At(29, pitFloor, laneMin), gocraft.At(31, ground, laneMax), "air")
+			b.fill(graft.At(29, pitFloor, laneMin), graft.At(31, ground, laneMax), "air")
 		},
 	},
 	{
 		name: "short dirt wall: climbs over, breaking the cap",
-		goal: gocraft.At(42, stand, 0),
+		goal: graft.At(42, stand, 0),
 		build: func(b *builder) {
-			b.fill(gocraft.At(38, stand, laneMin), gocraft.At(38, stand+1, laneMax), "dirt")
+			b.fill(graft.At(38, stand, laneMin), graft.At(38, stand+1, laneMax), "dirt")
 		},
 	},
 	{
 		name: "tall dirt wall: tunnels through at foot level",
-		goal: gocraft.At(50, stand, 0),
+		goal: graft.At(50, stand, 0),
 		build: func(b *builder) {
-			b.fill(gocraft.At(46, stand, laneMin), gocraft.At(46, stand+5, laneMax), "dirt")
+			b.fill(graft.At(46, stand, laneMin), graft.At(46, stand+5, laneMax), "dirt")
 		},
 	},
 	{
 		name: "stone wall with a gap: walking around beats mining",
-		goal: gocraft.At(58, stand, 0),
+		goal: graft.At(58, stand, 0),
 		build: func(b *builder) {
-			b.fill(gocraft.At(54, stand, laneMin), gocraft.At(54, stand+3, 3), "stone")
+			b.fill(graft.At(54, stand, laneMin), graft.At(54, stand+3, 3), "stone")
 		},
 	},
 	{
 		name: "four block chasm: leaps at the limit of the jump",
-		goal: gocraft.At(70, stand, 0),
+		goal: graft.At(70, stand, 0),
 		build: func(b *builder) {
-			b.fill(gocraft.At(63, pitFloor, laneMin), gocraft.At(66, ground, laneMax), "air")
+			b.fill(graft.At(63, pitFloor, laneMin), graft.At(66, ground, laneMax), "air")
 		},
 	},
 	{
 		name: "buried chamber: digs a shaft down",
-		goal: gocraft.At(78, stand, 0),
+		goal: graft.At(78, stand, 0),
 		build: func(b *builder) {
-			b.fill(gocraft.At(74, stand, laneMin), gocraft.At(80, stand+3, laneMax), "dirt")
-			b.fill(gocraft.At(77, stand, -1), gocraft.At(79, stand+1, 1), "air")
-			b.fill(gocraft.At(74, stand+4, laneMin), gocraft.At(80, stand+4, laneMax), "dirt")
+			b.fill(graft.At(74, stand, laneMin), graft.At(80, stand+3, laneMax), "dirt")
+			b.fill(graft.At(77, stand, -1), graft.At(79, stand+1, 1), "air")
+			b.fill(graft.At(74, stand+4, laneMin), graft.At(80, stand+4, laneMax), "dirt")
 		},
 	},
 }
 
 // entrance is where the course starts and where a lap closes
-func entrance() gocraft.Position {
-	return gocraft.At(courseStart+3, stand, 0)
+func entrance() graft.Position {
+	return graft.At(courseStart+3, stand, 0)
 }
 
 func carveCourse(address, password string) error {
@@ -218,7 +218,7 @@ func carveCourse(address, password string) error {
 	}
 
 	fmt.Println("\nwalk it with:")
-	fmt.Println("  gocraft goto <host[:port]>", strings.Join(legs, " "))
+	fmt.Println("  graft goto <host[:port]>", strings.Join(legs, " "))
 
 	return nil
 }
@@ -227,12 +227,12 @@ func carveCourse(address, password string) error {
 // the arena and walk around the outside, which quietly skips every obstacle
 func carve(b *builder) {
 	b.fill(
-		gocraft.At(courseStart, stand, -fenceZ),
-		gocraft.At(courseEnd, ceiling, fenceZ),
+		graft.At(courseStart, stand, -fenceZ),
+		graft.At(courseEnd, ceiling, fenceZ),
 		"air")
 	b.fill(
-		gocraft.At(courseStart, worldFloor+1, -fenceZ),
-		gocraft.At(courseEnd, ground, fenceZ),
+		graft.At(courseStart, worldFloor+1, -fenceZ),
+		graft.At(courseEnd, ground, fenceZ),
 		"dirt")
 	b.slab(courseStart, courseEnd, worldFloor, "bedrock")
 
@@ -241,12 +241,12 @@ func carve(b *builder) {
 	b.barrier(courseStart, courseEnd, fenceZ)
 
 	b.fill(
-		gocraft.At(courseStart, stand, -fenceZ),
-		gocraft.At(courseStart, ceiling, fenceZ),
+		graft.At(courseStart, stand, -fenceZ),
+		graft.At(courseStart, ceiling, fenceZ),
 		"bedrock")
 	b.fill(
-		gocraft.At(courseEnd, stand, -fenceZ),
-		gocraft.At(courseEnd, ceiling, fenceZ),
+		graft.At(courseEnd, stand, -fenceZ),
+		graft.At(courseEnd, ceiling, fenceZ),
 		"bedrock")
 }
 
@@ -261,8 +261,8 @@ func reset(b *builder) {
 // lap is every station in order and then the entrance, so the walk closes where
 // it started. Both the demo and the goto line printed above read it, which is
 // what keeps either from drifting from the course actually carved.
-func lap() []gocraft.Position {
-	legs := make([]gocraft.Position, 0, len(stations)+1)
+func lap() []graft.Position {
+	legs := make([]graft.Position, 0, len(stations)+1)
 	for _, current := range stations {
 		legs = append(legs, current.goal)
 	}
@@ -270,6 +270,6 @@ func lap() []gocraft.Position {
 	return append(legs, entrance())
 }
 
-func written(at gocraft.Position) string {
+func written(at graft.Position) string {
 	return fmt.Sprintf("%d,%d,%d", at.X, at.Y, at.Z)
 }

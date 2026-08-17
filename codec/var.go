@@ -62,14 +62,14 @@ func ReadVar[T varint](r io.ByteReader) (T, error) {
 			return 0, err
 		}
 		if valid := width - i*segmentLen; valid < segmentLen && (b&segmentBits)>>uint(valid) != 0 {
-			return 0, fmt.Errorf("gocraft: variable-length integer has bits beyond %d-bit width", width)
+			return 0, fmt.Errorf("graft: variable-length integer has bits beyond %d-bit width", width)
 		}
 		u |= uint64(b&segmentBits) << (i * segmentLen)
 		if b&continueBit == 0 {
 			return fromUnsigned[T](u), nil
 		}
 	}
-	return 0, fmt.Errorf("gocraft: variable-length integer exceeds %d bytes", maxLenOf[T]())
+	return 0, fmt.Errorf("graft: variable-length integer exceeds %d bytes", maxLenOf[T]())
 }
 
 func VarLen[T varint](v T) int {

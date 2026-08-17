@@ -12,8 +12,8 @@ import (
 	"sort"
 	"strings"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/atlas"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/atlas"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +30,7 @@ var guiTextures = map[string]string{
 }
 
 type registryItem struct {
-	Name gocraft.Identifier `json:"name"`
+	Name graft.Identifier `json:"name"`
 }
 
 type iconSources struct {
@@ -122,7 +122,7 @@ func blit(canvas *image.RGBA, src image.Image, originX, originY int) {
 
 // an item without a sprite of its own is drawn from the side texture of the
 // block it places, which is why the block faces are consulted here too
-func pickIcons(items []registryItem, sprites map[string]image.Image, faces map[gocraft.Identifier]faceNames, blocks map[string]image.Image) map[string]image.Image {
+func pickIcons(items []registryItem, sprites map[string]image.Image, faces map[graft.Identifier]faceNames, blocks map[string]image.Image) map[string]image.Image {
 	icons := map[string]image.Image{}
 	for _, item := range items {
 		name := item.Name.Path()

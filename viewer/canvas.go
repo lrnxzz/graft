@@ -3,8 +3,8 @@ package viewer
 import (
 	_ "embed"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 //go:embed assets/shaders/hud.vert
@@ -84,7 +84,7 @@ func (c *Canvas) Sprite(texture *gpu.Texture, area gpu.Rect, uv gpu.UV, tint gpu
 }
 
 // Icon paints an item's inventory sprite and reports whether the item has one
-func (c *Canvas) Icon(item gocraft.ItemID, area gpu.Rect) bool {
+func (c *Canvas) Icon(item graft.ItemID, area gpu.Rect) bool {
 	uv, drawable := c.icons.Icon(item)
 	if !drawable {
 		return false

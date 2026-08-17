@@ -27,7 +27,7 @@ static char *text(JSContextRef ctx, JSValueRef value) {
 	return copied;
 }
 
-// dispatch is what the page reaches when it calls gocraft.send(name, ...). Every
+// dispatch is what the page reaches when it calls graft.send(name, ...). Every
 // argument is handed over as text, which is all a DOM attribute can carry.
 static JSValueRef dispatch(JSContextRef ctx, JSObjectRef function, JSObjectRef self,
                            size_t count, const JSValueRef arguments[], JSValueRef *exception) {
@@ -64,7 +64,7 @@ static JSClassRef sending(void) {
 	}
 
 	JSClassDefinition described = kJSClassDefinitionEmpty;
-	described.className = "gocraftSend";
+	described.className = "graftSend";
 	described.callAsFunction = dispatch;
 
 	shared = JSClassCreate(&described);
@@ -88,7 +88,7 @@ static void install(void *user_data, ULView caller, unsigned long long frame_id,
 	JSObjectSetProperty(ctx, bridge, name, sender, kJSPropertyAttributeReadOnly, NULL);
 	JSStringRelease(name);
 
-	JSStringRef global = JSStringCreateWithUTF8CString("gocraft");
+	JSStringRef global = JSStringCreateWithUTF8CString("graft");
 	JSObjectSetProperty(ctx, window, global, bridge, kJSPropertyAttributeReadOnly, NULL);
 	JSStringRelease(global);
 
@@ -154,7 +154,7 @@ int ul_exceptions_caught(void) {
 }
 
 void ul_name_a_thread(void) {
-	ULONG_PTR described[4] = {0x1000, (ULONG_PTR) "gocraft-probe", (ULONG_PTR)-1, 0};
+	ULONG_PTR described[4] = {0x1000, (ULONG_PTR) "graft-probe", (ULONG_PTR)-1, 0};
 
 	RaiseException(THREAD_NAMING, 0, 4, described);
 }

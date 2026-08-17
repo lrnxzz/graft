@@ -1,6 +1,6 @@
 package atlas
 
-import gocraft "github.com/lrnxzz/go-craft"
+import graft "github.com/lrnxzz/graft"
 
 // Sheet is how a generated atlas image is cut into tiles. It ships as JSON beside
 // the PNG and lives here, in the one module both sides can import, so the
@@ -22,7 +22,7 @@ type Faces struct {
 // carries, so a lookup needs no conversion on either side
 type BlockSheet struct {
 	Sheet
-	Blocks map[gocraft.Identifier]Faces `json:"blocks"`
+	Blocks map[graft.Identifier]Faces `json:"blocks"`
 }
 
 // ItemSheet is keyed by item path, which is what the sprite files are named after

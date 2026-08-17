@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/plugin"
+	"github.com/lrnxzz/graft/plugin"
 )
 
 type wired struct {

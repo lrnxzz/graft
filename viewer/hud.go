@@ -5,9 +5,9 @@ import (
 	_ "embed"
 	"image/png"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/agent"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/agent"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 //go:embed assets/hotbar.png
@@ -103,7 +103,7 @@ func (h *Hud) Draw(canvas *Canvas) {
 		selectionWidth*guiScale, selectionHeight*guiScale)
 	canvas.Sprite(h.selection, frame, wholeTexture, gpu.White)
 
-	for index := range gocraft.HotbarSize {
+	for index := range graft.HotbarSize {
 		origin := bar.Min.Offset(float32(hotbarInset+index*hotbarStride)*guiScale, hotbarInset*guiScale)
 		canvas.Icon(inventory.Hotbar(index).Item, iconAt(origin))
 	}

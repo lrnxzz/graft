@@ -7,9 +7,9 @@ import (
 	"log/slog"
 	"time"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/agent"
-	v765 "github.com/lrnxzz/go-craft/codec/v765"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/agent"
+	v765 "github.com/lrnxzz/graft/codec/v765"
 )
 
 // Plugin is the code a user writes. It runs once the bot is connected and the
@@ -97,7 +97,7 @@ func warnAboutProtocol(ctx context.Context, address string) {
 	asking, stop := context.WithTimeout(ctx, statusTimeout)
 	defer stop()
 
-	status, err := gocraft.Ping(asking, address)
+	status, err := graft.Ping(asking, address)
 	if err != nil || status.Version.Protocol == v765.ProtocolVersion {
 		return
 	}

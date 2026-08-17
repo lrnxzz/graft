@@ -4,9 +4,9 @@ import (
 	_ "embed"
 
 	"github.com/go-gl/mathgl/mgl32"
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/agent"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/agent"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 //go:embed assets/shaders/route.vert
@@ -43,8 +43,8 @@ type Route struct {
 	mesh    *gpu.Mesh
 	points  []mgl32.Vec3
 	marks   []float32
-	first   gocraft.Position
-	last    gocraft.Position
+	first   graft.Position
+	last    graft.Position
 	walked  float32
 }
 
@@ -86,7 +86,7 @@ func (r *Route) DrawWorld(painter *Painter) {
 	r.mesh.Draw()
 }
 
-func (r *Route) update(walking agent.Path, feet gocraft.Vec3d) {
+func (r *Route) update(walking agent.Path, feet graft.Vec3d) {
 	if len(walking.Waypoints) < 2 {
 		r.clear()
 
@@ -105,7 +105,7 @@ func (r *Route) Close() {
 	r.program.Delete()
 }
 
-func (r *Route) rebuild(waypoints []gocraft.Position) {
+func (r *Route) rebuild(waypoints []graft.Position) {
 	r.clear()
 	r.first = waypoints[0]
 	r.last = waypoints[len(waypoints)-1]
@@ -159,7 +159,7 @@ func (r *Route) rebuild(waypoints []gocraft.Position) {
 		routeLayout...)
 }
 
-func (r *Route) progress(next int, feet gocraft.Vec3d) float32 {
+func (r *Route) progress(next int, feet graft.Vec3d) float32 {
 	if next <= 0 {
 		return 0
 	}

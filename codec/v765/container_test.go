@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
-	v765 "github.com/lrnxzz/go-craft/codec/v765"
-	"github.com/lrnxzz/go-craft/nbt"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
+	v765 "github.com/lrnxzz/graft/codec/v765"
+	"github.com/lrnxzz/graft/nbt"
 )
 
 func TestSlotRoundTripsThroughContainerSlot(t *testing.T) {
@@ -68,8 +68,8 @@ func TestEmptySlotCarriesNoPayload(t *testing.T) {
 }
 
 func TestSetContainerContentLoadsEverySlot(t *testing.T) {
-	slots := make(codec.Slice[v765.Slot], gocraft.InventorySize)
-	slots[gocraft.SlotHotbarStart] = v765.Slot{
+	slots := make(codec.Slice[v765.Slot], graft.InventorySize)
+	slots[graft.SlotHotbarStart] = v765.Slot{
 		Present: true,
 		Item:    1,
 		Count:   64,
@@ -96,11 +96,11 @@ func TestSetContainerContentLoadsEverySlot(t *testing.T) {
 	}
 
 	got := decoded.(*v765.SetContainerContent)
-	if len(got.Slots) != gocraft.InventorySize {
-		t.Fatalf("decoded %d slots, want %d", len(got.Slots), gocraft.InventorySize)
+	if len(got.Slots) != graft.InventorySize {
+		t.Fatalf("decoded %d slots, want %d", len(got.Slots), graft.InventorySize)
 	}
-	if !got.Slots[gocraft.SlotHotbarStart].Stack().Is(1) {
-		t.Errorf("hotbar slot = %+v, want item 1", got.Slots[gocraft.SlotHotbarStart].Stack())
+	if !got.Slots[graft.SlotHotbarStart].Stack().Is(1) {
+		t.Errorf("hotbar slot = %+v, want item 1", got.Slots[graft.SlotHotbarStart].Stack())
 	}
 	if !got.Carried.Stack().Is(2) {
 		t.Errorf("carried = %+v, want item 2", got.Carried.Stack())

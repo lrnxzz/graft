@@ -1,19 +1,19 @@
 package pathfinder
 
-import gocraft "github.com/lrnxzz/go-craft"
+import graft "github.com/lrnxzz/graft"
 
 type World interface {
-	BlockAt(gocraft.Position) (gocraft.BlockState, bool)
+	BlockAt(graft.Position) (graft.BlockState, bool)
 }
 
 type Terrain interface {
-	Passable(gocraft.BlockState) bool
-	Dangerous(gocraft.BlockState) bool
-	BreakTicks(gocraft.BlockState, gocraft.ItemID) (int, bool)
+	Passable(graft.BlockState) bool
+	Dangerous(graft.BlockState) bool
+	BreakTicks(graft.BlockState, graft.ItemID) (int, bool)
 }
 
 type Loadout struct {
-	Tool     gocraft.ItemID
+	Tool     graft.ItemID
 	Digging  bool
 	Scaffold int
 }

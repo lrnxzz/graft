@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec/v765/blocks"
-	"github.com/lrnxzz/go-craft/codec/v765/items"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec/v765/blocks"
+	"github.com/lrnxzz/graft/codec/v765/items"
 )
 
 type digs struct {
@@ -15,19 +15,19 @@ type digs struct {
 	finished int
 }
 
-func (d *digs) StartDigging(gocraft.RayHit) error {
+func (d *digs) StartDigging(graft.RayHit) error {
 	d.started++
 
 	return nil
 }
 
-func (d *digs) CancelDigging(gocraft.RayHit) error {
+func (d *digs) CancelDigging(graft.RayHit) error {
 	d.canceled++
 
 	return nil
 }
 
-func (d *digs) FinishDigging(gocraft.RayHit) error {
+func (d *digs) FinishDigging(graft.RayHit) error {
 	d.finished++
 
 	return nil
@@ -37,8 +37,8 @@ func TestMinerFinishesAfterVanillaBreakTime(t *testing.T) {
 	d := &digs{}
 	m := miner{digger: d}
 
-	hit := gocraft.RayHit{
-		Block: gocraft.Position{
+	hit := graft.RayHit{
+		Block: graft.Position{
 			X: 1,
 			Y: 64,
 			Z: 1,
@@ -46,7 +46,7 @@ func TestMinerFinishesAfterVanillaBreakTime(t *testing.T) {
 		State: blocks.Stone,
 	}
 
-	finished, err := m.begin(hit, 4.5, gocraft.Survival, items.Air)
+	finished, err := m.begin(hit, 4.5, graft.Survival, items.Air)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,8 +83,8 @@ func TestMinerSwitchingToolsSpeedsUpMidDig(t *testing.T) {
 	d := &digs{}
 	m := miner{digger: d}
 
-	hit := gocraft.RayHit{
-		Block: gocraft.Position{
+	hit := graft.RayHit{
+		Block: graft.Position{
 			X: 0,
 			Y: 10,
 			Z: 0,
@@ -92,7 +92,7 @@ func TestMinerSwitchingToolsSpeedsUpMidDig(t *testing.T) {
 		State: blocks.Stone,
 	}
 
-	_, err := m.begin(hit, 4.5, gocraft.Survival, items.Air)
+	_, err := m.begin(hit, 4.5, graft.Survival, items.Air)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,8 +113,8 @@ func TestMinerCancelsWhenLookingAway(t *testing.T) {
 	d := &digs{}
 	m := miner{digger: d}
 
-	hit := gocraft.RayHit{
-		Block: gocraft.Position{
+	hit := graft.RayHit{
+		Block: graft.Position{
 			X: 3,
 			Y: 64,
 			Z: 3,
@@ -122,7 +122,7 @@ func TestMinerCancelsWhenLookingAway(t *testing.T) {
 		State: blocks.Stone,
 	}
 
-	finished, err := m.begin(hit, 4.5, gocraft.Survival, items.Air)
+	finished, err := m.begin(hit, 4.5, graft.Survival, items.Air)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,8 +149,8 @@ func TestMinerRestartResolvesThePreviousDigAsAbandoned(t *testing.T) {
 	d := &digs{}
 	m := miner{digger: d}
 
-	first := gocraft.RayHit{
-		Block: gocraft.Position{
+	first := graft.RayHit{
+		Block: graft.Position{
 			X: 0,
 			Y: 64,
 			Z: 0,
@@ -160,11 +160,11 @@ func TestMinerRestartResolvesThePreviousDigAsAbandoned(t *testing.T) {
 	second := first
 	second.Block = first.Block.Add(0, 0, 1)
 
-	abandoned, err := m.begin(first, 4.5, gocraft.Survival, items.Air)
+	abandoned, err := m.begin(first, 4.5, graft.Survival, items.Air)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, restarted := m.begin(second, 4.5, gocraft.Survival, items.Air)
+	_, restarted := m.begin(second, 4.5, graft.Survival, items.Air)
 	if restarted != nil {
 		t.Fatal(restarted)
 	}
@@ -182,8 +182,8 @@ func TestMinerCreativeBreaksWithStartOnly(t *testing.T) {
 	d := &digs{}
 	m := miner{digger: d}
 
-	hit := gocraft.RayHit{
-		Block: gocraft.Position{
+	hit := graft.RayHit{
+		Block: graft.Position{
 			X: 5,
 			Y: 64,
 			Z: 5,
@@ -191,7 +191,7 @@ func TestMinerCreativeBreaksWithStartOnly(t *testing.T) {
 		State: blocks.Stone,
 	}
 
-	finished, err := m.begin(hit, 4.5, gocraft.Creative, items.Air)
+	finished, err := m.begin(hit, 4.5, graft.Creative, items.Air)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,8 +212,8 @@ func TestMinerRefusesUnbreakableBlocks(t *testing.T) {
 	d := &digs{}
 	m := miner{digger: d}
 
-	hit := gocraft.RayHit{
-		Block: gocraft.Position{
+	hit := graft.RayHit{
+		Block: graft.Position{
 			X: 0,
 			Y: -60,
 			Z: 0,
@@ -221,7 +221,7 @@ func TestMinerRefusesUnbreakableBlocks(t *testing.T) {
 		State: blocks.Bedrock,
 	}
 
-	_, err := m.begin(hit, 4.5, gocraft.Survival, items.NetheritePickaxe)
+	_, err := m.begin(hit, 4.5, graft.Survival, items.NetheritePickaxe)
 	if err == nil {
 		t.Fatal("bedrock should be refused")
 	}

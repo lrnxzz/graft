@@ -3,36 +3,36 @@ package pathfinder
 import (
 	"math"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	graft "github.com/lrnxzz/graft"
 )
 
-func (p *Planner) state(at gocraft.Position) (gocraft.BlockState, bool) {
+func (p *Planner) state(at graft.Position) (graft.BlockState, bool) {
 	return p.world.BlockAt(at)
 }
 
-func (p *Planner) passable(at gocraft.Position) bool {
+func (p *Planner) passable(at graft.Position) bool {
 	current, known := p.state(at)
 
 	return known && p.terrain.Passable(current) && !p.terrain.Dangerous(current)
 }
 
-func (p *Planner) footing(at gocraft.Position) bool {
+func (p *Planner) footing(at graft.Position) bool {
 	floor, known := p.state(at.Add(0, -1, 0))
 
 	return known && !p.terrain.Passable(floor) && !p.terrain.Dangerous(floor)
 }
 
-func (p *Planner) open(at gocraft.Position) bool {
+func (p *Planner) open(at graft.Position) bool {
 	return p.passable(at) && p.passable(at.Add(0, 1, 0))
 }
 
-func (p *Planner) standable(at gocraft.Position) bool {
+func (p *Planner) standable(at graft.Position) bool {
 	return p.footing(at) && p.open(at)
 }
 
 // clearing reports what it costs to make a block walk-through, counting an
 // already empty block as free so callers can treat every column the same way
-func (p *Planner) clearing(at gocraft.Position) (float64, bool) {
+func (p *Planner) clearing(at graft.Position) (float64, bool) {
 	if p.passable(at) {
 		return 0, true
 	}
@@ -53,7 +53,7 @@ func (p *Planner) clearing(at gocraft.Position) (float64, bool) {
 	return costTick * float64(ticks), true
 }
 
-func (p *Planner) clear(edge *move, at gocraft.Position) bool {
+func (p *Planner) clear(edge *move, at graft.Position) bool {
 	cost, reachable := p.clearing(at)
 	if !reachable {
 		return false
@@ -71,11 +71,11 @@ func (p *Planner) clear(edge *move, at gocraft.Position) bool {
 // crosshair reaches the block at eye level before the one at the feet, so
 // clearing the feet first would leave the bot aiming at a block it must not
 // break yet
-func (p *Planner) clearColumn(edge *move, at gocraft.Position) bool {
+func (p *Planner) clearColumn(edge *move, at graft.Position) bool {
 	return p.clear(edge, at.Add(0, 1, 0)) && p.clear(edge, at)
 }
 
-func (p *Planner) stepAcross(ahead gocraft.Position, reach func(move)) {
+func (p *Planner) stepAcross(ahead graft.Position, reach func(move)) {
 	if !p.footing(ahead) {
 		return
 	}
@@ -88,7 +88,7 @@ func (p *Planner) stepAcross(ahead gocraft.Position, reach func(move)) {
 	reach(crossing)
 }
 
-func (p *Planner) stepUp(from, ahead gocraft.Position, reach func(move)) {
+func (p *Planner) stepUp(from, ahead graft.Position, reach func(move)) {
 	climbed := ahead.Add(0, 1, 0)
 	if !p.footing(climbed) {
 		return
@@ -105,7 +105,7 @@ func (p *Planner) stepUp(from, ahead gocraft.Position, reach func(move)) {
 	reach(rising)
 }
 
-func (p *Planner) stepDown(ahead gocraft.Position, reach func(move)) {
+func (p *Planner) stepDown(ahead graft.Position, reach func(move)) {
 	if p.footing(ahead) {
 		return
 	}
@@ -131,7 +131,7 @@ func (p *Planner) stepDown(ahead gocraft.Position, reach func(move)) {
 	}
 }
 
-func (p *Planner) diagonals(from gocraft.Position, reach func(move)) {
+func (p *Planner) diagonals(from graft.Position, reach func(move)) {
 	for _, diagonal := range diagonalCorners {
 		first := from.Neighbor(diagonal.first)
 		second := from.Neighbor(diagonal.second)
@@ -143,14 +143,14 @@ func (p *Planner) diagonals(from gocraft.Position, reach func(move)) {
 	}
 }
 
-func (p *Planner) leaps(from gocraft.Position, reach func(move)) {
+func (p *Planner) leaps(from graft.Position, reach func(move)) {
 	if !p.passable(from.Add(0, headroom, 0)) {
 		return
 	}
 
 	for _, direction := range leapDirections {
 		for length := 2; length <= maxLeap; length++ {
-			leap := gocraft.At(direction.X*length, 0, direction.Z*length)
+			leap := graft.At(direction.X*length, 0, direction.Z*length)
 
 			span := leap.Horizontal().Length()
 			if span > leapReach {
@@ -172,7 +172,7 @@ func (p *Planner) leaps(from gocraft.Position, reach func(move)) {
 	}
 }
 
-func (p *Planner) corridor(from, leap gocraft.Position) bool {
+func (p *Planner) corridor(from, leap graft.Position) bool {
 	steps := int(leap.Horizontal().Length() * 2)
 	visited := from
 
@@ -192,7 +192,7 @@ func (p *Planner) corridor(from, leap gocraft.Position) bool {
 	return true
 }
 
-func (p *Planner) landingBelow(top gocraft.Position) (gocraft.Position, bool) {
+func (p *Planner) landingBelow(top graft.Position) (graft.Position, bool) {
 	for drop := range maxFall + 1 {
 		candidate := top.Add(0, -drop, 0)
 
@@ -200,14 +200,14 @@ func (p *Planner) landingBelow(top gocraft.Position) (gocraft.Position, bool) {
 			return candidate, true
 		}
 		if !p.passable(candidate) {
-			return gocraft.Position{}, false
+			return graft.Position{}, false
 		}
 	}
 
-	return gocraft.Position{}, false
+	return graft.Position{}, false
 }
 
-func (p *Planner) digDown(from gocraft.Position, reach func(move)) {
+func (p *Planner) digDown(from graft.Position, reach func(move)) {
 	if !p.loadout.Digging {
 		return
 	}
@@ -232,7 +232,7 @@ func (p *Planner) digDown(from gocraft.Position, reach func(move)) {
 // free face because every move lands the bot on solid footing — including the
 // support a previous bridge step just laid down, which the world does not show
 // yet while the route is still being planned
-func (p *Planner) bridge(from, ahead gocraft.Position, reach func(move)) {
+func (p *Planner) bridge(from, ahead graft.Position, reach func(move)) {
 	if !p.loadout.building() || p.footing(ahead) {
 		return
 	}

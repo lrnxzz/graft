@@ -3,9 +3,9 @@ package viewer_test
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/viewer"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/viewer"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 // The three types below are the plugin the API promises is possible: one marking
@@ -14,13 +14,13 @@ import (
 // reach, which is how the unusable Font.Emit went unnoticed before.
 
 type waypointMarker struct {
-	at gocraft.Position
+	at graft.Position
 }
 
 func (m waypointMarker) DrawWorld(painter *viewer.Painter) {
 	painter.Highlight(m.at, gpu.RGBA(1, 0.8, 0, 0.9))
 	painter.Line(m.at.Center(), m.at.Center().Offset(0, 3, 0), gpu.White)
-	painter.Box(gocraft.Box(m.at.Corner(), m.at.Corner().Offset(1, 1, 1)), gpu.White)
+	painter.Box(graft.Box(m.at.Corner(), m.at.Corner().Offset(1, 1, 1)), gpu.White)
 }
 
 type statusPanel struct {
@@ -40,8 +40,8 @@ func (p statusPanel) Draw(canvas *viewer.Canvas) {
 }
 
 type pickerScreen struct {
-	items  []gocraft.ItemID
-	chosen gocraft.ItemID
+	items  []graft.ItemID
+	chosen graft.ItemID
 }
 
 const pickerCell = 48
@@ -83,7 +83,7 @@ var (
 // hit test is exercised against the same layout Draw uses
 func TestPluginScreenResolvesAClickToTheItemUnderIt(t *testing.T) {
 	screen := gpu.RectAt(gpu.At(0, 0), 800, 600)
-	picker := &pickerScreen{items: []gocraft.ItemID{11, 22, 33}}
+	picker := &pickerScreen{items: []graft.ItemID{11, 22, 33}}
 
 	second := picker.cell(1, screen)
 	picker.Click(second.Center(), screen)

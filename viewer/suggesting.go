@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 const (

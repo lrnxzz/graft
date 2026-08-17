@@ -1,7 +1,7 @@
-package gocraft
+package graft
 
 import (
-	"github.com/lrnxzz/go-craft/codec"
+	"github.com/lrnxzz/graft/codec"
 
 	"errors"
 	"fmt"
@@ -24,7 +24,7 @@ func At(x, y, z int) Position {
 	}
 }
 
-var errPositionFormat = errors.New("gocraft: position must be written as x,y,z")
+var errPositionFormat = errors.New("graft: position must be written as x,y,z")
 
 func ParsePosition(text string) (Position, error) {
 	parts := strings.Split(text, ",")
@@ -36,7 +36,7 @@ func ParsePosition(text string) (Position, error) {
 	for index, part := range parts {
 		value, err := strconv.Atoi(strings.TrimSpace(part))
 		if err != nil {
-			return Position{}, fmt.Errorf("gocraft: invalid position coordinate %q", part)
+			return Position{}, fmt.Errorf("graft: invalid position coordinate %q", part)
 		}
 
 		coordinates[index] = value

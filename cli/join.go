@@ -5,10 +5,10 @@ import (
 	"log/slog"
 	"time"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/agent"
-	"github.com/lrnxzz/go-craft/codec/v765/blocks"
-	"github.com/lrnxzz/go-craft/host"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/agent"
+	"github.com/lrnxzz/graft/codec/v765/blocks"
+	"github.com/lrnxzz/graft/host"
 	"github.com/spf13/cobra"
 )
 
@@ -30,11 +30,11 @@ func joinCommand() *cobra.Command {
 			slog.Info("connecting", "server", args[0], "as", username)
 
 			observe := func(ctx context.Context, bot *agent.Agent) error {
-				var start gocraft.Vec3d
+				var start graft.Vec3d
 				if walk {
 					start = bot.Player().Position
 					bot.Look(0, 0)
-					bot.SetControls(gocraft.Controls{Forward: true})
+					bot.SetControls(graft.Controls{Forward: true})
 					slog.Info("walking forward", "from", start)
 				}
 
@@ -54,7 +54,7 @@ func joinCommand() *cobra.Command {
 		},
 	}
 
-	command.Flags().StringVar(&username, "username", "gocraft_bot", "bot username (offline mode)")
+	command.Flags().StringVar(&username, "username", "graft_bot", "bot username (offline mode)")
 	command.Flags().DurationVar(&timeout, "timeout", 15*time.Second, "how long to stay connected")
 	command.Flags().BoolVar(&walk, "walk", false, "walk forward after spawning")
 

@@ -5,10 +5,10 @@ import (
 	"log/slog"
 	"time"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/agent"
-	"github.com/lrnxzz/go-craft/host"
-	"github.com/lrnxzz/go-craft/pathfinder"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/agent"
+	"github.com/lrnxzz/graft/host"
+	"github.com/lrnxzz/graft/pathfinder"
 	"github.com/spf13/cobra"
 )
 
@@ -46,16 +46,16 @@ func gotoCommand() *cobra.Command {
 		},
 	}
 
-	command.Flags().StringVar(&username, "username", "gocraft_pathfinder", "bot username")
+	command.Flags().StringVar(&username, "username", "graft_pathfinder", "bot username")
 	command.Flags().DurationVar(&timeout, "timeout", 2*time.Minute, "abort after this long")
 
 	return command
 }
 
-func positions(written []string) ([]gocraft.Position, error) {
-	legs := make([]gocraft.Position, 0, len(written))
+func positions(written []string) ([]graft.Position, error) {
+	legs := make([]graft.Position, 0, len(written))
 	for _, each := range written {
-		leg, err := gocraft.ParsePosition(each)
+		leg, err := graft.ParsePosition(each)
 		if err != nil {
 			return nil, err
 		}
@@ -69,7 +69,7 @@ func positions(written []string) ([]gocraft.Position, error) {
 // walk reports where the bot is once a second while the leg runs. A planner that
 // has stalled looks exactly like one still working without it, which is the
 // whole reason to watch a walk rather than only read how it ended.
-func walk(ctx context.Context, bot *agent.Agent, leg gocraft.Position) error {
+func walk(ctx context.Context, bot *agent.Agent, leg graft.Position) error {
 	slog.Info("navigating", "from", bot.Snapshot().Position, "to", leg)
 
 	walked := make(chan error, 1)

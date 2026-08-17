@@ -1,7 +1,7 @@
-package gocraft
+package graft
 
 import (
-	"github.com/lrnxzz/go-craft/codec"
+	"github.com/lrnxzz/graft/codec"
 
 	"context"
 	"encoding/json"
@@ -119,7 +119,7 @@ func Ping(ctx context.Context, address string) (Status, error) {
 		return Status{}, err
 	}
 	if response.ID != statusResponseID {
-		return Status{}, fmt.Errorf("gocraft: unexpected packet 0x%02x during status exchange", response.ID)
+		return Status{}, fmt.Errorf("graft: unexpected packet 0x%02x during status exchange", response.ID)
 	}
 
 	var body codec.String
@@ -129,7 +129,7 @@ func Ping(ctx context.Context, address string) (Status, error) {
 
 	var status Status
 	if err := json.Unmarshal([]byte(body), &status); err != nil {
-		return Status{}, fmt.Errorf("gocraft: malformed status response: %w", err)
+		return Status{}, fmt.Errorf("graft: malformed status response: %w", err)
 	}
 
 	latency, err := measureLatency(conn)
@@ -166,7 +166,7 @@ func measureLatency(conn *codec.Conn) (time.Duration, error) {
 		return 0, err
 	}
 	if pong.ID != statusPingID || echoed != nonce {
-		return 0, fmt.Errorf("gocraft: pong 0x%02x with nonce %d does not match ping %d", pong.ID, echoed, nonce)
+		return 0, fmt.Errorf("graft: pong 0x%02x with nonce %d does not match ping %d", pong.ID, echoed, nonce)
 	}
 
 	return latency, nil
@@ -182,7 +182,7 @@ func SplitAddress(address string) (string, uint16, error) {
 
 	parsed, err := strconv.ParseUint(port, 10, 16)
 	if err != nil {
-		return "", 0, fmt.Errorf("gocraft: invalid port %q in %q", port, address)
+		return "", 0, fmt.Errorf("graft: invalid port %q in %q", port, address)
 	}
 
 	return host, uint16(parsed), nil

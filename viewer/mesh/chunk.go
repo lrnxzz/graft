@@ -2,15 +2,15 @@ package mesh
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 type Tiles interface {
-	Tile(state gocraft.BlockState, face Face) gpu.UV
+	Tile(state graft.BlockState, face Face) gpu.UV
 }
 
-func Chunk(world *gocraft.World, column *gocraft.Column, tiles Tiles) Geometry {
+func Chunk(world *graft.World, column *graft.Column, tiles Tiles) Geometry {
 	b := newBuilder()
 
 	baseX := int(column.X) * 16

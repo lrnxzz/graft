@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	graft "github.com/lrnxzz/graft"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +20,7 @@ func pingCommand() *cobra.Command {
 			ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
 			defer cancel()
 
-			status, err := gocraft.Ping(ctx, args[0])
+			status, err := graft.Ping(ctx, args[0])
 			if err != nil {
 				return err
 			}

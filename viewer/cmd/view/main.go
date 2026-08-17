@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/agent"
-	"github.com/lrnxzz/go-craft/host"
-	"github.com/lrnxzz/go-craft/pathfinder"
-	"github.com/lrnxzz/go-craft/viewer"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/agent"
+	"github.com/lrnxzz/graft/host"
+	"github.com/lrnxzz/graft/pathfinder"
+	"github.com/lrnxzz/graft/viewer"
 )
 
 const manualPoll = 500 * time.Millisecond
@@ -23,7 +23,7 @@ func init() {
 }
 
 type course struct {
-	targets []gocraft.Position
+	targets []graft.Position
 	delay   time.Duration
 	repeat  bool
 }
@@ -36,7 +36,7 @@ func main() {
 
 func run() error {
 	screenshot := flag.String("screenshot", "", "render a single frame to this PNG and exit")
-	username := flag.String("username", "gocraft_view", "bot username")
+	username := flag.String("username", "graft_view", "bot username")
 	goal := flag.String("goal", "", "pathfind to this x,y,z block while rendering")
 	loop := flag.Bool("loop", false, "repeat the goal list forever")
 	wait := flag.Duration("wait", 0, "delay before starting to navigate")
@@ -104,7 +104,7 @@ func walk(ctx context.Context, bot *agent.Agent, view *viewer.Viewer, legs cours
 	}
 }
 
-func navigate(ctx context.Context, bot *agent.Agent, target gocraft.Position) {
+func navigate(ctx context.Context, bot *agent.Agent, target graft.Position) {
 	log.Printf("navigating from %v to %v", bot.Snapshot().Position.Floor(), target)
 
 	arrived, err := bot.Navigate(ctx, pathfinder.GoalAt(target))
@@ -117,14 +117,14 @@ func navigate(ctx context.Context, bot *agent.Agent, target gocraft.Position) {
 	log.Printf("arrived at %v", arrived)
 }
 
-func parseGoals(goals string) ([]gocraft.Position, error) {
+func parseGoals(goals string) ([]graft.Position, error) {
 	if goals == "" {
 		return nil, nil
 	}
 
-	var targets []gocraft.Position
+	var targets []graft.Position
 	for _, leg := range strings.Split(goals, ";") {
-		target, err := gocraft.ParsePosition(leg)
+		target, err := graft.ParsePosition(leg)
 		if err != nil {
 			return nil, err
 		}

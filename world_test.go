@@ -1,16 +1,16 @@
-package gocraft_test
+package graft_test
 
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
+	graft "github.com/lrnxzz/graft"
 )
 
 func TestWorldTracksLoadedColumns(t *testing.T) {
-	world := gocraft.NewWorld()
-	world.LoadColumn(gocraft.ChunkColumn(1, -1, -64, 384))
+	world := graft.NewWorld()
+	world.LoadColumn(graft.ChunkColumn(1, -1, -64, 384))
 
-	at := gocraft.Chunk(1, -1)
+	at := graft.Chunk(1, -1)
 
 	_, loaded := world.Column(at)
 	if !loaded {
@@ -28,8 +28,8 @@ func TestWorldTracksLoadedColumns(t *testing.T) {
 }
 
 func TestWorldResolvesBlocksAcrossChunkBounds(t *testing.T) {
-	world := gocraft.NewWorld()
-	world.LoadColumn(gocraft.ChunkColumn(1, -1, -64, 384))
+	world := graft.NewWorld()
+	world.LoadColumn(graft.ChunkColumn(1, -1, -64, 384))
 
 	world.SetBlock(20, 70, -5, 42)
 

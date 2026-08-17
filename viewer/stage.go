@@ -1,6 +1,6 @@
 package viewer
 
-import "github.com/lrnxzz/go-craft/viewer/gpu"
+import "github.com/lrnxzz/graft/viewer/gpu"
 
 // stage is everything the viewer hands out: drawing time to layers, the frame to
 // menus, keys to whoever claimed them. The viewer's own hud and chat go through

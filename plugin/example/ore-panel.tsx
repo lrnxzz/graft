@@ -1,4 +1,4 @@
-import { plugin, mine, type Block, type Bot } from "gocraft"
+import { plugin, mine, type Block, type Bot } from "graft"
 
 type Group = { label: string; ores: Block[] }
 
@@ -235,7 +235,7 @@ const oreList = (bot: Bot) =>
           const held = bot.count(ore)
 
           return `
-          <div class="ore" onclick="gocraft.send('mine','${ore}')">
+          <div class="ore" onclick="graft.send('mine','${ore}')">
             <i class="icon icon-${ore}"></i>
             <span class="name">${named(ore)}</span>
             <span class="count">${held > 0 ? held : ""}</span>
@@ -250,13 +250,13 @@ const settings = () => `
     <span class="label">Manter no inventário
       <span class="hint">não descarta o que for minerado</span>
     </span>
-    <div class="toggle ${manterInventario ? "on" : ""}" onclick="gocraft.send('toggle','guardar')"><i></i></div>
+    <div class="toggle ${manterInventario ? "on" : ""}" onclick="graft.send('toggle','guardar')"><i></i></div>
   </div>
   <div class="row">
     <span class="label">Voltar ao baú
       <span class="hint">guarda tudo quando o inventário enche</span>
     </span>
-    <div class="toggle ${voltarAoBau ? "on" : ""}" onclick="gocraft.send('toggle','bau')"><i></i></div>
+    <div class="toggle ${voltarAoBau ? "on" : ""}" onclick="graft.send('toggle','bau')"><i></i></div>
   </div>
   <div class="row">
     <span class="label">Raio de busca
@@ -264,7 +264,7 @@ const settings = () => `
     </span>
     <div class="steps">
       ${[16, 32, 64, 128]
-        .map(n => `<span class="${n === raio ? "on" : ""}" onclick="gocraft.send('raio','${n}')">${n}</span>`)
+        .map(n => `<span class="${n === raio ? "on" : ""}" onclick="graft.send('raio','${n}')">${n}</span>`)
         .join("")}
     </div>
   </div>`
@@ -278,8 +278,8 @@ const panel = (bot: Bot) => `
       <span class="who">${bot.name}</span>
     </header>
     <nav>
-      <button class="${tab === "minerar" ? "on" : ""}" onclick="gocraft.send('tab','minerar')">Minérios</button>
-      <button class="${tab === "ajustes" ? "on" : ""}" onclick="gocraft.send('tab','ajustes')">Ajustes</button>
+      <button class="${tab === "minerar" ? "on" : ""}" onclick="graft.send('tab','minerar')">Minérios</button>
+      <button class="${tab === "ajustes" ? "on" : ""}" onclick="graft.send('tab','ajustes')">Ajustes</button>
     </nav>
     <div class="scroller">${tab === "minerar" ? oreList(bot) : settings()}</div>
     <footer><kbd>B</kbd> fecha · <kbd>roda</kbd> rola a lista</footer>

@@ -6,16 +6,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lrnxzz/go-craft/mojang"
+	"github.com/lrnxzz/graft/mojang"
 )
 
 func TestYggdrasilAuthenticate(t *testing.T) {
-	baseURL := os.Getenv("GOCRAFT_YGGDRASIL_URL")
-	email := os.Getenv("GOCRAFT_YGGDRASIL_EMAIL")
-	password := os.Getenv("GOCRAFT_YGGDRASIL_PASSWORD")
+	baseURL := os.Getenv("GRAFT_YGGDRASIL_URL")
+	email := os.Getenv("GRAFT_YGGDRASIL_EMAIL")
+	password := os.Getenv("GRAFT_YGGDRASIL_PASSWORD")
 
 	if baseURL == "" || email == "" || password == "" {
-		t.Skip("GOCRAFT_YGGDRASIL_URL, GOCRAFT_YGGDRASIL_EMAIL and GOCRAFT_YGGDRASIL_PASSWORD not set")
+		t.Skip("GRAFT_YGGDRASIL_URL, GRAFT_YGGDRASIL_EMAIL and GRAFT_YGGDRASIL_PASSWORD not set")
 	}
 
 	provider := mojang.Yggdrasil{
@@ -41,9 +41,9 @@ func TestYggdrasilAuthenticate(t *testing.T) {
 }
 
 func TestYggdrasilRejectsBadCredentials(t *testing.T) {
-	baseURL := os.Getenv("GOCRAFT_YGGDRASIL_URL")
+	baseURL := os.Getenv("GRAFT_YGGDRASIL_URL")
 	if baseURL == "" {
-		t.Skip("GOCRAFT_YGGDRASIL_URL not set")
+		t.Skip("GRAFT_YGGDRASIL_URL not set")
 	}
 
 	provider := mojang.Yggdrasil{

@@ -4,13 +4,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/codec"
-	v765 "github.com/lrnxzz/go-craft/codec/v765"
+	"github.com/lrnxzz/graft/codec"
+	v765 "github.com/lrnxzz/graft/codec/v765"
 )
 
 func TestLoginStartCarriesUsernameAndUUID(t *testing.T) {
 	original := &v765.LoginStart{
-		Username: "gocraft",
+		Username: "graft",
 		UUID:     codec.UUID{0x11, 0x22, 0x33},
 	}
 
@@ -31,7 +31,7 @@ func TestLoginStartCarriesUsernameAndUUID(t *testing.T) {
 func TestLoginSuccessCarriesProfileProperties(t *testing.T) {
 	original := &v765.LoginSuccess{
 		UUID:     codec.UUID{0xAB, 0xCD},
-		Username: "gocraft",
+		Username: "graft",
 		Properties: codec.Slice[v765.Property]{
 			{Name: "textures", Value: "base64", Signature: codec.Some(codec.String("sig"))},
 			{Name: "plain", Value: "value"},

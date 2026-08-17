@@ -9,7 +9,7 @@ func TestMUTF8RecoversEncodedString(t *testing.T) {
 	inputs := []string{
 		"",
 		"hello",
-		"go-craft ⛏",
+		"graft ⛏",
 		"null\x00inside",
 		"emoji 😀🔥",
 		"grüße café",

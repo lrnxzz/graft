@@ -1,4 +1,4 @@
-import { plugin, command } from "gocraft"
+import { plugin, command } from "graft"
 
 export default plugin({
   name: "beta",

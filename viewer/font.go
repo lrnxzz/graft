@@ -6,7 +6,7 @@ import (
 	"image"
 	"image/png"
 
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 //go:embed assets/ascii.png

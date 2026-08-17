@@ -3,29 +3,29 @@ package pathfinder_test
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/pathfinder"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/pathfinder"
 )
 
 const (
-	air        gocraft.BlockState = 0
-	stone      gocraft.BlockState = 1
-	bedrock    gocraft.BlockState = 2
-	lava       gocraft.BlockState = 9
-	stoneTicks                    = 20
+	air        graft.BlockState = 0
+	stone      graft.BlockState = 1
+	bedrock    graft.BlockState = 2
+	lava       graft.BlockState = 9
+	stoneTicks                  = 20
 )
 
 type testTerrain struct{}
 
-func (testTerrain) Passable(state gocraft.BlockState) bool {
+func (testTerrain) Passable(state graft.BlockState) bool {
 	return state == air
 }
 
-func (testTerrain) Dangerous(state gocraft.BlockState) bool {
+func (testTerrain) Dangerous(state graft.BlockState) bool {
 	return state == lava
 }
 
-func (testTerrain) BreakTicks(state gocraft.BlockState, _ gocraft.ItemID) (int, bool) {
+func (testTerrain) BreakTicks(state graft.BlockState, _ graft.ItemID) (int, bool) {
 	if state != stone {
 		return 0, false
 	}
@@ -56,19 +56,19 @@ func places(route pathfinder.Route) int {
 }
 
 func TestPlannerWalksStraightOnFlatGround(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, testTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 1, 2)
-	goal := pathfinder.GoalAt(gocraft.At(10, 1, 2))
+	from := graft.At(2, 1, 2)
+	goal := pathfinder.GoalAt(graft.At(10, 1, 2))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -87,19 +87,19 @@ func TestPlannerWalksStraightOnFlatGround(t *testing.T) {
 }
 
 func TestPlannerCutsDiagonals(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, testTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 1, 2)
-	goal := pathfinder.GoalAt(gocraft.At(6, 1, 6))
+	from := graft.At(2, 1, 2)
+	goal := pathfinder.GoalAt(graft.At(6, 1, 6))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -118,7 +118,7 @@ func TestPlannerCutsDiagonals(t *testing.T) {
 }
 
 func TestPlannerRespectsCorners(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
@@ -129,12 +129,12 @@ func TestPlannerRespectsCorners(t *testing.T) {
 		column.SetBlock(2, y, 3, stone)
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, testTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 1, 2)
-	goal := pathfinder.GoalAt(gocraft.At(3, 1, 3))
+	from := graft.At(2, 1, 2)
+	goal := pathfinder.GoalAt(graft.At(3, 1, 3))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -147,7 +147,7 @@ func TestPlannerRespectsCorners(t *testing.T) {
 }
 
 func TestPlannerDetoursAroundWalls(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
@@ -158,12 +158,12 @@ func TestPlannerDetoursAroundWalls(t *testing.T) {
 		column.SetBlock(5, 2, z, stone)
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, testTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 1, 8)
-	goal := pathfinder.GoalAt(gocraft.At(8, 1, 8))
+	from := graft.At(2, 1, 8)
+	goal := pathfinder.GoalAt(graft.At(8, 1, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -183,7 +183,7 @@ func TestPlannerDetoursAroundWalls(t *testing.T) {
 }
 
 func TestPlannerClimbsStairs(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
@@ -197,12 +197,12 @@ func TestPlannerClimbsStairs(t *testing.T) {
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, testTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 1, 8)
-	goal := pathfinder.GoalAt(gocraft.At(10, 4, 8))
+	from := graft.At(2, 1, 8)
+	goal := pathfinder.GoalAt(graft.At(10, 4, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -212,7 +212,7 @@ func TestPlannerClimbsStairs(t *testing.T) {
 }
 
 func TestPlannerDropsSafeLedges(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
@@ -222,12 +222,12 @@ func TestPlannerDropsSafeLedges(t *testing.T) {
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, testTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 4, 8)
-	goal := pathfinder.GoalAt(gocraft.At(12, 1, 8))
+	from := graft.At(2, 4, 8)
+	goal := pathfinder.GoalAt(graft.At(12, 1, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -237,7 +237,7 @@ func TestPlannerDropsSafeLedges(t *testing.T) {
 }
 
 func TestPlannerRefusesDeadlyDrops(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
@@ -247,12 +247,12 @@ func TestPlannerRefusesDeadlyDrops(t *testing.T) {
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, testTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 6, 8)
-	goal := pathfinder.GoalAt(gocraft.At(12, 1, 8))
+	from := graft.At(2, 6, 8)
+	goal := pathfinder.GoalAt(graft.At(12, 1, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -262,7 +262,7 @@ func TestPlannerRefusesDeadlyDrops(t *testing.T) {
 }
 
 func TestPlannerAvoidsHazards(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
@@ -272,12 +272,12 @@ func TestPlannerAvoidsHazards(t *testing.T) {
 		column.SetBlock(5, 0, z, lava)
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, testTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 1, 8)
-	goal := pathfinder.GoalAt(gocraft.At(8, 1, 8))
+	from := graft.At(2, 1, 8)
+	goal := pathfinder.GoalAt(graft.At(8, 1, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -293,7 +293,7 @@ func TestPlannerAvoidsHazards(t *testing.T) {
 }
 
 func TestPlannerParkoursGaps(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			if x != 5 {
@@ -302,12 +302,12 @@ func TestPlannerParkoursGaps(t *testing.T) {
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, testTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 7, 8)
-	goal := pathfinder.GoalAt(gocraft.At(8, 7, 8))
+	from := graft.At(2, 7, 8)
+	goal := pathfinder.GoalAt(graft.At(8, 7, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -323,7 +323,7 @@ func TestPlannerParkoursGaps(t *testing.T) {
 }
 
 func TestPlannerReturnsPartialRoutes(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
@@ -338,12 +338,12 @@ func TestPlannerReturnsPartialRoutes(t *testing.T) {
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, testTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 1, 8)
-	goal := pathfinder.GoalAt(gocraft.At(12, 1, 8))
+	from := graft.At(2, 1, 8)
+	goal := pathfinder.GoalAt(graft.At(12, 1, 8))
 
 	route, ok := planner.Plan(from, goal)
 
@@ -362,19 +362,19 @@ func TestPlannerReturnsPartialRoutes(t *testing.T) {
 }
 
 func TestPlannerReachesNearGoals(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, stone)
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
 	planner := pathfinder.NewPlanner(world, testTerrain{}, pathfinder.Loadout{})
-	from := gocraft.At(2, 1, 2)
-	goal := pathfinder.GoalNear(gocraft.At(10, 1, 2), 2)
+	from := graft.At(2, 1, 2)
+	goal := pathfinder.GoalNear(graft.At(10, 1, 2), 2)
 
 	route, ok := planner.Plan(from, goal)
 

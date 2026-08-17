@@ -4,16 +4,16 @@ import (
 	"reflect"
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
-	v765 "github.com/lrnxzz/go-craft/codec/v765"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
+	v765 "github.com/lrnxzz/graft/codec/v765"
 )
 
 func TestJoinGamePreservesAllFields(t *testing.T) {
 	original := &v765.JoinGame{
 		EntityID:            42,
 		Hardcore:            false,
-		Worlds:              codec.Slice[gocraft.Identifier]{"minecraft:overworld", "minecraft:the_nether"},
+		Worlds:              codec.Slice[graft.Identifier]{"minecraft:overworld", "minecraft:the_nether"},
 		MaxPlayers:          20,
 		ViewDistance:        10,
 		SimulationDistance:  10,
@@ -26,7 +26,7 @@ func TestJoinGamePreservesAllFields(t *testing.T) {
 		Flat:                true,
 		Death: codec.Some(v765.DeathLocation{
 			DimensionName: "minecraft:the_nether",
-			Location: gocraft.Position{
+			Location: graft.Position{
 				X: 10,
 				Y: 64,
 				Z: -20,
@@ -159,7 +159,7 @@ func TestPlayerAbilitiesAppliesFlags(t *testing.T) {
 		t.Errorf("got %+v, want %+v", got, original)
 	}
 
-	player := &gocraft.Player{}
+	player := &graft.Player{}
 	got.Apply(player)
 
 	if !player.Abilities.Invulnerable || !player.Abilities.AllowFlight || !player.Abilities.InstantBuild {
@@ -194,7 +194,7 @@ func TestSetExperienceAppliesProgress(t *testing.T) {
 		t.Errorf("got %+v, want %+v", got, original)
 	}
 
-	player := &gocraft.Player{}
+	player := &graft.Player{}
 	got.Apply(player)
 
 	if player.Experience != 0.5 || player.Level != 30 || player.TotalExperience != 825 {

@@ -4,9 +4,9 @@ import (
 	_ "embed"
 	"runtime"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
-	"github.com/lrnxzz/go-craft/viewer/mesh"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/viewer/gpu"
+	"github.com/lrnxzz/graft/viewer/mesh"
 )
 
 //go:embed assets/shaders/world.vert
@@ -18,14 +18,14 @@ var fragmentShader string
 const uploadsPerFrame = 2
 
 type meshJob struct {
-	key      gocraft.ChunkPos
+	key      graft.ChunkPos
 	revision int
-	world    *gocraft.World
-	column   *gocraft.Column
+	world    *graft.World
+	column   *graft.Column
 }
 
 type meshResult struct {
-	key      gocraft.ChunkPos
+	key      graft.ChunkPos
 	revision int
 	geometry mesh.Geometry
 }
@@ -33,9 +33,9 @@ type meshResult struct {
 type Renderer struct {
 	program   *gpu.Program
 	tileset   *Tileset
-	chunks    map[gocraft.ChunkPos]*gpu.Mesh
-	revisions map[gocraft.ChunkPos]int
-	pending   map[gocraft.ChunkPos]bool
+	chunks    map[graft.ChunkPos]*gpu.Mesh
+	revisions map[graft.ChunkPos]int
+	pending   map[graft.ChunkPos]bool
 	jobs      chan meshJob
 	results   chan meshResult
 }
@@ -49,9 +49,9 @@ func NewRenderer(tileset *Tileset) (*Renderer, error) {
 	renderer := &Renderer{
 		program:   program,
 		tileset:   tileset,
-		chunks:    map[gocraft.ChunkPos]*gpu.Mesh{},
-		revisions: map[gocraft.ChunkPos]int{},
-		pending:   map[gocraft.ChunkPos]bool{},
+		chunks:    map[graft.ChunkPos]*gpu.Mesh{},
+		revisions: map[graft.ChunkPos]int{},
+		pending:   map[graft.ChunkPos]bool{},
 		jobs:      make(chan meshJob, 512),
 		results:   make(chan meshResult, 512),
 	}
@@ -72,8 +72,8 @@ func (r *Renderer) mesher() {
 	}
 }
 
-func (r *Renderer) Build(world *gocraft.World) {
-	loaded := map[gocraft.ChunkPos]bool{}
+func (r *Renderer) Build(world *graft.World) {
+	loaded := map[graft.ChunkPos]bool{}
 	for _, column := range world.Columns() {
 		key := column.Pos()
 		loaded[key] = true

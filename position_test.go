@@ -1,19 +1,19 @@
-package gocraft_test
+package graft_test
 
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
 )
 
 type blockFaceCase struct {
-	face gocraft.BlockFace
-	want gocraft.Position
+	face graft.BlockFace
+	want graft.Position
 }
 
 func TestBlockFaceNeighbors(t *testing.T) {
-	origin := gocraft.Position{
+	origin := graft.Position{
 		X: 10,
 		Y: 64,
 		Z: -3,
@@ -21,27 +21,27 @@ func TestBlockFaceNeighbors(t *testing.T) {
 
 	cases := []blockFaceCase{
 		{
-			face: gocraft.FaceUp,
+			face: graft.FaceUp,
 			want: origin.Add(0, 1, 0),
 		},
 		{
-			face: gocraft.FaceDown,
+			face: graft.FaceDown,
 			want: origin.Add(0, -1, 0),
 		},
 		{
-			face: gocraft.FaceNorth,
+			face: graft.FaceNorth,
 			want: origin.Add(0, 0, -1),
 		},
 		{
-			face: gocraft.FaceSouth,
+			face: graft.FaceSouth,
 			want: origin.Add(0, 0, 1),
 		},
 		{
-			face: gocraft.FaceWest,
+			face: graft.FaceWest,
 			want: origin.Add(-1, 0, 0),
 		},
 		{
-			face: gocraft.FaceEast,
+			face: graft.FaceEast,
 			want: origin.Add(1, 0, 0),
 		},
 	}
@@ -59,21 +59,21 @@ func TestBlockFaceNeighbors(t *testing.T) {
 }
 
 func TestPositionCenter(t *testing.T) {
-	block := gocraft.Position{
+	block := graft.Position{
 		X: 1,
 		Y: 2,
 		Z: -4,
 	}
 
 	got := block.Center()
-	want := gocraft.Vec3(1.5, 2.5, -3.5)
+	want := graft.Vec3(1.5, 2.5, -3.5)
 	if got != want {
 		t.Errorf("Center() = %v, want %v", got, want)
 	}
 }
 
 func TestPositionRecoversPackedCoordinates(t *testing.T) {
-	positions := []gocraft.Position{
+	positions := []graft.Position{
 		{X: 0, Y: 0, Z: 0},
 		{X: 1, Y: 2, Z: 3},
 		{X: -1, Y: -1, Z: -1},
@@ -83,7 +83,7 @@ func TestPositionRecoversPackedCoordinates(t *testing.T) {
 	}
 
 	for _, want := range positions {
-		var got gocraft.Position
+		var got graft.Position
 
 		if err := codec.Unmarshal(want.Append(nil), &got); err != nil {
 			t.Errorf("decode %s: %v", want, err)
@@ -97,7 +97,7 @@ func TestPositionRecoversPackedCoordinates(t *testing.T) {
 
 func TestAngleDegrees(t *testing.T) {
 	tests := []struct {
-		angle   gocraft.Angle
+		angle   graft.Angle
 		degrees float64
 	}{
 		{
@@ -122,15 +122,15 @@ func TestAngleDegrees(t *testing.T) {
 		if got := tt.angle.Degrees(); got != tt.degrees {
 			t.Errorf("Angle(%d).Degrees() = %g, want %g", tt.angle, got, tt.degrees)
 		}
-		if got := gocraft.AngleFromDegrees(tt.degrees); got != tt.angle {
+		if got := graft.AngleFromDegrees(tt.degrees); got != tt.angle {
 			t.Errorf("AngleFromDegrees(%g) = %d, want %d", tt.degrees, got, tt.angle)
 		}
 	}
 }
 
 func TestAngleRecoversEncodedValue(t *testing.T) {
-	for _, want := range []gocraft.Angle{0, 1, 64, 128, 200, 255} {
-		var got gocraft.Angle
+	for _, want := range []graft.Angle{0, 1, 64, 128, 200, 255} {
+		var got graft.Angle
 
 		if err := codec.Unmarshal(want.Append(nil), &got); err != nil {
 			t.Errorf("decode %d: %v", want, err)

@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/agent"
-	"github.com/lrnxzz/go-craft/codec/v765/items"
-	"github.com/lrnxzz/go-craft/pathfinder"
-	"github.com/lrnxzz/go-craft/rcon"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/agent"
+	"github.com/lrnxzz/graft/codec/v765/items"
+	"github.com/lrnxzz/graft/pathfinder"
+	"github.com/lrnxzz/graft/rcon"
 )
 
 // joined connects a bot and leaves its session running, which is the same
@@ -23,9 +23,9 @@ import (
 func joined(ctx context.Context, t *testing.T, username string) (*agent.Agent, <-chan error) {
 	t.Helper()
 
-	addr := os.Getenv("GOCRAFT_IT_ADDR")
+	addr := os.Getenv("GRAFT_IT_ADDR")
 	if addr == "" {
-		t.Skip("set GOCRAFT_IT_ADDR to a running 1.20.4 server to run this integration test")
+		t.Skip("set GRAFT_IT_ADDR to a running 1.20.4 server to run this integration test")
 	}
 
 	bot, err := agent.Join(ctx, addr, username)
@@ -51,11 +51,11 @@ func TestAgentWalksOnServer(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
 
-	bot, finished := joined(ctx, t, "gocraft_walk")
+	bot, finished := joined(ctx, t, "graft_walk")
 
 	start := bot.Player().Position
 	bot.Look(0, 0)
-	bot.SetControls(gocraft.Controls{Forward: true})
+	bot.SetControls(graft.Controls{Forward: true})
 
 	if err := <-finished; err != nil && !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("run: %v", err)
@@ -82,7 +82,7 @@ func TestAgentMovesToTarget(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	bot, finished := joined(ctx, t, "gocraft_goto")
+	bot, finished := joined(ctx, t, "graft_goto")
 
 	target := bot.Player().Position.Offset(6, 0, 10)
 
@@ -124,7 +124,7 @@ func TestDiggingBreaksABlockOnServer(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	bot, _ := joined(ctx, t, "gocraft_dig")
+	bot, _ := joined(ctx, t, "graft_dig")
 
 	if err := bot.Ready(ctx); err != nil {
 		t.Fatalf("terrain: %v", err)
@@ -174,7 +174,7 @@ func TestClickingMovesAStackOnServer(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	bot, _ := joined(ctx, t, "gocraft_click")
+	bot, _ := joined(ctx, t, "graft_click")
 
 	if err := bot.Ready(ctx); err != nil {
 		t.Fatalf("terrain: %v", err)
@@ -229,14 +229,14 @@ func TestClickingMovesAStackOnServer(t *testing.T) {
 func prepared(t *testing.T, command string) {
 	t.Helper()
 
-	addr := os.Getenv("GOCRAFT_IT_RCON")
+	addr := os.Getenv("GRAFT_IT_RCON")
 	if addr == "" {
-		t.Skip("set GOCRAFT_IT_RCON to the server's rcon address to run this integration test")
+		t.Skip("set GRAFT_IT_RCON to the server's rcon address to run this integration test")
 	}
 
-	password := os.Getenv("GOCRAFT_IT_RCON_PASSWORD")
+	password := os.Getenv("GRAFT_IT_RCON_PASSWORD")
 	if password == "" {
-		password = "gocraft"
+		password = "graft"
 	}
 
 	console, err := rcon.Dial(addr, password)
@@ -261,7 +261,7 @@ func TestChatSentComesBack(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	bot, _ := joined(ctx, t, "gocraft_chat")
+	bot, _ := joined(ctx, t, "graft_chat")
 
 	heard := make(chan string, 8)
 	agent.On(bot, func(e agent.ChatReceived) {
@@ -273,7 +273,7 @@ func TestChatSentComesBack(t *testing.T) {
 		}
 	})
 
-	said := fmt.Sprintf("gocraft integration %d", time.Now().UnixNano())
+	said := fmt.Sprintf("graft integration %d", time.Now().UnixNano())
 	if err := bot.Chat(said); err != nil {
 		t.Fatalf("chat: %v", err)
 	}

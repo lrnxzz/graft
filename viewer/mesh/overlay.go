@@ -2,11 +2,11 @@ package mesh
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
-func Overlay(block gocraft.Position, inflate float32, uv gpu.UV) Geometry {
+func Overlay(block graft.Position, inflate float32, uv gpu.UV) Geometry {
 	origin := vec3(float32(block.X)-inflate, float32(block.Y)-inflate, float32(block.Z)-inflate)
 	span := 1 + 2*inflate
 

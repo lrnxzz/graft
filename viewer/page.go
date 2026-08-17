@@ -1,8 +1,8 @@
 package viewer
 
 import (
-	"github.com/lrnxzz/go-craft/viewer/gpu"
-	"github.com/lrnxzz/go-craft/viewer/ultralight"
+	"github.com/lrnxzz/graft/viewer/gpu"
+	"github.com/lrnxzz/graft/viewer/ultralight"
 )
 
 type Page struct {

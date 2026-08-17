@@ -1,23 +1,23 @@
 package blocks
 
 import (
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec/v765/assets"
-	"github.com/lrnxzz/go-craft/lib"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec/v765/assets"
+	"github.com/lrnxzz/graft/lib"
 )
 
-//go:generate go run github.com/lrnxzz/go-craft/cli gen blocks 765
+//go:generate go run github.com/lrnxzz/graft/cli gen blocks 765
 
-var registry = lib.LoadRegistry[gocraft.Block](765, assets.Blocks)
+var registry = lib.LoadRegistry[graft.Block](765, assets.Blocks)
 
-var Of = lib.Ranged(registry, func(b gocraft.Block) (gocraft.BlockState, gocraft.BlockState) {
+var Of = lib.Ranged(registry, func(b graft.Block) (graft.BlockState, graft.BlockState) {
 	return b.MinState, b.MaxState
 })
 
-var Named = lib.Keyed(registry, func(b gocraft.Block) gocraft.Identifier {
+var Named = lib.Keyed(registry, func(b graft.Block) graft.Identifier {
 	return b.Name
 })
 
-var Names = lib.Listed(registry, func(e gocraft.Block) gocraft.Identifier {
+var Names = lib.Listed(registry, func(e graft.Block) graft.Identifier {
 	return e.Name
 })

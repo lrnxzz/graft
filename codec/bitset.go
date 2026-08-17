@@ -67,7 +67,7 @@ func (b *BitSet) Decode(r *Reader) error {
 		return err
 	}
 	if count < 0 || count.Int() > r.Remaining()/8 {
-		return r.fail(fmt.Errorf("gocraft: bitset of %d longs is out of range", count))
+		return r.fail(fmt.Errorf("graft: bitset of %d longs is out of range", count))
 	}
 
 	words := make(BitSet, 0, min(count.Int(), maxPrealloc))

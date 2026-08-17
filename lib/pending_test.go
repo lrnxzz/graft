@@ -3,7 +3,7 @@ package lib_test
 import (
 	"testing"
 
-	"github.com/lrnxzz/go-craft/lib"
+	"github.com/lrnxzz/graft/lib"
 )
 
 func TestPendingSequencesAreMonotonic(t *testing.T) {

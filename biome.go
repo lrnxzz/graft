@@ -1,6 +1,6 @@
-package gocraft
+package graft
 
-import "github.com/lrnxzz/go-craft/codec"
+import "github.com/lrnxzz/graft/codec"
 
 type BiomeID int32
 

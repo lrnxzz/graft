@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/plugin"
+	"github.com/lrnxzz/graft/plugin"
 )
 
 // talker records what the page's handler asked the bot to do, which is the only
@@ -63,7 +63,7 @@ func TestAMenuCanBeWrittenAsAPage(t *testing.T) {
 	if !strings.Contains(written.Style, ".ore:hover") {
 		t.Error("the plugin's stylesheet was not carried")
 	}
-	if !strings.Contains(written.Body, "gocraft.send('pick', 'iron_ore')") {
+	if !strings.Contains(written.Body, "graft.send('pick', 'iron_ore')") {
 		t.Error("the plugin's markup was not carried")
 	}
 	if !strings.Contains(written.Body, "<p>talker</p>") {

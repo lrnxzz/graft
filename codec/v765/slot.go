@@ -1,8 +1,8 @@
 package v765
 
 import (
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
 )
 
 type Slot struct {
@@ -12,7 +12,7 @@ type Slot struct {
 	Data    codec.NBT
 }
 
-func slotOf(stack gocraft.ItemStack) Slot {
+func slotOf(stack graft.ItemStack) Slot {
 	if stack.Empty() {
 		return Slot{}
 	}
@@ -46,13 +46,13 @@ func (s *Slot) Decode(r *codec.Reader) error {
 	return codec.DecodeAll(r, &s.Item, &s.Count, &s.Data)
 }
 
-func (s Slot) Stack() gocraft.ItemStack {
+func (s Slot) Stack() graft.ItemStack {
 	if !s.Present.Bool() {
-		return gocraft.ItemStack{}
+		return graft.ItemStack{}
 	}
 
-	return gocraft.ItemStack{
-		Item:  gocraft.ItemID(s.Item),
+	return graft.ItemStack{
+		Item:  graft.ItemID(s.Item),
 		Count: s.Count.Int(),
 		Data:  s.Data,
 	}

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/viewer/command"
+	"github.com/lrnxzz/graft/viewer/command"
 )
 
 // Completion runs the same walk and the same parameters as a real call, so these

@@ -3,7 +3,7 @@ package codec_test
 import (
 	"testing"
 
-	"github.com/lrnxzz/go-craft/codec"
+	"github.com/lrnxzz/graft/codec"
 )
 
 type keepAlivePacket struct {

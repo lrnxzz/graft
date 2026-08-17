@@ -1,4 +1,4 @@
-module github.com/lrnxzz/go-craft/plugin
+module github.com/lrnxzz/graft/plugin
 
 go 1.26.3
 
@@ -14,3 +14,5 @@ require (
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/text v0.3.8 // indirect
 )
+
+replace github.com/lrnxzz/graft => ..

@@ -7,11 +7,11 @@ import (
 	"math"
 
 	"github.com/go-gl/mathgl/mgl32"
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec/v765/blocks"
-	"github.com/lrnxzz/go-craft/codec/v765/items"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
-	"github.com/lrnxzz/go-craft/viewer/mesh"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec/v765/blocks"
+	"github.com/lrnxzz/graft/codec/v765/items"
+	"github.com/lrnxzz/graft/viewer/gpu"
+	"github.com/lrnxzz/graft/viewer/mesh"
 )
 
 //go:embed assets/steve.png
@@ -24,7 +24,7 @@ type Hand struct {
 	skin    *gpu.Texture
 	arm     *gpu.Mesh
 	model   *gpu.Mesh
-	item    gocraft.ItemID
+	item    graft.ItemID
 	cube    bool
 	empty   bool
 }
@@ -50,7 +50,7 @@ func NewHand(tiles *Tileset, icons *Iconset) (*Hand, error) {
 	}, nil
 }
 
-func (h *Hand) Update(held gocraft.ItemStack) {
+func (h *Hand) Update(held graft.ItemStack) {
 	if held.Empty() {
 		h.clear()
 		h.item = 0

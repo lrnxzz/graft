@@ -65,7 +65,7 @@ func On[P Packet](c *Client, handler func(*Client, P) error) {
 	c.listeners.add(prototype.Name(), func(client *Client, packet Packet) error {
 		typed, ok := packet.(P)
 		if !ok {
-			return fmt.Errorf("gocraft: handler for %s received %T", prototype.Name(), packet)
+			return fmt.Errorf("graft: handler for %s received %T", prototype.Name(), packet)
 		}
 
 		return handler(client, typed)

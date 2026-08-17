@@ -1,19 +1,19 @@
 package biomes
 
 import (
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec/v765/assets"
-	"github.com/lrnxzz/go-craft/lib"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec/v765/assets"
+	"github.com/lrnxzz/graft/lib"
 )
 
-//go:generate go run github.com/lrnxzz/go-craft/cli gen biomes 765
+//go:generate go run github.com/lrnxzz/graft/cli gen biomes 765
 
-var registry = lib.LoadRegistry[gocraft.Biome](765, assets.Biomes)
+var registry = lib.LoadRegistry[graft.Biome](765, assets.Biomes)
 
-var Of = lib.Keyed(registry, func(b gocraft.Biome) gocraft.BiomeID {
+var Of = lib.Keyed(registry, func(b graft.Biome) graft.BiomeID {
 	return b.ID
 })
 
-var Named = lib.Keyed(registry, func(b gocraft.Biome) gocraft.Identifier {
+var Named = lib.Keyed(registry, func(b graft.Biome) graft.Identifier {
 	return b.Name
 })

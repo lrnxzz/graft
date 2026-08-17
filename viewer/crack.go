@@ -5,10 +5,10 @@ import (
 	_ "embed"
 	"image/png"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/agent"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
-	"github.com/lrnxzz/go-craft/viewer/mesh"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/agent"
+	"github.com/lrnxzz/graft/viewer/gpu"
+	"github.com/lrnxzz/graft/viewer/mesh"
 )
 
 //go:embed assets/breaking.png
@@ -27,7 +27,7 @@ type Crack struct {
 	program *gpu.Program
 	texture *gpu.Texture
 	model   *gpu.Mesh
-	block   gocraft.Position
+	block   graft.Position
 	stage   int
 }
 

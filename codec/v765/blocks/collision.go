@@ -1,12 +1,12 @@
 package blocks
 
-import gocraft "github.com/lrnxzz/go-craft"
+import graft "github.com/lrnxzz/graft"
 
-var fullCube = []gocraft.AABB{
-	gocraft.Box(gocraft.Vec3(0, 0, 0), gocraft.Vec3(1, 1, 1)),
+var fullCube = []graft.AABB{
+	graft.Box(graft.Vec3(0, 0, 0), graft.Vec3(1, 1, 1)),
 }
 
-func Solid(state gocraft.BlockState) bool {
+func Solid(state graft.BlockState) bool {
 	block, ok := Of(state)
 	if !ok {
 		return false
@@ -15,7 +15,7 @@ func Solid(state gocraft.BlockState) bool {
 	return block.Solid()
 }
 
-func Collision(state gocraft.BlockState) []gocraft.AABB {
+func Collision(state graft.BlockState) []graft.AABB {
 	if !Solid(state) {
 		return nil
 	}

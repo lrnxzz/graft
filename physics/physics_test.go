@@ -3,30 +3,30 @@ package physics_test
 import (
 	"testing"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/physics"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/physics"
 )
 
 func TestPhysicsLandsOnGround(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	column.SetBlock(0, 0, 0, 1)
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
-	player := &gocraft.Player{Position: gocraft.Vec3(0.5, 5, 0.5)}
-	body := physics.New(func(state gocraft.BlockState) []gocraft.AABB {
+	player := &graft.Player{Position: graft.Vec3(0.5, 5, 0.5)}
+	body := physics.New(func(state graft.BlockState) []graft.AABB {
 		if state == 0 {
 			return nil
 		}
 
-		return []gocraft.AABB{
-			gocraft.Box(gocraft.Vec3(0, 0, 0), gocraft.Vec3(1, 1, 1)),
+		return []graft.AABB{
+			graft.Box(graft.Vec3(0, 0, 0), graft.Vec3(1, 1, 1)),
 		}
 	})
 
 	for range 200 {
-		body.Tick(world, player, gocraft.Controls{})
+		body.Tick(world, player, graft.Controls{})
 	}
 
 	if !player.OnGround {
@@ -38,22 +38,22 @@ func TestPhysicsLandsOnGround(t *testing.T) {
 }
 
 func TestPhysicsFallsThroughAir(t *testing.T) {
-	world := gocraft.NewWorld()
-	world.LoadColumn(gocraft.ChunkColumn(0, 0, -64, 384))
+	world := graft.NewWorld()
+	world.LoadColumn(graft.ChunkColumn(0, 0, -64, 384))
 
-	player := &gocraft.Player{Position: gocraft.Vec3(0.5, 100, 0.5)}
-	body := physics.New(func(state gocraft.BlockState) []gocraft.AABB {
+	player := &graft.Player{Position: graft.Vec3(0.5, 100, 0.5)}
+	body := physics.New(func(state graft.BlockState) []graft.AABB {
 		if state == 0 {
 			return nil
 		}
 
-		return []gocraft.AABB{
-			gocraft.Box(gocraft.Vec3(0, 0, 0), gocraft.Vec3(1, 1, 1)),
+		return []graft.AABB{
+			graft.Box(graft.Vec3(0, 0, 0), graft.Vec3(1, 1, 1)),
 		}
 	})
 
 	for range 3 {
-		body.Tick(world, player, gocraft.Controls{})
+		body.Tick(world, player, graft.Controls{})
 	}
 
 	if player.OnGround {
@@ -65,29 +65,29 @@ func TestPhysicsFallsThroughAir(t *testing.T) {
 }
 
 func TestPhysicsWalksForward(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, 1)
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
-	player := &gocraft.Player{Position: gocraft.Vec3(8, 1, 8), OnGround: true}
-	body := physics.New(func(state gocraft.BlockState) []gocraft.AABB {
+	player := &graft.Player{Position: graft.Vec3(8, 1, 8), OnGround: true}
+	body := physics.New(func(state graft.BlockState) []graft.AABB {
 		if state == 0 {
 			return nil
 		}
 
-		return []gocraft.AABB{
-			gocraft.Box(gocraft.Vec3(0, 0, 0), gocraft.Vec3(1, 1, 1)),
+		return []graft.AABB{
+			graft.Box(graft.Vec3(0, 0, 0), graft.Vec3(1, 1, 1)),
 		}
 	})
 
 	for range 20 {
-		body.Tick(world, player, gocraft.Controls{Forward: true})
+		body.Tick(world, player, graft.Controls{Forward: true})
 	}
 
 	if player.Position.Z <= 8.5 {
@@ -99,30 +99,30 @@ func TestPhysicsWalksForward(t *testing.T) {
 }
 
 func TestPhysicsJumpClearsOneBlock(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, 1)
 		}
 	}
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
-	player := &gocraft.Player{Position: gocraft.Vec3(8, 1, 8), OnGround: true}
-	body := physics.New(func(state gocraft.BlockState) []gocraft.AABB {
+	player := &graft.Player{Position: graft.Vec3(8, 1, 8), OnGround: true}
+	body := physics.New(func(state graft.BlockState) []graft.AABB {
 		if state == 0 {
 			return nil
 		}
 
-		return []gocraft.AABB{
-			gocraft.Box(gocraft.Vec3(0, 0, 0), gocraft.Vec3(1, 1, 1)),
+		return []graft.AABB{
+			graft.Box(graft.Vec3(0, 0, 0), graft.Vec3(1, 1, 1)),
 		}
 	})
 
 	peak := player.Position.Y
 	for range 12 {
-		body.Tick(world, player, gocraft.Controls{Jump: true})
+		body.Tick(world, player, graft.Controls{Jump: true})
 		peak = max(peak, player.Position.Y)
 	}
 
@@ -132,7 +132,7 @@ func TestPhysicsJumpClearsOneBlock(t *testing.T) {
 }
 
 func TestPhysicsStepsOntoSlab(t *testing.T) {
-	column := gocraft.ChunkColumn(0, 0, -64, 384)
+	column := graft.ChunkColumn(0, 0, -64, 384)
 	for x := range 16 {
 		for z := range 16 {
 			column.SetBlock(x, 0, z, 1)
@@ -140,22 +140,22 @@ func TestPhysicsStepsOntoSlab(t *testing.T) {
 	}
 	column.SetBlock(8, 1, 10, 2)
 
-	world := gocraft.NewWorld()
+	world := graft.NewWorld()
 	world.LoadColumn(column)
 
-	player := &gocraft.Player{
-		Position: gocraft.Vec3(8.5, 1, 8.5),
+	player := &graft.Player{
+		Position: graft.Vec3(8.5, 1, 8.5),
 		OnGround: true,
 	}
-	body := physics.New(func(state gocraft.BlockState) []gocraft.AABB {
+	body := physics.New(func(state graft.BlockState) []graft.AABB {
 		switch state {
 		case 1:
-			return []gocraft.AABB{
-				gocraft.Box(gocraft.Vec3(0, 0, 0), gocraft.Vec3(1, 1, 1)),
+			return []graft.AABB{
+				graft.Box(graft.Vec3(0, 0, 0), graft.Vec3(1, 1, 1)),
 			}
 		case 2:
-			return []gocraft.AABB{
-				gocraft.Box(gocraft.Vec3(0, 0, 0), gocraft.Vec3(1, 0.5, 1)),
+			return []graft.AABB{
+				graft.Box(graft.Vec3(0, 0, 0), graft.Vec3(1, 0.5, 1)),
 			}
 		default:
 			return nil
@@ -163,7 +163,7 @@ func TestPhysicsStepsOntoSlab(t *testing.T) {
 	})
 
 	for range 8 {
-		body.Tick(world, player, gocraft.Controls{Forward: true})
+		body.Tick(world, player, graft.Controls{Forward: true})
 	}
 
 	if got := player.Position.Y; got != 1.5 {

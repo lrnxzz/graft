@@ -14,7 +14,7 @@ const (
 	jsxFactory  = "__element"
 	jsxFragment = "__fragment"
 
-	apiModule = "gocraft"
+	apiModule = "graft"
 )
 
 var sourceTypes = [...]string{".ts", ".tsx", ".js", ".jsx"}

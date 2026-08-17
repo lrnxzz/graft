@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/nbt"
+	"github.com/lrnxzz/graft/nbt"
 )
 
 func richTree() nbt.Compound {
@@ -16,7 +16,7 @@ func richTree() nbt.Compound {
 		"long":   nbt.Long(math.MinInt64),
 		"float":  nbt.Float(math.Pi),
 		"double": nbt.Double(-math.MaxFloat64),
-		"string": nbt.String("go-craft ⛏"),
+		"string": nbt.String("graft ⛏"),
 		"bytes":  nbt.ByteArray{0, 1, 2, 255},
 		"ints":   nbt.IntArray{0, -1, math.MaxInt32},
 		"longs":  nbt.LongArray{0, -1, math.MaxInt64},

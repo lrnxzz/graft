@@ -3,7 +3,7 @@ package codec
 import (
 	"errors"
 
-	"github.com/lrnxzz/go-craft/nbt"
+	"github.com/lrnxzz/graft/nbt"
 )
 
 type NBT nbt.Compound
@@ -16,7 +16,7 @@ func (n NBT) Append(dst []byte) []byte {
 	return append(dst, nbt.Encode(nbt.Compound(n))...)
 }
 
-var errTagRoot = errors.New("gocraft: nbt field needs a root tag")
+var errTagRoot = errors.New("graft: nbt field needs a root tag")
 
 func (r *Reader) peekTag() (nbt.TagType, error) {
 	if r.err != nil {

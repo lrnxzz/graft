@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"log/slog"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec"
-	"github.com/lrnxzz/go-craft/codec/v765/blocks"
-	"github.com/lrnxzz/go-craft/codec/v765/items"
-	"github.com/lrnxzz/go-craft/lib"
-	"github.com/lrnxzz/go-craft/mojang"
-	"github.com/lrnxzz/go-craft/nbt"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec"
+	"github.com/lrnxzz/graft/codec/v765/blocks"
+	"github.com/lrnxzz/graft/codec/v765/items"
+	"github.com/lrnxzz/graft/lib"
+	"github.com/lrnxzz/graft/mojang"
+	"github.com/lrnxzz/graft/nbt"
 )
 
 type dimensionBounds struct {
@@ -32,23 +32,23 @@ type ChatListener func(line string)
 
 type Session struct {
 	client     *codec.Client
-	world      *gocraft.World
-	player     *gocraft.Player
+	world      *graft.World
+	player     *graft.Player
 	ready      JoinHandler
 	spawned    bool
-	dimensions map[gocraft.Identifier]dimensionBounds
+	dimensions map[graft.Identifier]dimensionBounds
 	bounds     dimensionBounds
 	view       int
-	inventory  gocraft.Inventory
-	carried    gocraft.ItemStack
+	inventory  graft.Inventory
+	carried    graft.ItemStack
 	stateID    int32
 	pending    lib.Pending[blockPrediction]
 	chat       ChatListener
 }
 
 type blockPrediction struct {
-	position gocraft.Position
-	server   gocraft.BlockState
+	position graft.Position
+	server   graft.BlockState
 }
 
 func Join(client *codec.Client, host string, port uint16, username string, onReady JoinHandler) (*Session, error) {
@@ -66,10 +66,10 @@ func Join(client *codec.Client, host string, port uint16, username string, onRea
 
 	session := &Session{
 		client:     client,
-		world:      gocraft.NewWorld(),
-		player:     &gocraft.Player{},
+		world:      graft.NewWorld(),
+		player:     &graft.Player{},
 		ready:      onReady,
-		dimensions: map[gocraft.Identifier]dimensionBounds{},
+		dimensions: map[graft.Identifier]dimensionBounds{},
 		bounds:     overworld,
 	}
 	session.listen()
@@ -91,7 +91,7 @@ func Join(client *codec.Client, host string, port uint16, username string, onRea
 	})
 }
 
-func (s *Session) World() *gocraft.World {
+func (s *Session) World() *graft.World {
 	return s.world
 }
 
@@ -99,7 +99,7 @@ func (s *Session) ViewDistance() int {
 	return s.view
 }
 
-func (s *Session) Player() *gocraft.Player {
+func (s *Session) Player() *graft.Player {
 	return s.player
 }
 
@@ -198,15 +198,15 @@ func (s *Session) onBlockAck(c *codec.Client, p *AcknowledgeBlockChange) error {
 	return nil
 }
 
-func (s *Session) StartDigging(hit gocraft.RayHit) error {
+func (s *Session) StartDigging(hit graft.RayHit) error {
 	return s.action(digStart, hit)
 }
 
-func (s *Session) CancelDigging(hit gocraft.RayHit) error {
+func (s *Session) CancelDigging(hit graft.RayHit) error {
 	return s.action(digCancel, hit)
 }
 
-func (s *Session) FinishDigging(hit gocraft.RayHit) error {
+func (s *Session) FinishDigging(hit graft.RayHit) error {
 	if err := s.action(digFinish, hit); err != nil {
 		return err
 	}
@@ -216,7 +216,7 @@ func (s *Session) FinishDigging(hit gocraft.RayHit) error {
 	return nil
 }
 
-func (s *Session) action(status codec.VarInt, hit gocraft.RayHit) error {
+func (s *Session) action(status codec.VarInt, hit graft.RayHit) error {
 	packet := &PlayerAction{
 		Status:   status,
 		Location: hit.Block,
@@ -227,7 +227,7 @@ func (s *Session) action(status codec.VarInt, hit gocraft.RayHit) error {
 	return s.client.Send(packet)
 }
 
-func (s *Session) PlaceBlock(hit gocraft.RayHit) error {
+func (s *Session) PlaceBlock(hit graft.RayHit) error {
 	placed := hit.Block.Neighbor(hit.Face)
 	cursor := hit.Point.Sub(hit.Block.Corner())
 
@@ -259,7 +259,7 @@ func (s *Session) PlaceBlock(hit gocraft.RayHit) error {
 	return nil
 }
 
-func (s *Session) predict(position gocraft.Position) blockPrediction {
+func (s *Session) predict(position graft.Position) blockPrediction {
 	server, _ := s.world.BlockAt(position)
 
 	return blockPrediction{
@@ -269,7 +269,7 @@ func (s *Session) predict(position gocraft.Position) blockPrediction {
 }
 
 func (s *Session) applyServerBlock(change BlockChange) {
-	position := gocraft.Position{
+	position := graft.Position{
 		X: change.X,
 		Y: change.Y,
 		Z: change.Z,
@@ -326,7 +326,7 @@ func (s *Session) onRegistryData(c *codec.Client, p *RegistryData) error {
 			continue
 		}
 
-		s.dimensions[gocraft.Identifier(name)] = dimensionBounds{
+		s.dimensions[graft.Identifier(name)] = dimensionBounds{
 			minY:   int(minY),
 			height: int(height),
 		}
@@ -455,7 +455,7 @@ func (s *Session) onChunkData(c *codec.Client, p *ChunkData) error {
 }
 
 func (s *Session) onUnloadChunk(c *codec.Client, p *UnloadChunk) error {
-	s.world.UnloadColumn(gocraft.Chunk(p.X.Int32(), p.Z.Int32()))
+	s.world.UnloadColumn(graft.Chunk(p.X.Int32(), p.Z.Int32()))
 
 	return nil
 }
@@ -480,7 +480,7 @@ func (s *Session) onHealth(c *codec.Client, p *SetHealth) error {
 	return nil
 }
 
-func (s *Session) Inventory() *gocraft.Inventory {
+func (s *Session) Inventory() *graft.Inventory {
 	return &s.inventory
 }
 
@@ -491,7 +491,7 @@ func (s *Session) onContainerContent(c *codec.Client, p *SetContainerContent) er
 
 	s.stateID = p.StateID.Int32()
 
-	stacks := make([]gocraft.ItemStack, len(p.Slots))
+	stacks := make([]graft.ItemStack, len(p.Slots))
 	for index, slot := range p.Slots {
 		stacks[index] = slot.Stack()
 	}
@@ -521,7 +521,7 @@ func (s *Session) onHeldItem(c *codec.Client, p *SetHeldItem) error {
 }
 
 func (s *Session) SelectHotbar(index int) error {
-	if index < 0 || index >= gocraft.HotbarSize {
+	if index < 0 || index >= graft.HotbarSize {
 		return fmt.Errorf("v765: hotbar index %d is out of range", index)
 	}
 
@@ -535,19 +535,19 @@ func (s *Session) SelectHotbar(index int) error {
 }
 
 func (s *Session) SwapWithHotbar(slot, hotbar int) error {
-	if hotbar < 0 || hotbar >= gocraft.HotbarSize {
+	if hotbar < 0 || hotbar >= graft.HotbarSize {
 		return fmt.Errorf("v765: hotbar index %d is out of range", hotbar)
 	}
 
-	return s.swap(slot, codec.Byte(hotbar), gocraft.HotbarSlot(hotbar))
+	return s.swap(slot, codec.Byte(hotbar), graft.HotbarSlot(hotbar))
 }
 
 func (s *Session) SwapWithOffhand(slot int) error {
-	return s.swap(slot, offhandButton, gocraft.SlotOffhand)
+	return s.swap(slot, offhandButton, graft.SlotOffhand)
 }
 
 func (s *Session) swap(slot int, button codec.Byte, other int) error {
-	if slot < 0 || slot >= gocraft.InventorySize {
+	if slot < 0 || slot >= graft.InventorySize {
 		return fmt.Errorf("v765: inventory slot %d is out of range", slot)
 	}
 	if slot == other {
@@ -584,15 +584,15 @@ func (s *Session) swap(slot int, button codec.Byte, other int) error {
 	return nil
 }
 
-func (s *Session) Carried() gocraft.ItemStack {
+func (s *Session) Carried() graft.ItemStack {
 	return s.carried
 }
 
 func (s *Session) ClickSlot(slot int) error {
-	if slot < 0 || slot >= gocraft.InventorySize {
+	if slot < 0 || slot >= graft.InventorySize {
 		return fmt.Errorf("v765: inventory slot %d is out of range", slot)
 	}
-	if slot == gocraft.SlotCraftingOutput && !s.carried.Empty() {
+	if slot == graft.SlotCraftingOutput && !s.carried.Empty() {
 		return nil
 	}
 
@@ -624,12 +624,12 @@ func (s *Session) ClickSlot(slot int) error {
 	return nil
 }
 
-func land(slot, carried gocraft.ItemStack) (gocraft.ItemStack, gocraft.ItemStack) {
+func land(slot, carried graft.ItemStack) (graft.ItemStack, graft.ItemStack) {
 	if carried.Empty() || slot.Empty() || slot.Item != carried.Item {
 		return carried, slot
 	}
 
-	size := gocraft.MaxStackSize
+	size := graft.MaxStackSize
 	item, known := items.Of(slot.Item)
 	if known {
 		size = item.StackSize
@@ -639,7 +639,7 @@ func land(slot, carried gocraft.ItemStack) (gocraft.ItemStack, gocraft.ItemStack
 	slot.Count = min(total, size)
 	carried.Count = total - slot.Count
 	if carried.Count == 0 {
-		carried = gocraft.ItemStack{}
+		carried = graft.ItemStack{}
 	}
 
 	return slot, carried

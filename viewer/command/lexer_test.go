@@ -3,7 +3,7 @@ package command_test
 import (
 	"testing"
 
-	"github.com/lrnxzz/go-craft/viewer/command"
+	"github.com/lrnxzz/graft/viewer/command"
 )
 
 // The lexer is what every other piece reads, so it is checked shape by shape

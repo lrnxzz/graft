@@ -6,9 +6,9 @@ import (
 	"errors"
 	"math"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/codec/v765/blocks"
-	"github.com/lrnxzz/go-craft/pathfinder"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/codec/v765/blocks"
+	"github.com/lrnxzz/graft/pathfinder"
 )
 
 var (
@@ -31,9 +31,9 @@ const (
 
 type order struct {
 	action   pathfinder.Action
-	target   gocraft.Position
-	aim      gocraft.Vec3d
-	controls gocraft.Controls
+	target   graft.Position
+	aim      graft.Vec3d
+	controls graft.Controls
 	yaw      float32
 	pitch    float32
 }
@@ -42,7 +42,7 @@ type order struct {
 // it stopped and not just whether it failed; one buffered send keeps the tick
 // loop from ever waiting on the caller
 type arrival struct {
-	at  gocraft.Position
+	at  graft.Position
 	err error
 }
 
@@ -91,7 +91,7 @@ func (n *navigator) give(err error) {
 	n.settle()
 }
 
-func (n *navigator) arrive(reached gocraft.Position) {
+func (n *navigator) arrive(reached graft.Position) {
 	err := errNavigationPartial
 	if n.complete {
 		err = nil
@@ -113,7 +113,7 @@ func (n *navigator) route() Path {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	waypoints := make([]gocraft.Position, 0, len(n.steps))
+	waypoints := make([]graft.Position, 0, len(n.steps))
 	walked := 0
 
 	for index, current := range n.steps {
@@ -134,7 +134,7 @@ func (n *navigator) route() Path {
 }
 
 // advance retires the current step and reports whether that finished the route
-func (n *navigator) advance(reached gocraft.Position, patience int) bool {
+func (n *navigator) advance(reached graft.Position, patience int) bool {
 	n.next++
 	n.closest = math.Inf(1)
 	n.patience = patience
@@ -148,7 +148,7 @@ func (n *navigator) advance(reached gocraft.Position, patience int) bool {
 	return true
 }
 
-func (n *navigator) tick(world *gocraft.World, player *gocraft.Player) (order, bool) {
+func (n *navigator) tick(world *graft.World, player *graft.Player) (order, bool) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -181,7 +181,7 @@ func (n *navigator) tick(world *gocraft.World, player *gocraft.Player) (order, b
 
 // work drives a break or a place: the world itself reports completion, so a
 // server that refuses the action simply runs the patience down into a replan
-func (n *navigator) work(world *gocraft.World, player *gocraft.Player, current pathfinder.Step) (order, bool) {
+func (n *navigator) work(world *graft.World, player *graft.Player, current pathfinder.Step) (order, bool) {
 	if settled(world, current) {
 		return order{}, true
 	}
@@ -200,7 +200,7 @@ func (n *navigator) work(world *gocraft.World, player *gocraft.Player, current p
 		return order{}, false
 	}
 
-	yaw, pitch := gocraft.LookAngles(player.Eye(), aim)
+	yaw, pitch := graft.LookAngles(player.Eye(), aim)
 
 	return order{
 		action: current.Action,
@@ -211,7 +211,7 @@ func (n *navigator) work(world *gocraft.World, player *gocraft.Player, current p
 	}, false
 }
 
-func settled(world *gocraft.World, current pathfinder.Step) bool {
+func settled(world *graft.World, current pathfinder.Step) bool {
 	state, known := world.BlockAt(current.Target)
 	if !known {
 		return false
@@ -226,7 +226,7 @@ func settled(world *gocraft.World, current pathfinder.Step) bool {
 
 // a block is always placed onto the far face of whatever the crosshair hits, so
 // the bot aims at the shared face of a neighbour that already exists
-func aimFor(world *gocraft.World, current pathfinder.Step) (gocraft.Vec3d, bool) {
+func aimFor(world *graft.World, current pathfinder.Step) (graft.Vec3d, bool) {
 	if current.Action == pathfinder.Break {
 		return current.Target.Center(), true
 	}
@@ -244,19 +244,19 @@ func aimFor(world *gocraft.World, current pathfinder.Step) (gocraft.Vec3d, bool)
 		return neighbour.Center().Add(toward), true
 	}
 
-	return gocraft.Vec3d{}, false
+	return graft.Vec3d{}, false
 }
 
-var placeFaces = [...]gocraft.BlockFace{
-	gocraft.FaceDown,
-	gocraft.FaceNorth,
-	gocraft.FaceSouth,
-	gocraft.FaceWest,
-	gocraft.FaceEast,
-	gocraft.FaceUp,
+var placeFaces = [...]graft.BlockFace{
+	graft.FaceDown,
+	graft.FaceNorth,
+	graft.FaceSouth,
+	graft.FaceWest,
+	graft.FaceEast,
+	graft.FaceUp,
 }
 
-func (n *navigator) stride(player *gocraft.Player, waypoint gocraft.Position) (order, bool) {
+func (n *navigator) stride(player *graft.Player, waypoint graft.Position) (order, bool) {
 	feet := player.Position
 	toward := waypoint.Center().Horizontal().Sub(feet.Horizontal())
 	horizontal := toward.Length()
@@ -280,7 +280,7 @@ func (n *navigator) stride(player *gocraft.Player, waypoint gocraft.Position) (o
 		// the ledge: airborne we coast and let gravity land us; caught on the
 		// very lip of the edge we creep toward the landing column, no sprint
 		creeping := order{
-			controls: gocraft.Controls{Forward: player.OnGround},
+			controls: graft.Controls{Forward: player.OnGround},
 			yaw:      yaw,
 		}
 
@@ -291,7 +291,7 @@ func (n *navigator) stride(player *gocraft.Player, waypoint gocraft.Position) (o
 	leaping := leaps(previous, waypoint) && horizontal <= leapWindow
 
 	striding := order{
-		controls: gocraft.Controls{
+		controls: graft.Controls{
 			Forward: true,
 			Sprint:  true,
 			Jump:    climbing || leaping,
@@ -302,7 +302,7 @@ func (n *navigator) stride(player *gocraft.Player, waypoint gocraft.Position) (o
 	return striding, false
 }
 
-func (n *navigator) previousWaypoint(fallback gocraft.Position) gocraft.Position {
+func (n *navigator) previousWaypoint(fallback graft.Position) graft.Position {
 	for index := n.next - 1; index >= 0; index-- {
 		if n.steps[index].Action == pathfinder.Walk {
 			return n.steps[index].Target
@@ -325,7 +325,7 @@ func (n *navigator) progressing(distance float64) bool {
 	return n.patience > 0
 }
 
-func overshotDrop(previous, waypoint gocraft.Position, feet gocraft.Vec3d, toward gocraft.Vec2d) bool {
+func overshotDrop(previous, waypoint graft.Position, feet graft.Vec3d, toward graft.Vec2d) bool {
 	if float64(waypoint.Y) >= feet.Y-descendMargin {
 		return false
 	}
@@ -335,7 +335,7 @@ func overshotDrop(previous, waypoint gocraft.Position, feet gocraft.Vec3d, towar
 	return toward.Dot(segment) <= 0
 }
 
-func leaps(from, to gocraft.Position) bool {
+func leaps(from, to graft.Position) bool {
 	dx := to.X - from.X
 	dz := to.Z - from.Z
 

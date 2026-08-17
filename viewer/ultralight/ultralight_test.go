@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/viewer/ultralight"
+	"github.com/lrnxzz/graft/viewer/ultralight"
 )
 
 const resources = "sdk/resources"
@@ -443,7 +443,7 @@ func TestResizeTracksSize(t *testing.T) {
 // the page reaching back into Go is what lets a menu do more than look right;
 // without it a click is only a repaint
 func TestPageSendsToGo(t *testing.T) {
-	const talking = `<body style="margin:0" onload="gocraft.send('pick','stone',7)">`
+	const talking = `<body style="margin:0" onload="graft.send('pick','stone',7)">`
 
 	var heard []string
 	var name string
@@ -483,7 +483,7 @@ func TestPageSendsToGo(t *testing.T) {
 // a view nobody listens to must not grow the function, or a plugin without the
 // permission would still be reachable from its own markup
 func TestPageWithoutAListenerHasNoBridge(t *testing.T) {
-	const asking = `<body style="margin:0" onload="document.title = typeof gocraft">`
+	const asking = `<body style="margin:0" onload="document.title = typeof graft">`
 
 	var kind string
 
@@ -509,7 +509,7 @@ func TestPageWithoutAListenerHasNoBridge(t *testing.T) {
 	})
 
 	if kind != "undefined" {
-		t.Fatalf("an unlistened page saw gocraft as %q, want undefined", kind)
+		t.Fatalf("an unlistened page saw graft as %q, want undefined", kind)
 	}
 }
 

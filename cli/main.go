@@ -30,7 +30,7 @@ func root() *cobra.Command {
 	var verbose bool
 
 	command := &cobra.Command{
-		Use:           "gocraft",
+		Use:           "graft",
 		Short:         "Minecraft protocol toolbox",
 		SilenceUsage:  true,
 		SilenceErrors: true,

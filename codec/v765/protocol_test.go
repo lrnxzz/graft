@@ -3,8 +3,8 @@ package v765_test
 import (
 	"testing"
 
-	"github.com/lrnxzz/go-craft/codec"
-	v765 "github.com/lrnxzz/go-craft/codec/v765"
+	"github.com/lrnxzz/graft/codec"
+	v765 "github.com/lrnxzz/graft/codec/v765"
 )
 
 func TestUnknownPacketIsSkipped(t *testing.T) {

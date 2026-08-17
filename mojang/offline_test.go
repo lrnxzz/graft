@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/lrnxzz/go-craft/mojang"
+	"github.com/lrnxzz/graft/mojang"
 )
 
 func TestOfflineProfileIsDeterministic(t *testing.T) {

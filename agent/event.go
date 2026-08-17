@@ -3,8 +3,8 @@ package agent
 import (
 	"sync"
 
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/pathfinder"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/pathfinder"
 )
 
 // Notice is something that already happened. Notices are queued and delivered on
@@ -39,7 +39,7 @@ func (d *decision) Refused() (string, bool) {
 }
 
 type Spawned struct {
-	At gocraft.Vec3d
+	At graft.Vec3d
 }
 
 func (Spawned) Name() string {
@@ -49,7 +49,7 @@ func (Spawned) Name() string {
 // Arrived carries why a walk ended, because ending short of the goal is a normal
 // outcome and a plugin usually cares which it was
 type Arrived struct {
-	At     gocraft.Position
+	At     graft.Position
 	Reason error
 }
 
@@ -68,8 +68,8 @@ func (ChatReceived) Name() string {
 // BlockChanged reports the settled state only. The previous one is gone by the
 // time this is raised: the session applies the packet before the agent sees it.
 type BlockChanged struct {
-	At    gocraft.Position
-	State gocraft.BlockState
+	At    graft.Position
+	State graft.BlockState
 }
 
 func (BlockChanged) Name() string {
@@ -95,9 +95,9 @@ func (Disconnected) Name() string {
 
 type Digging struct {
 	decision
-	Block gocraft.Position
-	State gocraft.BlockState
-	Tool  gocraft.ItemID
+	Block graft.Position
+	State graft.BlockState
+	Tool  graft.ItemID
 }
 
 func (*Digging) Name() string {
@@ -106,8 +106,8 @@ func (*Digging) Name() string {
 
 type Placing struct {
 	decision
-	Block gocraft.Position
-	Item  gocraft.ItemID
+	Block graft.Position
+	Item  graft.ItemID
 }
 
 func (*Placing) Name() string {

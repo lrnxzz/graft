@@ -1,8 +1,8 @@
 package command
 
 import (
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/agent"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/agent"
 )
 
 // A Call is one line being run: what the arguments parsed to, who is running it,
@@ -39,9 +39,9 @@ func (c Call) Tokens() Tokens {
 }
 
 // Standing is where the bot is, which is what a relative offset is relative to
-func (c Call) Standing() gocraft.Position {
+func (c Call) Standing() graft.Position {
 	if c.bot == nil {
-		return gocraft.Position{}
+		return graft.Position{}
 	}
 
 	return c.bot.Snapshot().Position.Floor()

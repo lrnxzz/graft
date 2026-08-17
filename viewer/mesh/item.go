@@ -2,8 +2,8 @@ package mesh
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	gocraft "github.com/lrnxzz/go-craft"
-	"github.com/lrnxzz/go-craft/viewer/gpu"
+	graft "github.com/lrnxzz/graft"
+	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
 var spriteFace = cubeFace{
@@ -17,7 +17,7 @@ var spriteFace = cubeFace{
 	shade: 1.0,
 }
 
-func Block(state gocraft.BlockState, tiles Tiles) Geometry {
+func Block(state graft.BlockState, tiles Tiles) Geometry {
 	b := newBuilder()
 	for _, face := range cubeFaces {
 		b.quad(mgl32.Vec3{}, face, tiles.Tile(state, face.face))
