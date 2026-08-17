@@ -68,7 +68,7 @@ func (m *Marking) cage(painter *Painter, middle graft.Vec3d) {
 		tint = gpu.RGBA(0.6, 1, 0.7, 1)
 	}
 
-	for _, corner := range corners {
+	for _, corner := range cageCorners {
 		far := middle.Offset(corner.X*(0.5+reach), corner.Y*(0.5+reach), corner.Z*(0.5+reach))
 		near := middle.Offset(corner.X*0.62, corner.Y*0.62, corner.Z*0.62)
 
@@ -116,7 +116,7 @@ func (m *Marking) beam(painter *Painter, middle graft.Vec3d, now float64) {
 	painter.Line(middle.Offset(-0.2, 0, -0.2), top.Offset(-0.2, 0, -0.2), tint)
 }
 
-var corners = [...]graft.Vec3d{
+var cageCorners = [...]graft.Vec3d{
 	graft.Vec3(1, 1, 1),
 	graft.Vec3(1, 1, -1),
 	graft.Vec3(1, -1, 1),

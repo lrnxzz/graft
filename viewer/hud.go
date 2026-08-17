@@ -20,7 +20,7 @@ var selectionImage []byte
 var crosshairImage []byte
 
 const (
-	guiScale = 3
+	GuiScale = 3
 
 	hotbarWidth     = 182
 	hotbarHeight    = 22
@@ -87,7 +87,7 @@ func loadTexture(encoded []byte) (*gpu.Texture, error) {
 }
 
 func (h *Hud) Draw(canvas *Canvas) {
-	const barWidth, barHeight = hotbarWidth * guiScale, hotbarHeight * guiScale
+	const barWidth, barHeight = hotbarWidth * GuiScale, hotbarHeight * GuiScale
 
 	screen := canvas.Screen()
 	inventory := h.bot.Inventory()
@@ -99,17 +99,17 @@ func (h *Hud) Draw(canvas *Canvas) {
 	canvas.Sprite(h.hotbar, bar, wholeTexture, gpu.White)
 
 	frame := gpu.RectAt(
-		bar.Min.Offset(float32(inventory.HeldIndex()*hotbarStride-1)*guiScale, -guiScale),
-		selectionWidth*guiScale, selectionHeight*guiScale)
+		bar.Min.Offset(float32(inventory.HeldIndex()*hotbarStride-1)*GuiScale, -GuiScale),
+		selectionWidth*GuiScale, selectionHeight*GuiScale)
 	canvas.Sprite(h.selection, frame, wholeTexture, gpu.White)
 
 	for index := range graft.HotbarSize {
-		origin := bar.Min.Offset(float32(hotbarInset+index*hotbarStride)*guiScale, hotbarInset*guiScale)
+		origin := bar.Min.Offset(float32(hotbarInset+index*hotbarStride)*GuiScale, hotbarInset*GuiScale)
 		canvas.Icon(inventory.Hotbar(index).Item, iconAt(origin))
 	}
 
 	if h.aiming {
-		sight := screen.Centered(crosshairSize*guiScale, crosshairSize*guiScale)
+		sight := screen.Centered(crosshairSize*GuiScale, crosshairSize*GuiScale)
 		canvas.Sprite(h.crosshair, sight, wholeTexture, gpu.White)
 	}
 }
@@ -121,7 +121,7 @@ func (h *Hud) Close() {
 }
 
 func iconAt(origin gpu.Point) gpu.Rect {
-	return gpu.RectAt(origin, iconSize*guiScale, iconSize*guiScale)
+	return gpu.RectAt(origin, iconSize*GuiScale, iconSize*GuiScale)
 }
 
 // the crosshair is hidden while a menu is up

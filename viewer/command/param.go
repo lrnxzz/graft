@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,7 +13,6 @@ import (
 // reads back through.
 type Argument interface {
 	Label() string
-	Shape() string
 	Spare() bool
 	Offer(call Call, typed string) []string
 
@@ -24,7 +24,6 @@ type Argument interface {
 // chat needs to complete a half-typed line.
 type Param[T any] struct {
 	label string
-	shape string
 	spare bool
 	fallb T
 
@@ -34,10 +33,6 @@ type Param[T any] struct {
 
 func (p Param[T]) Label() string {
 	return p.label
-}
-
-func (p Param[T]) Shape() string {
-	return p.shape
 }
 
 func (p Param[T]) Spare() bool {
@@ -88,22 +83,36 @@ func (p Param[T]) take(stream *Stream, call *Call) error {
 	return nil
 }
 
-// Text is any single word, or a quoted run held together
-func Text(label string) Param[string] {
-	read := func(stream *Stream, _ Call) (string, error) {
+// word is the common single-token parameter: take one token, refuse it as
+// wanted when parse will not have it
+func word[T any](label, wanted string, parse func(string) (T, error)) Param[T] {
+	read := func(stream *Stream, _ Call) (T, error) {
+		var zero T
+
 		token, held := stream.Take()
 		if !held {
-			return "", missing(label)
+			return zero, missing(label)
 		}
 
-		return token.Text, nil
+		value, err := parse(token.Text)
+		if err != nil {
+			return zero, refuse(label, token, wanted)
+		}
+
+		return value, nil
 	}
 
-	return Param[string]{
+	return Param[T]{
 		label: label,
-		shape: "text",
 		read:  read,
 	}
+}
+
+// Text is any single word, or a quoted run held together
+func Text(label string) Param[string] {
+	return word(label, "a word", func(text string) (string, error) {
+		return text, nil
+	})
 }
 
 // Rest is everything left of the line, spacing and all
@@ -119,141 +128,60 @@ func Rest(label string) Param[string] {
 
 	return Param[string]{
 		label: label,
-		shape: "text...",
 		read:  read,
 	}
 }
 
 func Whole(label string) Param[int] {
-	read := func(stream *Stream, _ Call) (int, error) {
-		token, held := stream.Take()
-		if !held {
-			return 0, missing(label)
-		}
-
-		value, err := strconv.Atoi(token.Text)
-		if err != nil {
-			return 0, refuse(label, token, "a whole number")
-		}
-
-		return value, nil
-	}
-
-	return Param[int]{
-		label: label,
-		shape: "number",
-		read:  read,
-	}
+	return word(label, "a whole number", strconv.Atoi)
 }
 
 func Number(label string) Param[float64] {
-	read := func(stream *Stream, _ Call) (float64, error) {
-		token, held := stream.Take()
-		if !held {
-			return 0, missing(label)
-		}
-
-		value, err := strconv.ParseFloat(token.Text, 64)
-		if err != nil {
-			return 0, refuse(label, token, "a number")
-		}
-
-		return value, nil
-	}
-
-	return Param[float64]{
-		label: label,
-		shape: "number",
-		read:  read,
-	}
+	return word(label, "a number", func(text string) (float64, error) {
+		return strconv.ParseFloat(text, 64)
+	})
 }
 
-var truths = [...]string{"true", "yes", "on"}
-
 func Flag(label string) Param[bool] {
-	read := func(stream *Stream, _ Call) (bool, error) {
-		token, held := stream.Take()
-		if !held {
-			return false, missing(label)
+	param := word(label, "yes or no", func(text string) (bool, error) {
+		switch strings.ToLower(text) {
+		case "true", "yes", "on":
+			return true, nil
+		case "false", "no", "off":
+			return false, nil
 		}
 
-		spoken := strings.ToLower(token.Text)
-		for _, yes := range truths {
-			if spoken == yes {
-				return true, nil
-			}
-		}
+		return false, errors.New("refused")
+	})
 
-		for _, no := range [...]string{"false", "no", "off"} {
-			if spoken == no {
-				return false, nil
-			}
-		}
-
-		return false, refuse(label, token, "yes or no")
-	}
-
-	offer := func(_ Call, typed string) []string {
+	param.offer = func(_ Call, typed string) []string {
 		return matching([]string{"yes", "no"}, typed)
 	}
 
-	return Param[bool]{
-		label: label,
-		shape: "yes|no",
-		read:  read,
-		offer: offer,
-	}
+	return param
 }
 
 func Span(label string) Param[time.Duration] {
-	read := func(stream *Stream, _ Call) (time.Duration, error) {
-		token, held := stream.Take()
-		if !held {
-			return 0, missing(label)
-		}
-
-		value, err := time.ParseDuration(token.Text)
-		if err != nil {
-			return 0, refuse(label, token, "a length of time such as 30s or 2m")
-		}
-
-		return value, nil
-	}
-
-	return Param[time.Duration]{
-		label: label,
-		shape: "duration",
-		read:  read,
-	}
+	return word(label, "a length of time such as 30s or 2m", time.ParseDuration)
 }
 
 // OneOf accepts nothing but the words it was given, and offers them
 func OneOf(label string, choices ...string) Param[string] {
-	read := func(stream *Stream, _ Call) (string, error) {
-		token, held := stream.Take()
-		if !held {
-			return "", missing(label)
-		}
-
+	param := word(label, "one of "+strings.Join(choices, ", "), func(text string) (string, error) {
 		for _, choice := range choices {
-			if strings.EqualFold(token.Text, choice) {
+			if strings.EqualFold(text, choice) {
 				return choice, nil
 			}
 		}
 
-		return "", refuse(label, token, "one of "+strings.Join(choices, ", "))
-	}
+		return "", errors.New("refused")
+	})
 
-	offer := func(_ Call, typed string) []string {
+	param.offer = func(_ Call, typed string) []string {
 		return matching(choices, typed)
 	}
 
-	return Param[string]{
-		label: label,
-		shape: strings.Join(choices, "|"),
-		read:  read,
-		offer: offer,
-	}
+	return param
 }
 
 func missing(label string) error {
@@ -290,6 +218,7 @@ func (r *Refusal) Error() string {
 	return said
 }
 
+// matching keeps only what the half-typed word could still become
 func matching(choices []string, typed string) []string {
 	if typed == "" {
 		return choices

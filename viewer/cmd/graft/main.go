@@ -128,11 +128,10 @@ func attach(view *viewer.Viewer, opening menus) {
 
 			continue
 		}
-		if reserved(key) {
+
+		if view.Bind(key, opening.pressing(key)) {
 			slog.Warn("plugin key", "key", claimed, "err", "taken over from the viewer")
 		}
-
-		view.Bind(key, opening.pressing(key))
 	}
 }
 
@@ -144,16 +143,6 @@ func keyed(name string) (gpu.Key, bool) {
 	}
 
 	return 0, false
-}
-
-func reserved(key gpu.Key) bool {
-	for _, taken := range [...]gpu.Key{gpu.KeyE, gpu.KeyP, gpu.KeyT, gpu.KeySlash} {
-		if key == taken {
-			return true
-		}
-	}
-
-	return false
 }
 
 type menus struct {
@@ -188,7 +177,7 @@ func (m menus) Open(menu *plugin.Menu) {
 	}
 	if m.engine == nil {
 		slog.Warn("plugin page", "err", "the html engine never started, so the menu cannot be shown")
-		m.Toast("§cthis menu is a page, and the html engine never started")
+		m.Toast(viewer.Red + "this menu is a page, and the html engine never started")
 
 		return
 	}

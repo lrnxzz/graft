@@ -17,18 +17,17 @@ type commands struct {
 	chat    *viewer.Chat
 }
 
-// The prefix is a dot rather than a slash because not every keyboard has one
-// within reach. A slash still works, since the server only ever sees a line no
-// one here claimed.
+// A slash also opens a line, since that is the prefix the server's own commands
+// already taught the player's fingers.
 const (
-	prefix = "."
-	spare  = "/"
+	prefix = viewer.Opener
+	slash  = "/"
 )
 
 // Held takes whichever prefix opened the line, and reports the rest. Nothing
 // else in the viewer should be testing the first letter itself.
 func Held(line string) (string, bool) {
-	for _, opener := range []string{prefix, spare} {
+	for _, opener := range []string{prefix, slash} {
 		if rest, cut := strings.CutPrefix(line, opener); cut {
 			return rest, true
 		}
@@ -109,18 +108,18 @@ func quoted(line string) []string {
 func (c commands) refuse(word string, err error) {
 	slog.Warn("plugin command", "command", word, "err", err)
 
-	c.chat.Push("§c" + err.Error())
+	c.chat.Push(viewer.Red + err.Error())
 
 	usage, known := c.plugins.Usage()[word]
 	if known {
-		c.chat.Push("§7" + prefix + usage)
+		c.chat.Push(viewer.Grey + prefix + usage)
 	}
 }
 
 func (c commands) help() {
 	usage := c.plugins.Usage()
 	if len(usage) == 0 {
-		c.chat.Push("§7no plugin has claimed a command")
+		c.chat.Push(viewer.Grey + "no plugin has claimed a command")
 
 		return
 	}
@@ -131,8 +130,8 @@ func (c commands) help() {
 	}
 	sort.Strings(words)
 
-	c.chat.Push("§7commands from plugins:")
+	c.chat.Push(viewer.Grey + "commands from plugins:")
 	for _, word := range words {
-		c.chat.Push("§f" + prefix + usage[word])
+		c.chat.Push(viewer.White + prefix + usage[word])
 	}
 }

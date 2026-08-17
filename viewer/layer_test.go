@@ -11,7 +11,7 @@ import (
 // The three types below are the plugin the API promises is possible: one marking
 // up the world, one painting an overlay and one menu. They live in an external
 // package on purpose — anything they cannot reach is genuinely out of a plugin's
-// reach, which is how the unusable Font.Emit went unnoticed before.
+// reach.
 
 type waypointMarker struct {
 	at graft.Position

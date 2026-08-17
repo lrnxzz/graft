@@ -128,7 +128,7 @@ func (r *reading) arguments(node *Node) {
 			return
 		}
 
-		r.spans(mark, r.stream.Mark(), true)
+		r.spans(mark, r.stream.Mark())
 	}
 }
 
@@ -222,7 +222,7 @@ func (r *reading) bad(token Token) {
 	})
 }
 
-func (r *reading) spans(from, to int, good bool) {
+func (r *reading) spans(from, to int) {
 	tokens := r.stream.Tokens()
 
 	for at := from; at < to; at++ {
@@ -231,11 +231,7 @@ func (r *reading) spans(from, to int, good bool) {
 			return
 		}
 
-		r.marks = append(r.marks, Mark{
-			From: token.From,
-			To:   token.To,
-			Good: good,
-		})
+		r.good(token)
 	}
 }
 

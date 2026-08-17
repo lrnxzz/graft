@@ -33,7 +33,7 @@ type bench struct {
 	spare commands
 }
 
-func commandsFor(ctx context.Context, view *viewer.Viewer, spare commands) *bench {
+func commandsFor(ctx context.Context, view *viewer.Viewer, spare commands) {
 	drawn := &route{
 		view: view,
 	}
@@ -73,8 +73,6 @@ func commandsFor(ctx context.Context, view *viewer.Viewer, spare commands) *benc
 	// the whole of it and the commands are there for what keys cannot say
 	view.Bind(gpu.KeyBackspace, desk.whileDrawing(desk.undo))
 	view.Bind(gpu.KeyEnter, desk.whileDrawing(desk.walk))
-
-	return desk
 }
 
 // whileDrawing runs a route command from a key, and only out of the body, so a

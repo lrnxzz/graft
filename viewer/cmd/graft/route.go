@@ -114,11 +114,11 @@ var errNoRoute = errors.New("no route has been drawn — press F, rest your aim 
 func spoken(state reachable) string {
 	switch state {
 	case open:
-		return "§areachable"
+		return viewer.Green + "reachable"
 	case blocked:
-		return "§cno path"
+		return viewer.Red + "no path"
 	default:
-		return "§8out of sight"
+		return viewer.Faint + "out of sight"
 	}
 }
 

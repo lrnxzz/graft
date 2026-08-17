@@ -6,11 +6,12 @@ import "github.com/lrnxzz/graft/viewer/gpu"
 // menus, keys to whoever claimed them. The viewer's own hud and chat go through
 // it too, so a plugin's are never a second kind of thing.
 type stage struct {
-	world   []WorldLayer
-	layers  []Layer
-	screens []Screen
-	binds   map[gpu.Key]func()
-	spoken  []func(string) bool
+	world    []WorldLayer
+	layers   []Layer
+	screens  []Screen
+	binds    map[gpu.Key]func()
+	spoken   []func(string) bool
+	offering func(line string, cursor int) ([]string, int, int)
 }
 
 func newStage() stage {
@@ -27,8 +28,13 @@ func (s *stage) addLayer(layer Layer) {
 	s.layers = append(s.layers, layer)
 }
 
-func (s *stage) bind(key gpu.Key, action func()) {
+// bind reports whether the key already had an owner, which the newcomer has now
+// taken it from
+func (s *stage) bind(key gpu.Key, action func()) bool {
+	_, taken := s.binds[key]
 	s.binds[key] = action
+
+	return taken
 }
 
 // intercept offers a submitted line to each handler in turn. The first to answer

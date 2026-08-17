@@ -127,14 +127,7 @@ func (c *Canvas) TextWidth(text string, scale float32) float32 {
 // Page paints a rendered HTML page. Its colour already carries its alpha, so it
 // takes a batch of its own rather than joining the sprites around it.
 func (c *Canvas) Page(surface *gpu.Surface, area gpu.Rect) {
-	whole := gpu.UV{
-		U0: 0,
-		V0: 0,
-		U1: 1,
-		V1: 1,
-	}
-
-	c.blended(surface.Texture(), gpu.Premultiplied, area, whole, gpu.White)
+	c.blended(surface.Texture(), gpu.Premultiplied, area, wholeTexture, gpu.White)
 }
 
 func (c *Canvas) quad(texture *gpu.Texture, area gpu.Rect, uv gpu.UV, tint gpu.Color) {

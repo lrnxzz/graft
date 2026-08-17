@@ -47,7 +47,6 @@ type Viewer struct {
 	settled []func(graft.Position)
 
 	suggesting Suggesting
-	offering   func(line string, cursor int) ([]string, int, int)
 }
 
 func New(bot *agent.Agent, visible bool) (*Viewer, error) {
@@ -163,6 +162,47 @@ func (v *Viewer) installDefaults() error {
 // within reach, so the dot is what the chat key prefills.
 const Opener = "."
 
+func (v *Viewer) toggleFreecam() {
+	if v.Detached() {
+		v.Attach()
+		v.chat.Push("back in the body")
+
+		return
+	}
+
+	v.Detach()
+	v.chat.Push("out of the body — fly with WASD, hold still 3s on a block to mark it, F to return")
+}
+
+func (v *Viewer) togglePathfinder() {
+	if v.driving.takeWheel() {
+		v.bot.Stop()
+		v.chat.Push("pathfinder paused — press P to resume")
+
+		return
+	}
+
+	v.chat.Push("pathfinder resumed")
+}
+
+// the inventory is built fresh each time so its texture follows the Closer
+// contract every other screen obeys
+func (v *Viewer) openInventory() {
+	screen, err := NewInventoryScreen(v.bot)
+	if err != nil {
+		v.chat.Push("inventory unavailable: " + err.Error())
+
+		return
+	}
+
+	v.Open(screen)
+}
+
+func (v *Viewer) openChat(prefill string) {
+	v.window.Typed()
+	v.chat.Open(prefill)
+}
+
 // AddWorldLayer registers geometry drawn inside the world, with depth still on
 func (v *Viewer) AddWorldLayer(layer WorldLayer) {
 	v.stage.addWorldLayer(layer)
@@ -200,9 +240,11 @@ func (v *Viewer) Showing() bool {
 	return v.stage.showing()
 }
 
-// Bind claims a key while no menu is up. It is how a plugin opens its own screen.
-func (v *Viewer) Bind(key gpu.Key, action func()) {
-	v.stage.bind(key, action)
+// Bind claims a key while no menu is up. It is how a plugin opens its own
+// screen. It reports whether the key was already bound, since the newcomer has
+// just taken it over.
+func (v *Viewer) Bind(key gpu.Key, action func()) bool {
+	return v.stage.bind(key, action)
 }
 
 // Intercept offers every line the player submits to a handler before the server
@@ -216,7 +258,7 @@ func (v *Viewer) Intercept(handle func(line string) bool) {
 // under the chat and splices the chosen one back in; what they mean is the
 // caller's business.
 func (v *Viewer) Offers(offer func(line string, cursor int) (words []string, from, to int)) {
-	v.offering = offer
+	v.stage.offering = offer
 }
 
 // Pick answers what the crosshair is pointing at. Out of the body that is the

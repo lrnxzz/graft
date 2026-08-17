@@ -1,6 +1,7 @@
 package viewer
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 
@@ -48,7 +49,7 @@ type Suggesting struct {
 func (s *Suggesting) Offers(words []string, typed string, from, to int) {
 	s.typed, s.from, s.to = typed, from, to
 
-	if same(s.words, words) {
+	if slices.Equal(s.words, words) {
 		return
 	}
 
@@ -208,16 +209,65 @@ func frame(canvas *Canvas, panel gpu.Rect) {
 	canvas.Fill(gpu.RectAt(panel.Min.Offset(panel.Width()-suggestEdge, 0), suggestEdge, panel.Height()), suggestFrame)
 }
 
-func same(before, after []string) bool {
-	if len(before) != len(after) {
+// suggest keeps the list under the chat current and answers whether a key was
+// spent moving through it, so a stroke that picked a word never also submits
+func (v *Viewer) suggest() bool {
+	if v.stage.offering == nil {
 		return false
 	}
 
-	for index := range before {
-		if before[index] != after[index] {
-			return false
-		}
+	line, cursor := v.chat.Line()
+
+	words, from, to := v.stage.offering(line, cursor)
+	v.suggesting.Offers(words, run(line, from, to), from, to)
+
+	if !v.suggesting.Showing() {
+		return false
 	}
 
+	if v.edges.key(gpu.KeyUp).started {
+		v.suggesting.Move(-1)
+
+		return true
+	}
+	if v.edges.key(gpu.KeyDown).started {
+		v.suggesting.Move(1)
+
+		return true
+	}
+
+	if v.edges.key(gpu.KeyTab).started {
+		return v.accept()
+	}
+
+	// Enter takes the row once you have picked one, and otherwise only when the
+	// word would add something. A word already typed in full is not worth a
+	// keystroke, so the line goes instead of standing still.
+	if v.edges.key(gpu.KeyEnter).started && (v.suggesting.Moved() || v.suggesting.Adds()) {
+		return v.accept()
+	}
+
+	return false
+}
+
+func (v *Viewer) accept() bool {
+	word, from, to, chosen := v.suggesting.Chosen()
+	if !chosen {
+		return false
+	}
+
+	v.chat.Splice(from, to, word)
+	v.suggesting.Clear()
+
 	return true
+}
+
+// run is what the offer would replace, which the list shows apart from the rest
+// of each word
+func run(line string, from, to int) string {
+	if from < 0 || to > len(line) || from > to {
+		return ""
+	}
+
+	return line[from:to]
 }

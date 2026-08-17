@@ -50,7 +50,7 @@ func (s *InventoryScreen) Draw(canvas *Canvas) {
 
 	inventory := s.bot.Inventory()
 	for index := range graft.InventorySize {
-		origin := frame.Min.Add(containerSlot(index).Scale(guiScale))
+		origin := frame.Min.Add(containerSlot(index).Scale(GuiScale))
 		canvas.Icon(inventory.Slot(index).Item, iconAt(origin))
 	}
 
@@ -65,7 +65,7 @@ func (s *InventoryScreen) drawCarried(canvas *Canvas) {
 	}
 
 	cursor := canvas.Cursor()
-	canvas.Icon(carried.Item, iconAt(cursor.Offset(-iconSize*guiScale/2, -iconSize*guiScale/2)))
+	canvas.Icon(carried.Item, iconAt(cursor.Offset(-iconSize*GuiScale/2, -iconSize*GuiScale/2)))
 }
 
 func (s *InventoryScreen) Click(cursor gpu.Point, screen gpu.Rect) {
@@ -97,15 +97,15 @@ func slotAt(cursor gpu.Point, screen gpu.Rect) (int, bool) {
 }
 
 func containerFrame(screen gpu.Rect) gpu.Rect {
-	return screen.Centered(containerWidth*guiScale, containerHeight*guiScale)
+	return screen.Centered(containerWidth*GuiScale, containerHeight*GuiScale)
 }
 
 // the clickable cell is the 18px slot, whose art starts one pixel above and to
 // the left of the 16px icon the layout points at
 func slotCell(panel gpu.Rect, origin gpu.Point) gpu.Rect {
-	corner := panel.Min.Add(origin.Offset(-1, -1).Scale(guiScale))
+	corner := panel.Min.Add(origin.Offset(-1, -1).Scale(GuiScale))
 
-	return gpu.RectAt(corner, slotSize*guiScale, slotSize*guiScale)
+	return gpu.RectAt(corner, slotSize*GuiScale, slotSize*GuiScale)
 }
 
 var containerSlots = map[int]gpu.Point{

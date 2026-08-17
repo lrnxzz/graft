@@ -1,7 +1,5 @@
 package command
 
-import "strings"
-
 // An Offer is what the chat may put in place of what is being typed. The span is
 // what it replaces, so accepting one is a splice rather than a guess at where the
 // word began.
@@ -132,20 +130,8 @@ func words(among []*Node) []string {
 
 // spread keeps only what the half-typed word could still become
 func spread(offers []string, typed string, from, to int) Offer {
-	kept := offers
-	if typed != "" {
-		kept = nil
-		lowered := strings.ToLower(typed)
-
-		for _, offer := range offers {
-			if strings.HasPrefix(strings.ToLower(offer), lowered) {
-				kept = append(kept, offer)
-			}
-		}
-	}
-
 	return Offer{
-		Words: kept,
+		Words: matching(offers, typed),
 		From:  from,
 		To:    to,
 	}

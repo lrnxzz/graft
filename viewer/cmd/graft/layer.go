@@ -6,10 +6,22 @@ import (
 	graft "github.com/lrnxzz/graft"
 	"github.com/lrnxzz/graft/plugin"
 	"github.com/lrnxzz/graft/viewer"
-	"github.com/lrnxzz/graft/viewer/gpu"
+	"github.com/lrnxzz/graft/viewer/ultralight"
 )
 
-const guiScale = 3
+// advances the html engine once a frame: there is one for the whole process
+type repaint struct {
+	engine *ultralight.Renderer
+}
+
+func (r repaint) Draw(*viewer.Canvas) {
+	if r.engine == nil {
+		return
+	}
+
+	r.engine.Update()
+	r.engine.Render()
+}
 
 type overlay struct {
 	plugins *plugin.Plugins
@@ -21,7 +33,7 @@ func (o overlay) Draw(canvas *viewer.Canvas) {
 
 	painted := surface{
 		canvas: canvas,
-		scale:  guiScale,
+		scale:  viewer.GuiScale,
 	}
 	for _, root := range roots {
 		plugin.Paint(root, painted)
@@ -58,7 +70,7 @@ func paint(painter *viewer.Painter, mark plugin.Marker) {
 	case plugin.MarkHighlight:
 		painter.Highlight(from.Floor(), color)
 	case plugin.MarkBeacon:
-		painter.Line(from, from.Offset(0, beaconHeight, 0), color)
+		painter.Line(from, from.Offset(0, pluginBeacon, 0), color)
 	case plugin.MarkBox:
 		painter.Box(graft.Box(from, to), color)
 	case plugin.MarkLine:
@@ -66,50 +78,20 @@ func paint(painter *viewer.Painter, mark plugin.Marker) {
 	}
 }
 
-const beaconHeight = 3
+const pluginBeacon = 3
 
-type screen struct {
-	menu   *plugin.Menu
-	picks  []plugin.Pick
-	scroll plugin.Scroll
-}
-
-func (s *screen) Draw(canvas *viewer.Canvas) {
-	root, built, err := s.menu.Body()
-	if err != nil {
-		slog.Warn("plugin menu", "err", err)
-
-		return
-	}
-	if !built {
-		return
-	}
-
-	painted := surface{
-		canvas: canvas,
-		scale:  guiScale,
-	}
-	s.picks = plugin.Scrolled(root, painted, &s.scroll)
-}
-
-func (s *screen) Click(cursor gpu.Point, _ gpu.Rect) {
-	hit := plugin.Clicked(s.picks, cursor.X/guiScale, cursor.Y/guiScale)
-	if hit != nil {
-		hit()
-	}
-}
-
-func (s *screen) Key(gpu.Key) {
-}
-
-func (s *screen) Scroll(delta float64) {
-	s.scroll.By(float32(delta) * scrollStep)
-}
-
-const scrollStep = 12
+// a report is called from the frame loop, and a plugin broken there would say so
+// sixty times a second — each distinct failure is said once
+var reported = map[string]bool{}
 
 func report(stage string, failures []plugin.Failure) {
 	for _, failure := range failures {
-		slog.Warn("plugin "+stage, "err", failure)
+		said := stage + ": " + failure.Error()
+		if reported[said] {
+			continue
+		}
+		reported[said] = true
+
+		slog.Warn("plugin failed", "stage", stage, "err", failure)
 	}
 }

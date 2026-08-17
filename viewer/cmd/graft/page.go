@@ -9,20 +9,6 @@ import (
 	"github.com/lrnxzz/graft/viewer/ultralight"
 )
 
-// advances the html engine once a frame: there is one for the whole process
-type repaint struct {
-	engine *ultralight.Renderer
-}
-
-func (r repaint) Draw(*viewer.Canvas) {
-	if r.engine == nil {
-		return
-	}
-
-	r.engine.Update()
-	r.engine.Render()
-}
-
 type paged struct {
 	menu   *plugin.Menu
 	page   *viewer.Page

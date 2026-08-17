@@ -50,7 +50,6 @@ func Spot(label string) Param[graft.Position] {
 
 	return Param[graft.Position]{
 		label: label,
-		shape: "x y z",
 		read:  read,
 		offer: offer,
 	}
@@ -63,7 +62,6 @@ func coordinates(label string, stream *Stream) ([3]float64, bool, error) {
 	var (
 		axes  [3]float64
 		local bool
-		here  bool
 	)
 
 	for axis := range 3 {
@@ -85,7 +83,6 @@ func coordinates(label string, stream *Stream) ([3]float64, bool, error) {
 
 			axes[axis] = value
 		case Relative, Local:
-			here = true
 			local = local || token.Shape == Local
 
 			offset, carried := token.Offset()
@@ -102,14 +99,6 @@ func coordinates(label string, stream *Stream) ([3]float64, bool, error) {
 		default:
 			return axes, false, refuse(label, token, "a coordinate — a number, ~ from here or ^ from where the bot faces")
 		}
-
-		if token.Shape == Local && !local {
-			local = true
-		}
-	}
-
-	if local && !here {
-		return axes, false, nil
 	}
 
 	return axes, local, nil
@@ -163,7 +152,6 @@ func Block(label string) Param[graft.Block] {
 
 	return Param[graft.Block]{
 		label: label,
-		shape: "block",
 		read:  read,
 		offer: offer,
 	}
@@ -190,7 +178,6 @@ func Item(label string) Param[graft.Item] {
 
 	return Param[graft.Item]{
 		label: label,
-		shape: "item",
 		read:  read,
 		offer: offer,
 	}

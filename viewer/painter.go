@@ -89,54 +89,9 @@ type boxEdge struct {
 
 // the bottom ring, the top ring, then the four uprights joining them
 var boxEdges = [...]boxEdge{
-	{
-		from: 0,
-		to:   1,
-	},
-	{
-		from: 1,
-		to:   2,
-	},
-	{
-		from: 2,
-		to:   3,
-	},
-	{
-		from: 3,
-		to:   0,
-	},
-	{
-		from: 4,
-		to:   5,
-	},
-	{
-		from: 5,
-		to:   6,
-	},
-	{
-		from: 6,
-		to:   7,
-	},
-	{
-		from: 7,
-		to:   4,
-	},
-	{
-		from: 0,
-		to:   4,
-	},
-	{
-		from: 1,
-		to:   5,
-	},
-	{
-		from: 2,
-		to:   6,
-	},
-	{
-		from: 3,
-		to:   7,
-	},
+	{0, 1}, {1, 2}, {2, 3}, {3, 0},
+	{4, 5}, {5, 6}, {6, 7}, {7, 4},
+	{0, 4}, {1, 5}, {2, 6}, {3, 7},
 }
 
 func (p *Painter) vertex(at graft.Vec3d, tint gpu.Color) {
