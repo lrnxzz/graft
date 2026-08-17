@@ -85,8 +85,8 @@ func TestDecodeNetworkSample(t *testing.T) {
 func TestDecodeRejectsMalformedInput(t *testing.T) {
 	tests := [][]byte{
 		nil,
-		[]byte{byte(nbt.TagByte)},
-		[]byte{byte(nbt.TagCompound), byte(nbt.TagInt), 0x00, 0x01, 'x', 0x00},
+		{byte(nbt.TagByte)},
+		{byte(nbt.TagCompound), byte(nbt.TagInt), 0x00, 0x01, 'x', 0x00},
 	}
 
 	for _, input := range tests {
