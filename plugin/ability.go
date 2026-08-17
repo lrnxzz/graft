@@ -1,6 +1,10 @@
 package plugin
 
-import "github.com/dop251/goja"
+import (
+	"slices"
+
+	"github.com/dop251/goja"
+)
 
 const always Permission = ""
 
@@ -304,15 +308,5 @@ func (r *Runtime) veto(handle goja.Callable, about Intent) string {
 }
 
 func granted(permissions []Permission, needs Permission) bool {
-	if needs == always {
-		return true
-	}
-
-	for _, permission := range permissions {
-		if permission == needs {
-			return true
-		}
-	}
-
-	return false
+	return needs == always || slices.Contains(permissions, needs)
 }

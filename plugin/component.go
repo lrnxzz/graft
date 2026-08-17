@@ -245,13 +245,21 @@ type bar struct {
 	fill  Color
 }
 
+// parsed once: overlay rebuilds the tree every frame, and these never change
+var (
+	barGreen   = ParseColor("#3c3")
+	barShade   = ParseColor("#0006")
+	listRail   = ParseColor("#fff6")
+	optionWash = ParseColor("#ffffff22")
+)
+
 func buildBar(given reading) Node {
 	return bar{
 		value: given.field("value").number(),
 		max:   given.field("max").number(),
 		width: given.field("width").number(),
-		color: given.field("color").color().or(ParseColor("#3c3")),
-		fill:  ParseColor("#0006"),
+		color: given.field("color").color().or(barGreen),
+		fill:  barShade,
 	}
 }
 
@@ -313,7 +321,7 @@ func buildList(given reading) Node {
 	return list{
 		frame:  frameOf(given),
 		height: given.field("height").number(),
-		rail:   ParseColor("#fff6"),
+		rail:   listRail,
 	}
 }
 
@@ -372,7 +380,7 @@ func buildOption(given reading) Node {
 		frame:     frameOf(given),
 		selected:  given.field("selected").flag(),
 		pick:      given.field("onPick").callback(),
-		highlight: ParseColor("#ffffff22"),
+		highlight: optionWash,
 	}
 }
 

@@ -130,17 +130,17 @@ func (r *Renderer) View(width, height int) *View {
 }
 
 func (v *View) Close() {
-	if v.handle == nil {
-		return
+	if v.handle != nil {
+		C.ulDestroyView(v.handle)
+		v.handle = nil
 	}
 
+	// the handle goes only after the view: a callback firing during the destroy
+	// still resolves it, and a view that never created still lets it go
 	if v.owner != 0 {
 		v.owner.Delete()
 		v.owner = 0
 	}
-
-	C.ulDestroyView(v.handle)
-	v.handle = nil
 }
 
 func (v *View) LoadHTML(html string) {

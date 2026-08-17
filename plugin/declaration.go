@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -36,13 +37,7 @@ const (
 )
 
 func (d Declaration) Allows(permission Permission) bool {
-	for _, granted := range d.Permissions {
-		if granted == permission {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(d.Permissions, permission)
 }
 
 type Reaction struct {

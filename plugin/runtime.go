@@ -171,42 +171,45 @@ func (r *Runtime) read(declared goja.Value) (Declaration, error) {
 }
 
 func readCommands(spec reading, decl *Declaration) error {
-	commands := spec.field("commands")
-	if commands.missing() {
-		return nil
-	}
-	if commands.object() == nil {
-		return errLooseCommands
-	}
-
-	for _, word := range commands.keys() {
-		command, built := exported[*Command](commands.field(word))
+	return readTable(spec, "commands", errLooseCommands, func(word string, entry reading) error {
+		command, built := exported[*Command](entry)
 		if !built {
 			return fmt.Errorf("command %q was not built with command()", word)
 		}
 
 		decl.Commands[word] = command
-	}
 
-	return nil
+		return nil
+	})
 }
 
 func readKeys(spec reading, decl *Declaration) error {
-	keys := spec.field("keys")
-	if keys.missing() {
-		return nil
-	}
-	if keys.object() == nil {
-		return errLooseKeys
-	}
-
-	for _, name := range keys.keys() {
-		bound := keys.field(name).callable()
+	return readTable(spec, "keys", errLooseKeys, func(name string, entry reading) error {
+		bound := entry.callable()
 		if bound == nil {
 			return fmt.Errorf("key %q is not bound to a function", name)
 		}
 
 		decl.Keys[name] = bound
+
+		return nil
+	})
+}
+
+// readTable walks one optional object field, handing each entry to keep
+func readTable(spec reading, name string, loose error, keep func(string, reading) error) error {
+	table := spec.field(name)
+	if table.missing() {
+		return nil
+	}
+	if table.object() == nil {
+		return loose
+	}
+
+	for _, word := range table.keys() {
+		if err := keep(word, table.field(word)); err != nil {
+			return err
+		}
 	}
 
 	return nil
