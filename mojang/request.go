@@ -7,13 +7,13 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-const jsonContentType = "application/json"
+const (
+	jsonContentType = "application/json"
+	timeout         = 10 * time.Second
+)
 
 // request is the part of an HTTP call that actually differs between the OAuth,
-// Xbox, Yggdrasil and session endpoints. Everything around it — the pooled
-// request and response, the deadline clamped against the caller's context,
-// copying the body out before the response returns to the pool — was identical
-// at all six call sites and lives in send.
+// Xbox, Yggdrasil and session endpoints; everything shared lives in send.
 type request struct {
 	client      *fasthttp.Client
 	method      string

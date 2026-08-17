@@ -83,23 +83,15 @@ func TestDecodeNetworkSample(t *testing.T) {
 }
 
 func TestDecodeRejectsMalformedInput(t *testing.T) {
-	tests := []struct {
-		input []byte
-	}{
-		{
-			input: nil,
-		},
-		{
-			input: []byte{byte(nbt.TagByte)},
-		},
-		{
-			input: []byte{byte(nbt.TagCompound), byte(nbt.TagInt), 0x00, 0x01, 'x', 0x00},
-		},
+	tests := [][]byte{
+		nil,
+		[]byte{byte(nbt.TagByte)},
+		[]byte{byte(nbt.TagCompound), byte(nbt.TagInt), 0x00, 0x01, 'x', 0x00},
 	}
 
-	for _, tt := range tests {
-		if _, err := nbt.Decode(tt.input); err == nil {
-			t.Errorf("Decode(%x): expected an error, got nil", tt.input)
+	for _, input := range tests {
+		if _, err := nbt.Decode(input); err == nil {
+			t.Errorf("Decode(%x): expected an error, got nil", input)
 		}
 	}
 }

@@ -12,6 +12,11 @@ import (
 	v765 "github.com/lrnxzz/graft/codec/v765"
 )
 
+const (
+	spawnTimeout  = 45 * time.Second
+	statusTimeout = 10 * time.Second
+)
+
 // Plugin is the code a user writes. It runs once the bot is connected and the
 // terrain around it has arrived, and the session lasts exactly as long as it
 // does: returning winds the connection down.
@@ -86,8 +91,6 @@ func spawn(ctx context.Context, bot *agent.Agent) error {
 		"protocol, or be holding the bot somewhere before letting it in", spawnTimeout)
 }
 
-const spawnTimeout = 45 * time.Second
-
 // warnAboutProtocol says what the server answers the status query with, when it
 // is not what this client speaks. It only warns: a server running ViaVersion
 // reports its own version here and still accepts an older client at login, so a
@@ -107,5 +110,3 @@ func warnAboutProtocol(ctx context.Context, address string) {
 		"speaks", status.Version.Protocol,
 		"client", v765.ProtocolVersion)
 }
-
-const statusTimeout = 10 * time.Second

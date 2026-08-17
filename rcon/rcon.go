@@ -49,6 +49,8 @@ func (c *Client) login(password string) error {
 	return nil
 }
 
+// Run sends one command and reads one answer frame; a server that splits a very
+// long answer across frames only has its first one reported
 func (c *Client) Run(command string) (string, error) {
 	if _, err := c.send(frameCommand, command); err != nil {
 		return "", err

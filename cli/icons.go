@@ -6,11 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"image"
-	"image/png"
 	"io"
 	"os"
-	"sort"
-	"strings"
 
 	graft "github.com/lrnxzz/graft"
 	"github.com/lrnxzz/graft/atlas"
@@ -148,43 +145,12 @@ func assignIcons(icons map[string]image.Image) map[string]int {
 	for name := range icons {
 		names = append(names, name)
 	}
-	sort.Strings(names)
 
-	index := make(map[string]int, len(names))
-	for tile, name := range names {
-		index[name] = tile
-	}
-
-	return index
+	return indexOf(names)
 }
 
 func readSprites(jar []byte) (map[string]image.Image, error) {
-	archive, err := zip.NewReader(bytes.NewReader(jar), int64(len(jar)))
-	if err != nil {
-		return nil, err
-	}
-
-	const prefix = "assets/minecraft/textures/item/"
-	sprites := map[string]image.Image{}
-	for _, file := range archive.File {
-		if !strings.HasPrefix(file.Name, prefix) || !strings.HasSuffix(file.Name, ".png") {
-			continue
-		}
-
-		reader, err := file.Open()
-		if err != nil {
-			return nil, err
-		}
-		img, err := png.Decode(reader)
-		reader.Close()
-		if err != nil || img.Bounds().Dx() != tileSize {
-			continue
-		}
-
-		sprites[strings.TrimSuffix(strings.TrimPrefix(file.Name, prefix), ".png")] = img
-	}
-
-	return sprites, nil
+	return readPNGs(jar, "assets/minecraft/textures/item/")
 }
 
 func extractTextures(jar []byte) error {

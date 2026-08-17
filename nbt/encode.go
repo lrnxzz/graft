@@ -2,6 +2,7 @@ package nbt
 
 import (
 	"encoding/binary"
+	"fmt"
 	"maps"
 	"math"
 	"slices"
@@ -92,7 +93,14 @@ func encodeString(buf []byte, s string) []byte {
 	buf = append(buf, 0, 0)
 	buf = encodeMUTF8(buf, s)
 
-	binary.BigEndian.PutUint16(buf[start:], uint16(len(buf)-start-2))
+	written := len(buf) - start - 2
+	if written > math.MaxUint16 {
+		// the length prefix cannot carry it, and a wrapped value would silently
+		// corrupt every byte that follows
+		panic(fmt.Sprintf("nbt: string of %d bytes exceeds the %d-byte limit", written, math.MaxUint16))
+	}
+
+	binary.BigEndian.PutUint16(buf[start:], uint16(written))
 
 	return buf
 }

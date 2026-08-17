@@ -153,17 +153,25 @@ func cached(pathname string, download func() ([]byte, error)) ([]byte, error) {
 		return nil, err
 	}
 
-	return data, os.WriteFile(pathname, data, 0o644)
+	// a cache that cannot be written only costs the next run a download, so a
+	// failure here must not throw away the one that just succeeded
+	_ = os.WriteFile(pathname, data, 0o644)
+
+	return data, nil
 }
 
 func readTextures(jar []byte) (map[string]image.Image, error) {
+	return readPNGs(jar, "assets/minecraft/textures/block/")
+}
+
+// readPNGs collects every tile-sized png under the prefix, keyed by its bare name
+func readPNGs(jar []byte, prefix string) (map[string]image.Image, error) {
 	archive, err := zip.NewReader(bytes.NewReader(jar), int64(len(jar)))
 	if err != nil {
 		return nil, err
 	}
 
-	const prefix = "assets/minecraft/textures/block/"
-	textures := map[string]image.Image{}
+	images := map[string]image.Image{}
 	for _, file := range archive.File {
 		if !strings.HasPrefix(file.Name, prefix) || !strings.HasSuffix(file.Name, ".png") {
 			continue
@@ -179,10 +187,10 @@ func readTextures(jar []byte) (map[string]image.Image, error) {
 			continue
 		}
 
-		textures[strings.TrimSuffix(strings.TrimPrefix(file.Name, prefix), ".png")] = img
+		images[strings.TrimSuffix(strings.TrimPrefix(file.Name, prefix), ".png")] = img
 	}
 
-	return textures, nil
+	return images, nil
 }
 
 func fetchClientJar(game string) ([]byte, error) {
@@ -325,11 +333,17 @@ func assignTiles(faces map[graft.Identifier]faceNames) map[string]int {
 	for name := range used {
 		names = append(names, name)
 	}
+
+	return indexOf(names)
+}
+
+// indexOf hands every name a stable tile, sorted so two runs agree
+func indexOf(names []string) map[string]int {
 	sort.Strings(names)
 
 	index := make(map[string]int, len(names))
-	for i, name := range names {
-		index[name] = i
+	for tile, name := range names {
+		index[name] = tile
 	}
 
 	return index

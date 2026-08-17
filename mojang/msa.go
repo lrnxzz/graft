@@ -12,8 +12,6 @@ import (
 
 const (
 	formContentType = "application/x-www-form-urlencoded"
-
-	msaTimeout = 10 * time.Second
 )
 
 type MSA struct {
@@ -43,7 +41,7 @@ func (m *MSA) RequestDeviceCode(ctx context.Context) (DeviceCode, error) {
 		url:         m.Flow.DeviceCodeURL,
 		contentType: formContentType,
 		body:        []byte(form.encode()),
-		timeout:     msaTimeout,
+		timeout:     timeout,
 	}
 
 	body, status, err := send(ctx, call)
@@ -91,7 +89,7 @@ func (m *MSA) token(ctx context.Context, form msaForm) (TokenSet, error) {
 		url:         m.Flow.TokenURL,
 		contentType: formContentType,
 		body:        []byte(form.encode()),
-		timeout:     msaTimeout,
+		timeout:     timeout,
 	}
 
 	body, status, err := send(ctx, call)

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"time"
 
 	"github.com/valyala/fasthttp"
 )
@@ -14,8 +13,6 @@ const (
 	profileURL   = "https://api.minecraftservices.com/minecraft/profile"
 	joinURL      = "https://sessionserver.mojang.com/session/minecraft/join"
 	hasJoinedURL = "https://sessionserver.mojang.com/session/minecraft/hasJoined"
-
-	mojangTimeout = 10 * time.Second
 )
 
 type Profile struct {
@@ -118,7 +115,7 @@ func (m *Mojang) do(ctx context.Context, method, target string, body []byte) (ra
 		accept:  jsonContentType,
 		bearer:  m.token,
 		body:    body,
-		timeout: mojangTimeout,
+		timeout: timeout,
 	}
 	if body != nil {
 		call.contentType = jsonContentType

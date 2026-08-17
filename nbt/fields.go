@@ -15,12 +15,12 @@ type field struct {
 }
 
 var (
-	_fieldCache    sync.Map
-	_fieldMapCache sync.Map
+	fieldCache    sync.Map
+	fieldMapCache sync.Map
 )
 
 func fieldsOf(t reflect.Type) []field {
-	cached, hit := _fieldCache.Load(t)
+	cached, hit := fieldCache.Load(t)
 	if hit {
 		fields, ok := cached.([]field)
 		if ok {
@@ -29,13 +29,13 @@ func fieldsOf(t reflect.Type) []field {
 	}
 
 	fields := resolveShadows(collectFields(t, nil))
-	_fieldCache.Store(t, fields)
+	fieldCache.Store(t, fields)
 
 	return fields
 }
 
 func fieldMapOf(t reflect.Type) map[string]field {
-	cached, hit := _fieldMapCache.Load(t)
+	cached, hit := fieldMapCache.Load(t)
 	if hit {
 		byName, ok := cached.(map[string]field)
 		if ok {
@@ -47,7 +47,7 @@ func fieldMapOf(t reflect.Type) map[string]field {
 	for _, f := range fieldsOf(t) {
 		byName[f.name] = f
 	}
-	_fieldMapCache.Store(t, byName)
+	fieldMapCache.Store(t, byName)
 
 	return byName
 }

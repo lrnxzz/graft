@@ -5,15 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/valyala/fasthttp"
 )
 
 const (
 	loginWithXboxURL = "https://api.minecraftservices.com/authentication/login_with_xbox"
-
-	loginTimeout = 10 * time.Second
 )
 
 type identityRequest struct {
@@ -98,7 +95,7 @@ func loginWithIdentity(ctx context.Context, identityToken string) (minecraftToke
 		contentType: jsonContentType,
 		accept:      jsonContentType,
 		body:        body,
-		timeout:     loginTimeout,
+		timeout:     timeout,
 	}
 
 	answer, status, err := send(ctx, call)

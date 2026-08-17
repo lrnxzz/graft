@@ -4,12 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/valyala/fasthttp"
 )
-
-const yggdrasilTimeout = 10 * time.Second
 
 type yggdrasilAgent struct {
 	Name    string `json:"name"`
@@ -72,7 +69,7 @@ func (y Yggdrasil) Authenticate(ctx context.Context) (Session, error) {
 		contentType: jsonContentType,
 		accept:      jsonContentType,
 		body:        body,
-		timeout:     yggdrasilTimeout,
+		timeout:     timeout,
 	}
 
 	answer, status, err := send(ctx, call)

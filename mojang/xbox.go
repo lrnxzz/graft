@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/valyala/fasthttp"
 )
@@ -21,8 +20,6 @@ const (
 	rpsSiteName   = "user.auth.xboxlive.com"
 	retailSandbox = "RETAIL"
 	jwtTokenType  = "JWT"
-
-	xboxTimeout = 10 * time.Second
 )
 
 type xstsDenialCode uint64
@@ -184,7 +181,7 @@ func (x *Xbox) authorize(ctx context.Context, target string, payload []byte) (Xb
 		contentType: jsonContentType,
 		accept:      jsonContentType,
 		body:        payload,
-		timeout:     xboxTimeout,
+		timeout:     timeout,
 	}
 
 	body, status, err := send(ctx, call)
