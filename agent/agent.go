@@ -54,7 +54,7 @@ func (a *Agent) Snapshot() Snapshot {
 }
 
 func Join(ctx context.Context, address, username string) (*Agent, error) {
-	host, port, err := graft.SplitAddress(address)
+	host, port, err := graft.Resolve(address)
 	if err != nil {
 		return nil, err
 	}

@@ -79,7 +79,7 @@ func flattenChat(raw json.RawMessage) string {
 }
 
 func Ping(ctx context.Context, address string) (Status, error) {
-	host, port, err := SplitAddress(address)
+	host, port, err := Resolve(address)
 	if err != nil {
 		return Status{}, err
 	}
