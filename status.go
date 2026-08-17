@@ -79,12 +79,12 @@ func flattenChat(raw json.RawMessage) string {
 }
 
 func Ping(ctx context.Context, address string) (Status, error) {
-	host, port, err := splitAddress(address)
+	host, port, err := SplitAddress(address)
 	if err != nil {
 		return Status{}, err
 	}
 
-	target := net.JoinHostPort(host.String(), strconv.Itoa(port.Int()))
+	target := net.JoinHostPort(host, strconv.Itoa(int(port)))
 
 	conn, err := codec.Dial(ctx, target)
 	if err != nil {
@@ -101,7 +101,7 @@ func Ping(ctx context.Context, address string) (Status, error) {
 
 	handshake := codec.Frame{
 		ID:      handshakeID,
-		Payload: codec.Marshal(statusVersion, host, port, stateStatus),
+		Payload: codec.Marshal(statusVersion, codec.String(host), codec.UShort(port), stateStatus),
 	}
 	if err := conn.WriteFrame(handshake); err != nil {
 		return Status{}, err
@@ -172,10 +172,12 @@ func measureLatency(conn *codec.Conn) (time.Duration, error) {
 	return latency, nil
 }
 
-func splitAddress(address string) (codec.String, codec.UShort, error) {
+// SplitAddress takes a host and port apart, defaulting the port when the address
+// carries none. A bare host is the common way to write a server.
+func SplitAddress(address string) (string, uint16, error) {
 	host, port, err := net.SplitHostPort(address)
 	if err != nil {
-		return codec.String(address), DefaultPort, nil
+		return address, DefaultPort.Uint16(), nil
 	}
 
 	parsed, err := strconv.ParseUint(port, 10, 16)
@@ -183,5 +185,5 @@ func splitAddress(address string) (codec.String, codec.UShort, error) {
 		return "", 0, fmt.Errorf("gocraft: invalid port %q in %q", port, address)
 	}
 
-	return codec.String(host), codec.UShort(parsed), nil
+	return host, uint16(parsed), nil
 }

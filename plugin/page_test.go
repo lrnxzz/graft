@@ -105,6 +105,25 @@ func TestTheNodeTreeStillDeclaresNoPage(t *testing.T) {
 	}
 }
 
+// the host picks a renderer from this alone, before either callback has run, so
+// it has to agree with the two above without building anything
+func TestAMenuSaysWhichRendererItWantsWithoutBuilding(t *testing.T) {
+	page := openedPage(t, &talker{})
+	if !page.Written() {
+		t.Error("a menu declaring a page did not ask for the html renderer")
+	}
+
+	runtime := loadExample(t)
+
+	tree, opened, err := runtime.Press("M", nil)
+	if err != nil || !opened {
+		t.Fatalf("press: opened=%v err=%v", opened, err)
+	}
+	if tree.Written() {
+		t.Error("a menu declaring a node tree asked for the html renderer")
+	}
+}
+
 // what the page sends has to run the plugin's own code, on the plugin's own bot
 func TestWhatThePageSendsReachesTheBot(t *testing.T) {
 	bot := &talker{}

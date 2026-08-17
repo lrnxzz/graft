@@ -63,6 +63,14 @@ func (m *Menu) Page() (Markup, bool, error) {
 	}, true, nil
 }
 
+// Written reports whether the menu is a page rather than a tree of nodes. The
+// two are alternatives, and the host has to choose a renderer before it asks
+// the plugin to build anything — asking Page() to find out would run the
+// plugin's callback on the path that then throws the answer away.
+func (m *Menu) Written() bool {
+	return m.page != nil
+}
+
 // Send delivers what the page asked for through gocraft.send. An unclaimed name
 // is not an error: markup outlives the handler that used to answer it.
 func (m *Menu) Send(name string, args []string) error {

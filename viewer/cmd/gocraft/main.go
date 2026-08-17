@@ -176,23 +176,31 @@ func (m menus) pressing(key gpu.Key) func() {
 	}
 }
 
-// a menu says how it wants to be drawn by which of the two it declares, and a
-// page falls back to the canvas when the engine never started
+// a menu says how it wants to be drawn by which of the two it declares. The
+// canvas is not a fallback for a page: it can only draw a node tree, and a menu
+// written as a page has none, so opening one on it shows an empty screen the
+// player still has to dismiss.
 func (m menus) Open(menu *plugin.Menu) {
-	markup, err := document(menu)
-	if err != nil {
-		slog.Warn("plugin page", "err", err)
-	}
-	if markup != "" && m.engine != nil {
-		m.view.Open(newPaged(m.engine, m.view.Viewport(), menu, markup))
+	if !menu.Written() {
+		m.view.Open(&screen{menu: menu})
 
 		return
 	}
-	if markup != "" {
+	if m.engine == nil {
 		slog.Warn("plugin page", "err", "the html engine never started, so the menu cannot be shown")
+		m.Toast("§cthis menu is a page, and the html engine never started")
+
+		return
 	}
 
-	m.view.Open(&screen{menu: menu})
+	markup, err := document(menu)
+	if err != nil {
+		slog.Warn("plugin page", "err", err)
+
+		return
+	}
+
+	m.view.Open(newPaged(m.engine, m.view.Viewport(), menu, markup))
 }
 
 func (m menus) Dismiss() {

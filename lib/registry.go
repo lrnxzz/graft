@@ -13,24 +13,18 @@ type Registry[T any] struct {
 	entries []T
 }
 
-func LoadJSON[T any](data []byte) T {
-	var loaded T
-	if err := json.Unmarshal(data, &loaded); err != nil {
+// LoadRegistry reads data compiled into the binary, so bad data is a build
+// mistake rather than something to hand back at runtime.
+func LoadRegistry[T any](version int32, data []byte) *Registry[T] {
+	var entries []T
+	if err := json.Unmarshal(data, &entries); err != nil {
 		panic(fmt.Sprintf("lib: embedded data is invalid: %v", err))
 	}
 
-	return loaded
-}
-
-func LoadRegistry[T any](version int32, data []byte) *Registry[T] {
 	return &Registry[T]{
 		version: version,
-		entries: LoadJSON[[]T](data),
+		entries: entries,
 	}
-}
-
-func (r *Registry[T]) Version() int32 {
-	return r.version
 }
 
 func Keyed[T any, K comparable](r *Registry[T], key func(T) K) func(K) (T, bool) {

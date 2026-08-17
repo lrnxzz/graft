@@ -175,7 +175,3 @@ func (a Angle) Radians() float64 {
 func AngleFromDegrees(degrees float64) Angle {
 	return Angle(int64(math.Round(degrees / 360 * 256)))
 }
-
-func AngleFromRadians(radians float64) Angle {
-	return Angle(int64(math.Round(radians / (2 * math.Pi) * 256)))
-}

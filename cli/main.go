@@ -53,6 +53,9 @@ func root() *cobra.Command {
 	command.AddCommand(loginCommand())
 	command.AddCommand(joinCommand())
 	command.AddCommand(gotoCommand())
+	command.AddCommand(rconCommand())
+	command.AddCommand(courseCommand())
+	command.AddCommand(demoCommand())
 	command.AddCommand(genCommand())
 
 	return command

@@ -28,12 +28,12 @@ type bench struct {
 	says  viewer.Speaking
 	tree  *command.Tree
 
-	// plugins get whatever the tree does not claim, so a plugin can still add a
+	// spare gets whatever the tree does not claim, so a plugin can still add a
 	// word without the viewer knowing it exists
-	plugins commands
+	spare commands
 }
 
-func commandsFor(ctx context.Context, view *viewer.Viewer, plugins commands) *bench {
+func commandsFor(ctx context.Context, view *viewer.Viewer, spare commands) *bench {
 	drawn := &route{
 		view: view,
 	}
@@ -44,7 +44,7 @@ func commandsFor(ctx context.Context, view *viewer.Viewer, plugins commands) *be
 		route: drawn,
 		says:  viewer.Says(view.Chat()),
 
-		plugins: plugins,
+		spare: spare,
 	}
 
 	desk.tree = command.Rooted(
@@ -101,7 +101,7 @@ func (b *bench) claim(line string) bool {
 
 	ran, err := b.tree.Run(held, command.Calling(b.view.Bot(), b.view.Chat().Says))
 	if !ran {
-		return b.plugins.claim(line)
+		return b.spare.claim(line)
 	}
 	if err != nil {
 		b.refuse(line, err)
@@ -169,8 +169,8 @@ func (b *bench) help(command.Call) error {
 		b.says.Note(prefix + line)
 	}
 
-	if len(b.plugins.plugins.Usage()) > 0 {
-		b.plugins.help()
+	if len(b.spare.plugins.Usage()) > 0 {
+		b.spare.help()
 	}
 
 	return nil

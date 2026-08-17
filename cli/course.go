@@ -2,17 +2,14 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	gocraft "github.com/lrnxzz/go-craft"
 	"github.com/lrnxzz/go-craft/rcon"
+	"github.com/spf13/cobra"
 )
 
 const (
-	address  = "localhost:25575"
-	password = "gocraft"
-
 	// the flat preset caps at a grass block, so feet land one above it, and
 	// nothing may be carved below the world floor or the server refuses the fill
 	worldFloor = -64
@@ -28,6 +25,23 @@ const (
 	courseStart = -6
 	courseEnd   = 82
 )
+
+func courseCommand() *cobra.Command {
+	var password string
+
+	command := &cobra.Command{
+		Use:   "course <host[:port]>",
+		Short: "Carve the pathfinder obstacle course on a server over rcon",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(_ *cobra.Command, args []string) error {
+			return carveCourse(args[0], password)
+		},
+	}
+
+	command.Flags().StringVar(&password, "password", "gocraft", "rcon password")
+
+	return command
+}
 
 type builder struct {
 	console *rcon.Client
@@ -163,13 +177,12 @@ var stations = [...]station{
 	},
 }
 
-func main() {
-	if err := run(); err != nil {
-		log.Fatal(err)
-	}
+// entrance is where the course starts and where a lap closes
+func entrance() gocraft.Position {
+	return gocraft.At(courseStart+3, stand, 0)
 }
 
-func run() error {
+func carveCourse(address, password string) error {
 	console, err := rcon.Dial(address, password)
 	if err != nil {
 		return err
@@ -199,8 +212,13 @@ func run() error {
 	for _, current := range stations {
 		fmt.Printf("  %-52s goal %v\n", current.name, current.goal)
 	}
-	fmt.Println("\ngoal flag:")
-	fmt.Println(" ", goalFlag())
+	legs := make([]string, 0, len(stations)+1)
+	for _, at := range lap() {
+		legs = append(legs, written(at))
+	}
+
+	fmt.Println("\nwalk it with:")
+	fmt.Println("  gocraft goto <host[:port]>", strings.Join(legs, " "))
 
 	return nil
 }
@@ -233,18 +251,25 @@ func carve(b *builder) {
 }
 
 func reset(b *builder) {
-	entrance := gocraft.At(courseStart+3, stand, 0)
+	at := entrance()
 
-	b.run(fmt.Sprintf("setworldspawn %d %d %d", entrance.X, entrance.Y, entrance.Z))
-	b.run(fmt.Sprintf("spawnpoint @a %d %d %d", entrance.X, entrance.Y, entrance.Z))
-	b.run(fmt.Sprintf("tp @a %d %d %d", entrance.X, entrance.Y, entrance.Z))
+	b.run(fmt.Sprintf("setworldspawn %d %d %d", at.X, at.Y, at.Z))
+	b.run(fmt.Sprintf("spawnpoint @a %d %d %d", at.X, at.Y, at.Z))
+	b.run(fmt.Sprintf("tp @a %d %d %d", at.X, at.Y, at.Z))
 }
 
-func goalFlag() string {
-	legs := make([]string, 0, len(stations))
+// lap is every station in order and then the entrance, so the walk closes where
+// it started. Both the demo and the goto line printed above read it, which is
+// what keeps either from drifting from the course actually carved.
+func lap() []gocraft.Position {
+	legs := make([]gocraft.Position, 0, len(stations)+1)
 	for _, current := range stations {
-		legs = append(legs, fmt.Sprintf("%d,%d,%d", current.goal.X, current.goal.Y, current.goal.Z))
+		legs = append(legs, current.goal)
 	}
 
-	return strings.Join(legs, ";")
+	return append(legs, entrance())
+}
+
+func written(at gocraft.Position) string {
+	return fmt.Sprintf("%d,%d,%d", at.X, at.Y, at.Z)
 }

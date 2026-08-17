@@ -63,7 +63,7 @@ func (a *Agent) Snapshot() Snapshot {
 }
 
 func Join(ctx context.Context, address, username string) (*Agent, error) {
-	host, port, err := splitAddress(address)
+	host, port, err := gocraft.SplitAddress(address)
 	if err != nil {
 		return nil, err
 	}
@@ -471,18 +471,4 @@ func (a *Agent) sight(player *gocraft.Player, command order) (gocraft.RayHit, bo
 	direction := command.aim.Sub(player.Eye())
 
 	return a.session.World().Raycast(player.Eye(), direction, gocraft.BlockReach, blocks.Solid)
-}
-
-func splitAddress(address string) (string, uint16, error) {
-	host, raw, err := net.SplitHostPort(address)
-	if err != nil {
-		return address, gocraft.DefaultPort.Uint16(), nil
-	}
-
-	port, err := strconv.ParseUint(raw, 10, 16)
-	if err != nil {
-		return "", 0, fmt.Errorf("agent: invalid port in %q", address)
-	}
-
-	return host, uint16(port), nil
 }
