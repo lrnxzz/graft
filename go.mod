@@ -7,7 +7,6 @@ require (
 	github.com/lrnxzz/graft/mojang v0.0.0-20260715002557-52d1baa1c5b9
 	github.com/lrnxzz/graft/nbt v0.0.0-20260715002557-52d1baa1c5b9
 	github.com/spf13/cobra v1.10.2
-	golang.org/x/exp v0.0.0-20260709172345-9ea1abe57597
 	golang.org/x/sync v0.22.0
 )
 

@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"math"
 	"unsafe"
-
-	"golang.org/x/exp/constraints"
 )
+
+type unsigned interface {
+	~uint8 | ~uint16 | ~uint32 | ~uint64
+}
 
 const (
 	MaxStringLen   = 32767
@@ -48,14 +50,14 @@ func Unmarshal(payload []byte, fields ...FieldPtr) error {
 	return DecodeAll(NewReader(payload), fields...)
 }
 
-func appendBE[T constraints.Unsigned](dst []byte, v T) []byte {
+func appendBE[T unsigned](dst []byte, v T) []byte {
 	for shift := (int(unsafe.Sizeof(v)) - 1) * bitsPerByte; shift >= 0; shift -= bitsPerByte {
 		dst = append(dst, byte(v>>shift))
 	}
 	return dst
 }
 
-func readBE[T constraints.Unsigned](r *Reader) (T, error) {
+func readBE[T unsigned](r *Reader) (T, error) {
 	raw := r.take(int(unsafe.Sizeof(T(0))))
 	if raw == nil {
 		return 0, r.err

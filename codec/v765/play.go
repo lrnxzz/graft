@@ -296,6 +296,7 @@ func (p *ChunkData) Column(minY, height int) (*graft.Column, error) {
 	return column, nil
 }
 
+// Z really does come first: 765 encodes this one packet backwards
 type UnloadChunk struct {
 	Z codec.Int
 	X codec.Int

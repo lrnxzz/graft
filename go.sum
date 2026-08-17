@@ -5,12 +5,6 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/klauspost/compress v1.18.6 h1:2jupLlAwFm95+YDR+NwD2MEfFO9d4z4Prjl1XXDjuao=
 github.com/klauspost/compress v1.18.6/go.mod h1:cwPg85FWrGar70rWktvGQj8/hthj3wpl0PGDogxkrSQ=
-github.com/lrnxzz/graft/codec/v765 v765.0.0-20260715043208-c635497e8677 h1:312D15hruYoxAi/3wYahKbMNjaBKahjZ4Qfvl3aSGNY=
-github.com/lrnxzz/graft/codec/v765 v765.0.0-20260715043208-c635497e8677/go.mod h1:YANbDHpd/zFVRYtW8h+UO4K9DoHe3MyPbWYK9GPiR3Q=
-github.com/lrnxzz/graft/mojang v0.0.0-20260715002557-52d1baa1c5b9 h1:+mYyI6swhNYPJHREqYhdAQSfBOcctRl5Sg5vJAuqu58=
-github.com/lrnxzz/graft/mojang v0.0.0-20260715002557-52d1baa1c5b9/go.mod h1:7xGr6Zrhy2ShdEaWVBT15/JpRFECWhJkyhzfA4QA3ag=
-github.com/lrnxzz/graft/nbt v0.0.0-20260715002557-52d1baa1c5b9 h1:RK5/kZtEnt6Bi4CML4gA9CD9Ctootl8W7zNmJv4RdLg=
-github.com/lrnxzz/graft/nbt v0.0.0-20260715002557-52d1baa1c5b9/go.mod h1:LRi8rYgnjEQnLvPvY2VQzgcHEFqHEvh3o0LilL3TYXI=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/spf13/cobra v1.10.2 h1:DMTTonx5m65Ic0GOoRY2c16WCbHxOOw6xxezuLaBpcU=
 github.com/spf13/cobra v1.10.2/go.mod h1:7C1pvHqHw5A4vrJfjNwvOdzYu0Gml16OCs2GRiTUUS4=
@@ -23,8 +17,6 @@ github.com/valyala/fasthttp v1.72.0/go.mod h1:zsbLTYqcpIktdQytlVBwIjY9La5d6bs990
 github.com/xyproto/randomstring v1.0.5 h1:YtlWPoRdgMu3NZtP45drfy1GKoojuR7hmRcnhZqKjWU=
 github.com/xyproto/randomstring v1.0.5/go.mod h1:rgmS5DeNXLivK7YprL0pY+lTuhNQW3iGxZ18UQApw/E=
 go.yaml.in/yaml/v3 v3.0.4/go.mod h1:DhzuOOF2ATzADvBadXxruRBLzYTpT36CKvDb3+aBEFg=
-golang.org/x/exp v0.0.0-20260709172345-9ea1abe57597 h1:qLvzZeaANDgyVOA8pyHCOStGlXn0rseXma+GQjeuv2g=
-golang.org/x/exp v0.0.0-20260709172345-9ea1abe57597/go.mod h1:EdfpwwqSu+0Li0mzskwHU6FWDV3t9Q+RZDo3QMUtL3Q=
 golang.org/x/sync v0.22.0 h1:SZjpbeLmrCk4xhRSZFNZW5gFUeCeFgjekvI/+gfScek=
 golang.org/x/sync v0.22.0/go.mod h1:9xrNwdLfx4jkKbNva9FpL6vEN7evnE43NNNJQ2LF3+0=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=

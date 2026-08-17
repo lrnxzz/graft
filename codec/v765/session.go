@@ -28,8 +28,6 @@ var overworld = dimensionBounds{
 
 type JoinHandler func(*codec.Client, *JoinGame) error
 
-type ChatListener func(line string)
-
 type Session struct {
 	client     *codec.Client
 	world      *graft.World
@@ -59,10 +57,15 @@ func Join(client *codec.Client, host string, port uint16, username string, onRea
 		return nil, err
 	}
 
-	var uuid codec.UUID
-	if raw, err := hex.DecodeString(profile.Profile.ID); err == nil {
-		copy(uuid[:], raw)
+	// a profile id that does not decode is a bug in whoever produced the
+	// profile, not a condition to play on with a zeroed uuid
+	raw, err := hex.DecodeString(profile.Profile.ID)
+	if err != nil {
+		return nil, fmt.Errorf("v765: profile id %q is not hex: %w", profile.Profile.ID, err)
 	}
+
+	var uuid codec.UUID
+	copy(uuid[:], raw)
 
 	session := &Session{
 		client:     client,
@@ -120,7 +123,7 @@ func (s *Session) listen() {
 	codec.On(s.client, s.onConfigDisconnect)
 
 	codec.On(s.client, s.onJoinGame)
-	codec.On(s.client, s.onChunkBatch)
+	codec.On(s.client, s.onChunkBatchFinished)
 	codec.On(s.client, s.onKeepAlive)
 	codec.On(s.client, s.onSyncPosition)
 	codec.On(s.client, s.onChunkData)
@@ -138,56 +141,6 @@ func (s *Session) listen() {
 	codec.On(s.client, s.onDisguisedChat)
 	codec.On(s.client, s.onBlockAck)
 	codec.On(s.client, s.onPlayDisconnect)
-}
-
-func (s *Session) OnChat(listener ChatListener) {
-	s.chat = listener
-}
-
-func (s *Session) notifyChat(line string) {
-	if s.chat != nil {
-		s.chat(line)
-	}
-}
-
-func (s *Session) onSystemChat(c *codec.Client, p *SystemChat) error {
-	if !p.Overlay.Bool() {
-		s.notifyChat(plainText(p.Content.Tag))
-	}
-
-	return nil
-}
-
-func (s *Session) onPlayerChat(c *codec.Client, p *PlayerChat) error {
-	s.notifyChat(fmt.Sprintf(formatChat, plainText(p.NetworkName.Tag), p.Message))
-
-	return nil
-}
-
-func (s *Session) onDisguisedChat(c *codec.Client, p *DisguisedChat) error {
-	s.notifyChat(fmt.Sprintf(formatAnnouncement, plainText(p.SenderName.Tag), plainText(p.Message.Tag)))
-
-	return nil
-}
-
-func (s *Session) SendChat(message string) error {
-	stamp := stampChat()
-
-	return s.client.Send(&ChatMessage{
-		Message:   codec.String(message),
-		Timestamp: stamp.timestamp,
-		Salt:      stamp.salt,
-	})
-}
-
-func (s *Session) SendCommand(command string) error {
-	stamp := stampChat()
-
-	return s.client.Send(&ChatCommand{
-		Command:   codec.String(command),
-		Timestamp: stamp.timestamp,
-		Salt:      stamp.salt,
-	})
 }
 
 func (s *Session) onBlockAck(c *codec.Client, p *AcknowledgeBlockChange) error {
@@ -439,7 +392,7 @@ func (s *Session) SendPosition() error {
 // to protect, so it asks for as much as the vanilla client ever would
 const chunkBatchRate codec.Float = 64
 
-func (s *Session) onChunkBatch(c *codec.Client, p *ChunkBatchFinished) error {
+func (s *Session) onChunkBatchFinished(c *codec.Client, p *ChunkBatchFinished) error {
 	return c.Send(&ChunkBatchReceived{ChunksPerTick: chunkBatchRate})
 }
 

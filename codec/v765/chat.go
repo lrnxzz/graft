@@ -356,3 +356,55 @@ func translated(component nbt.Compound, key string) string {
 
 	return fmt.Sprintf(format, values...)
 }
+
+type ChatListener func(line string)
+
+func (s *Session) OnChat(listener ChatListener) {
+	s.chat = listener
+}
+
+func (s *Session) notifyChat(line string) {
+	if s.chat != nil {
+		s.chat(line)
+	}
+}
+
+func (s *Session) onSystemChat(c *codec.Client, p *SystemChat) error {
+	if !p.Overlay.Bool() {
+		s.notifyChat(plainText(p.Content.Tag))
+	}
+
+	return nil
+}
+
+func (s *Session) onPlayerChat(c *codec.Client, p *PlayerChat) error {
+	s.notifyChat(fmt.Sprintf(formatChat, plainText(p.NetworkName.Tag), p.Message))
+
+	return nil
+}
+
+func (s *Session) onDisguisedChat(c *codec.Client, p *DisguisedChat) error {
+	s.notifyChat(fmt.Sprintf(formatAnnouncement, plainText(p.SenderName.Tag), plainText(p.Message.Tag)))
+
+	return nil
+}
+
+func (s *Session) SendChat(message string) error {
+	stamp := stampChat()
+
+	return s.client.Send(&ChatMessage{
+		Message:   codec.String(message),
+		Timestamp: stamp.timestamp,
+		Salt:      stamp.salt,
+	})
+}
+
+func (s *Session) SendCommand(command string) error {
+	stamp := stampChat()
+
+	return s.client.Send(&ChatCommand{
+		Command:   codec.String(command),
+		Timestamp: stamp.timestamp,
+		Salt:      stamp.salt,
+	})
+}

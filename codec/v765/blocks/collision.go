@@ -15,6 +15,8 @@ func Solid(state graft.BlockState) bool {
 	return block.Solid()
 }
 
+// Collision hands back a shared, read-only slice — a caller that mutates it
+// corrupts every other caller's idea of a full block
 func Collision(state graft.BlockState) []graft.AABB {
 	if !Solid(state) {
 		return nil

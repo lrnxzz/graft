@@ -37,7 +37,7 @@ func (l *loop) send(packet Packet) error {
 	case l.outbound <- packet:
 		return nil
 	case <-l.done:
-		return errors.New("graft: send on a closed client")
+		return errClientClosed
 	}
 }
 
