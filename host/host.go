@@ -3,7 +3,6 @@ package host
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"time"
 
@@ -71,10 +70,11 @@ func play(ctx context.Context, stop context.CancelFunc, bot *agent.Agent, plugin
 	return plugin(ctx, bot)
 }
 
-// spawn waits for the world with a deadline, because a login that is accepted
-// and then goes quiet is otherwise indistinguishable from a slow one. A proxy
-// holding the bot in a waiting room looks exactly like this: logged in, ticking,
-// and no terrain will ever arrive.
+// spawn waits for the world with a deadline. A login that is accepted and then
+// goes quiet — a proxy holding the bot in a login lobby before letting it
+// through — looks exactly like a slow one: logged in, ticking, no terrain. So
+// the wait is not fatal: the viewer opens anyway, the player logs in by hand,
+// and the world streams in once the server lets go of the bot.
 func spawn(ctx context.Context, bot *agent.Agent) error {
 	waiting, stop := context.WithTimeout(ctx, spawnTimeout)
 	defer stop()
@@ -87,8 +87,10 @@ func spawn(ctx context.Context, bot *agent.Agent) error {
 		return err
 	}
 
-	return fmt.Errorf("host: logged in but no world arrived in %s — the server may speak another "+
-		"protocol, or be holding the bot somewhere before letting it in", spawnTimeout)
+	slog.Warn("no world yet — opening anyway; if the server has a login lobby, register or log in and it will stream in",
+		"waited", spawnTimeout)
+
+	return nil
 }
 
 // warnAboutProtocol says what the server answers the status query with, when it

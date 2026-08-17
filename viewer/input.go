@@ -238,6 +238,10 @@ func (v *Viewer) strike(ctx context.Context, now float64) {
 func (v *Viewer) compose() {
 	v.chat.Type(v.window.Typed())
 
+	if v.window.Pressed(gpu.KeyCtrl) && v.edges.key(gpu.KeyV).started {
+		v.chat.Type([]rune(v.window.Clipboard()))
+	}
+
 	if v.edges.key(gpu.KeyBackspace).started {
 		v.chat.Erase()
 	}

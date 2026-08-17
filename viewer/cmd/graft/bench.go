@@ -17,6 +17,7 @@ var (
 	ore    = command.Block("ore")
 	times  = command.Whole("times").Or(1)
 	saying = command.Rest("message")
+	secret = command.Rest("password")
 )
 
 // bench holds what the commands act on. It exists so every handler is a method
@@ -53,6 +54,11 @@ func commandsFor(ctx context.Context, view *viewer.Viewer, spare commands) {
 		command.Word("mine").Says("mine an ore until the inventory fills").Takes(ore).Runs(desk.mine),
 		command.Word("say").Says("speak in chat").Takes(saying).Runs(desk.say),
 		command.Word("stop").Says("drop whatever the bot is doing").Runs(desk.stop),
+
+		// a keyboard without a slash cannot type /register, so these forward one
+		// for the login lobbies cracked servers put a bot in
+		command.Word("register").Says("send /register to a login server").Takes(secret).Runs(desk.register),
+		command.Word("login").Says("send /login to a login server").Takes(secret).Runs(desk.login),
 
 		command.Word("route").Says("draw a path and have the bot follow it").Under(
 			command.Word("draw").Says("leave the body to lay out the path").Runs(desk.draw),
@@ -197,6 +203,14 @@ func (b *bench) mine(c command.Call) error {
 
 func (b *bench) say(c command.Call) error {
 	return b.view.Bot().Chat(saying.Of(c))
+}
+
+func (b *bench) register(c command.Call) error {
+	return b.view.Bot().Chat("/register " + secret.Of(c))
+}
+
+func (b *bench) login(c command.Call) error {
+	return b.view.Bot().Chat("/login " + secret.Of(c))
 }
 
 func (b *bench) stop(command.Call) error {

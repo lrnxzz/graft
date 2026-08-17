@@ -13,6 +13,7 @@ const (
 	KeyF         Key = Key(glfw.KeyF)
 	KeyT         Key = Key(glfw.KeyT)
 	KeyP         Key = Key(glfw.KeyP)
+	KeyV         Key = Key(glfw.KeyV)
 	KeySlash     Key = Key(glfw.KeySlash)
 	KeyPeriod    Key = Key(glfw.KeyPeriod)
 	KeyEnter     Key = Key(glfw.KeyEnter)
@@ -142,4 +143,10 @@ func (w *Window) Typed() []rune {
 	w.typed = nil
 
 	return typed
+}
+
+// Clipboard is what a paste would insert, which the chat needs because a
+// keyboard without a slash cannot otherwise write a server command
+func (w *Window) Clipboard() string {
+	return w.handle.GetClipboardString()
 }
