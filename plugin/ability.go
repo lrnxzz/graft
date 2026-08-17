@@ -8,15 +8,13 @@ import (
 
 const always Permission = ""
 
-type Sense struct {
-	Name  string
-	Needs Permission
-	Read  func(Bot) func() any
-}
-
+// An Ability is one name on the bot object. A sense fills Read and lands as a
+// property the plugin watches; an action fills Bind and lands as a method it
+// calls. Either comes back nil when the bot lacks the capability behind it.
 type Ability struct {
 	Name  string
 	Needs Permission
+	Read  func(Bot) func() any
 	Bind  func(*Runtime, Bot) any
 }
 
@@ -41,51 +39,6 @@ func able[C any](bind func(*Runtime, C) any) func(*Runtime, Bot) any {
 		}
 
 		return bind(r, capable)
-	}
-}
-
-func Senses() []Sense {
-	return []Sense{
-		{
-			Name:  "name",
-			Needs: always,
-			Read:  sensed(readName),
-		},
-		{
-			Name:  "position",
-			Needs: always,
-			Read:  sensed(readPosition),
-		},
-		{
-			Name:  "health",
-			Needs: always,
-			Read:  sensed(readHealth),
-		},
-		{
-			Name:  "food",
-			Needs: always,
-			Read:  sensed(readFood),
-		},
-		{
-			Name:  "onGround",
-			Needs: always,
-			Read:  sensed(readOnGround),
-		},
-		{
-			Name:  "looking",
-			Needs: always,
-			Read:  sensed(readLooking),
-		},
-		{
-			Name:  "held",
-			Needs: MayInventory,
-			Read:  sensed(readHeld),
-		},
-		{
-			Name:  "inventory",
-			Needs: MayInventory,
-			Read:  sensed(readInventory),
-		},
 	}
 }
 
@@ -128,6 +81,46 @@ func readLooking(eyes Sighted) any {
 
 func Abilities() []Ability {
 	return []Ability{
+		{
+			Name:  "name",
+			Needs: always,
+			Read:  sensed(readName),
+		},
+		{
+			Name:  "position",
+			Needs: always,
+			Read:  sensed(readPosition),
+		},
+		{
+			Name:  "health",
+			Needs: always,
+			Read:  sensed(readHealth),
+		},
+		{
+			Name:  "food",
+			Needs: always,
+			Read:  sensed(readFood),
+		},
+		{
+			Name:  "onGround",
+			Needs: always,
+			Read:  sensed(readOnGround),
+		},
+		{
+			Name:  "looking",
+			Needs: always,
+			Read:  sensed(readLooking),
+		},
+		{
+			Name:  "held",
+			Needs: MayInventory,
+			Read:  sensed(readHeld),
+		},
+		{
+			Name:  "inventory",
+			Needs: MayInventory,
+			Read:  sensed(readInventory),
+		},
 		{
 			Name:  "goto",
 			Needs: MayMove,

@@ -1,6 +1,8 @@
 package plugin
 
 import (
+	"github.com/dop251/goja"
+
 	"strconv"
 	"strings"
 )
@@ -16,51 +18,26 @@ const (
 	defaultBarWidth = 80
 )
 
-// Component is one tag a plugin can write, and the shape it builds. The three
-// catalogues — components, goals and markers — all land on the same javascript
-// object, which is where a clash between them is caught.
-type Component struct {
-	Tag   string
-	Build func(reading) Node
+func componentWords() []Word {
+	return []Word{
+		component("Panel", buildStack),
+		component("Column", buildStack),
+		component("Row", buildRow),
+		component("Text", buildText),
+		component("Bar", buildBar),
+		component("Icon", buildIcon),
+		component("List", buildList),
+		component("Option", buildOption),
+		component("Raw", buildRaw),
+	}
 }
 
-func Components() []Component {
-	return []Component{
-		{
-			Tag:   "Panel",
-			Build: buildStack,
-		},
-		{
-			Tag:   "Column",
-			Build: buildStack,
-		},
-		{
-			Tag:   "Row",
-			Build: buildRow,
-		},
-		{
-			Tag:   "Text",
-			Build: buildText,
-		},
-		{
-			Tag:   "Bar",
-			Build: buildBar,
-		},
-		{
-			Tag:   "Icon",
-			Build: buildIcon,
-		},
-		{
-			Tag:   "List",
-			Build: buildList,
-		},
-		{
-			Tag:   "Option",
-			Build: buildOption,
-		},
-		{
-			Tag:   "Raw",
-			Build: buildRaw,
+// component is one tag a plugin can write, building the node the canvas draws
+func component(tag string, build func(reading) Node) Word {
+	return Word{
+		Name: tag,
+		Build: func(r *Runtime, call goja.FunctionCall) goja.Value {
+			return r.vm.ToValue(build(r.reading(call.Argument(0))))
 		},
 	}
 }

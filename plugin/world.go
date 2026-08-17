@@ -1,5 +1,7 @@
 package plugin
 
+import "github.com/dop251/goja"
+
 type Marker struct {
 	Type  MarkerType
 	From  Vec3
@@ -16,28 +18,26 @@ const (
 	MarkBeacon    MarkerType = "beacon"
 )
 
-type MarkerSpec struct {
-	Type  MarkerType
-	Build func(args []reading) Marker
+func markerWords() []Word {
+	return []Word{
+		marker(MarkHighlight, markSpot(MarkHighlight)),
+		marker(MarkBeacon, markSpot(MarkBeacon)),
+		marker(MarkBox, markSpan(MarkBox)),
+		marker(MarkLine, markSpan(MarkLine)),
+	}
 }
 
-func Markers() []MarkerSpec {
-	return []MarkerSpec{
-		{
-			Type:  MarkHighlight,
-			Build: markSpot(MarkHighlight),
-		},
-		{
-			Type:  MarkBeacon,
-			Build: markSpot(MarkBeacon),
-		},
-		{
-			Type:  MarkBox,
-			Build: markSpan(MarkBox),
-		},
-		{
-			Type:  MarkLine,
-			Build: markSpan(MarkLine),
+// marker gathers however many arguments the mark's shape wants
+func marker(kind MarkerType, build func([]reading) Marker) Word {
+	return Word{
+		Name: string(kind),
+		Build: func(r *Runtime, call goja.FunctionCall) goja.Value {
+			args := make([]reading, 0, len(call.Arguments))
+			for _, argument := range call.Arguments {
+				args = append(args, r.reading(argument))
+			}
+
+			return r.vm.ToValue(build(args))
 		},
 	}
 }

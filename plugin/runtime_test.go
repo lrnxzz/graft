@@ -211,30 +211,18 @@ func TestAnUndeclaredPermissionIsNeverBound(t *testing.T) {
 	}
 }
 
-// Every name a plugin can write comes from one of three catalogues onto one
-// javascript object. Nothing stops two of them choosing the same word, and the
-// loser would simply never be reachable, so the clash has to be an error.
-func TestTheCataloguesDoNotOverlap(t *testing.T) {
-	claimed := map[string]string{}
+// Every name a plugin can write lands on one javascript object. Nothing stops
+// two corners of the catalogue choosing the same word, and the loser would
+// simply never be reachable, so the clash has to be an error.
+func TestNoWordIsClaimedTwice(t *testing.T) {
+	claimed := map[string]bool{}
 
-	for _, spec := range plugin.Components() {
-		claimed[spec.Tag] = "component"
-	}
-	for _, spec := range plugin.Goals() {
-		where, taken := claimed[string(spec.Type)]
-		if taken {
-			t.Errorf("goal %s is already a %s", spec.Type, where)
+	for _, word := range plugin.Words() {
+		if claimed[word.Name] {
+			t.Errorf("the word %s is claimed twice", word.Name)
 		}
 
-		claimed[string(spec.Type)] = "goal"
-	}
-	for _, spec := range plugin.Markers() {
-		where, taken := claimed[string(spec.Type)]
-		if taken {
-			t.Errorf("marker %s is already a %s", spec.Type, where)
-		}
-
-		claimed[string(spec.Type)] = "marker"
+		claimed[word.Name] = true
 	}
 }
 

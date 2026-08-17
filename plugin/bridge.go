@@ -15,22 +15,9 @@ func (r *Runtime) install() error {
 		"when":    r.when,
 	})
 
-	for _, spec := range Components() {
-		bridge.set(spec.Tag, r.component(spec.Build))
+	for _, word := range Words() {
+		bridge.set(word.Name, r.spoken(word.Build))
 	}
-	for _, spec := range Goals() {
-		bridge.set(string(spec.Type), r.goal(spec.Build))
-	}
-	for _, spec := range Markers() {
-		bridge.set(string(spec.Type), r.marker(spec.Build))
-	}
-
-	bridge.all(map[string]any{
-		string(GoalSequence): r.nesting(GoalSequence),
-		string(GoalRace):     r.nesting(GoalRace),
-		string(GoalRepeat):   r.repeat,
-		"within":             r.within,
-	})
 
 	if err := bridge.done(); err != nil {
 		return err
@@ -67,55 +54,6 @@ func (u *UnknownImport) Error() string {
 
 func (r *Runtime) declare(spec *goja.Object) *goja.Object {
 	return spec
-}
-
-func (r *Runtime) component(build func(reading) Node) func(goja.FunctionCall) goja.Value {
-	return func(call goja.FunctionCall) goja.Value {
-		return r.vm.ToValue(build(r.reading(call.Argument(0))))
-	}
-}
-
-func (r *Runtime) goal(build func(reading, reading) Goal) func(goja.FunctionCall) goja.Value {
-	return func(call goja.FunctionCall) goja.Value {
-		return r.vm.ToValue(build(r.reading(call.Argument(0)), r.reading(call.Argument(1))))
-	}
-}
-
-func (r *Runtime) nesting(wanted GoalType) func(goja.FunctionCall) goja.Value {
-	return func(call goja.FunctionCall) goja.Value {
-		goal := Goal{Type: wanted}
-		for _, argument := range call.Arguments {
-			goal.Inner = append(goal.Inner, asGoal(r.reading(argument)))
-		}
-
-		return r.vm.ToValue(goal)
-	}
-}
-
-func (r *Runtime) repeat(call goja.FunctionCall) goja.Value {
-	return r.vm.ToValue(Goal{
-		Type:  GoalRepeat,
-		Times: r.reading(call.Argument(1)).count(),
-		Inner: []Goal{asGoal(r.reading(call.Argument(0)))},
-	})
-}
-
-func (r *Runtime) within(call goja.FunctionCall) goja.Value {
-	area := r.vm.NewObject()
-	_ = area.Set("radius", call.Argument(0))
-
-	return area
-}
-
-func (r *Runtime) marker(build func([]reading) Marker) func(goja.FunctionCall) goja.Value {
-	return func(call goja.FunctionCall) goja.Value {
-		args := make([]reading, 0, len(call.Arguments))
-		for _, argument := range call.Arguments {
-			args = append(args, r.reading(argument))
-		}
-
-		return r.vm.ToValue(build(args))
-	}
 }
 
 func (r *Runtime) element(call goja.FunctionCall) goja.Value {
@@ -155,30 +93,22 @@ func (r *Runtime) botObject(bot Bot, permissions []Permission) (*goja.Object, er
 
 	bridge := into(r.vm, object)
 
-	for _, sense := range Senses() {
-		if !granted(permissions, sense.Needs) {
-			continue
-		}
-
-		read := sense.Read(bot)
-		if read == nil {
-			continue
-		}
-
-		bridge.getter(sense.Name, read)
-	}
-
 	for _, ability := range Abilities() {
 		if !granted(permissions, ability.Needs) {
 			continue
 		}
 
-		bound := ability.Bind(r, bot)
-		if bound == nil {
+		if ability.Read != nil {
+			if read := ability.Read(bot); read != nil {
+				bridge.getter(ability.Name, read)
+			}
+
 			continue
 		}
 
-		bridge.set(ability.Name, bound)
+		if bound := ability.Bind(r, bot); bound != nil {
+			bridge.set(ability.Name, bound)
+		}
 	}
 
 	return object, bridge.done()
