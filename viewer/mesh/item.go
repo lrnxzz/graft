@@ -17,10 +17,10 @@ var spriteFace = cubeFace{
 	shade: 1.0,
 }
 
-func Block(state graft.BlockState, tiles Tiles) Geometry {
+func Block(state graft.BlockState, blocks Blocks) Geometry {
 	b := newBuilder()
 	for _, face := range cubeFaces {
-		b.quad(mgl32.Vec3{}, face, tiles.Tile(state, face.face))
+		b.quad(mgl32.Vec3{}, face, blocks.Tile(state, face.face))
 	}
 
 	return b.geometry()

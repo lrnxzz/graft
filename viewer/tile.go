@@ -55,6 +55,12 @@ func (t *Tileset) Tile(state graft.BlockState, face mesh.Face) gpu.UV {
 	return t.atlas.Tile(t.index(state, face))
 }
 
+// Solid reports whether the block fills its cube opaquely, which is what lets a
+// neighbour hide the face between them
+func (t *Tileset) Solid(state graft.BlockState) bool {
+	return blocks.Solid(state)
+}
+
 func (t *Tileset) index(state graft.BlockState, face mesh.Face) int {
 	block, ok := blocks.Of(state)
 	if !ok {

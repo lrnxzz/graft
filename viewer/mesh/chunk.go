@@ -6,11 +6,12 @@ import (
 	"github.com/lrnxzz/graft/viewer/gpu"
 )
 
-type Tiles interface {
+type Blocks interface {
 	Tile(state graft.BlockState, face Face) gpu.UV
+	Solid(state graft.BlockState) bool
 }
 
-func Chunk(world *graft.World, column *graft.Column, tiles Tiles) Geometry {
+func Chunk(world *graft.World, column *graft.Column, blocks Blocks) Geometry {
 	b := newBuilder()
 
 	baseX := int(column.X) * 16
@@ -28,10 +29,16 @@ func Chunk(world *graft.World, column *graft.Column, tiles Tiles) Geometry {
 				}
 
 				for _, face := range cubeFaces {
-					if neighbor, _ := world.Block(x+face.step[0], y+face.step[1], z+face.step[2]); neighbor != 0 {
+					neighbor, _ := world.Block(x+face.step[0], y+face.step[1], z+face.step[2])
+
+					// a face is hidden only by a full opaque cube, or by more of the
+					// same block — so grass and water stop swallowing the ground
+					// behind them, while an ocean still meshes only its surface
+					if neighbor == state || blocks.Solid(neighbor) {
 						continue
 					}
-					b.quad(mgl32.Vec3{float32(x), float32(y), float32(z)}, face, tiles.Tile(state, face.face))
+
+					b.quad(mgl32.Vec3{float32(x), float32(y), float32(z)}, face, blocks.Tile(state, face.face))
 				}
 			}
 		}
